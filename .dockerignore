@@ -1,0 +1,14 @@
+.git
+.gitignore
+.dockerignore
+build*/
+*.pro.user
+*.pro.user.*
+.qtcreator/
+.codex-qt-build/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+tasks/

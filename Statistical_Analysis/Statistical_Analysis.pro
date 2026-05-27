@@ -27,6 +27,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 # 配置C++标准为C++11
 CONFIG += c++11
+win32-g++:QMAKE_CXXFLAGS += -Wa,-mbig-obj
 
 # 指定源文件、头文件和界面文件
 SOURCES += \
@@ -42,8 +43,8 @@ FORMS += \
         mainwindow.ui
 
 # 添加头文件和库文件的搜索路径
-INCLUDEPATH += D:/information/Projects/Statistical_Analysis/QXsl/header
-LIBS        += D:/information/Projects/Statistical_Analysis/QXsl/lib/libQXlsx.a
+INCLUDEPATH += $$PWD/../QXsl/header
+LIBS        += $$PWD/../QXsl/lib/libQXlsx.a
 
 # Default rules for deployment.
 # 在不同平台上指定部署目标路径

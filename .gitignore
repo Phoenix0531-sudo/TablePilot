@@ -1,0 +1,36 @@
+# Qt / C++ build outputs
+build*/
+*.pro.user
+*.pro.user.*
+.qmake.stash
+Makefile
+Makefile.*
+moc_*.cpp
+moc_*.o
+ui_*.h
+*.o
+*.obj
+*.exe
+*.dll
+*.debug
+
+# Qt Creator local state
+.qtcreator/
+CMakeLists.txt.user*
+
+# Python service
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+
+# Local Codex build scratch
+.codex-qt-build/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -110,10 +110,10 @@ void MainWindow::Slot1(){//打开Excel
 
     // 如果成功加载 Excel 文件
     if(p_xlsx->load()){
-        qInfo() << "open execel is ok!" << endl;  // 输出信息，表示成功打开 Excel 文件
+        qInfo() << "open execel is ok!";  // 输出信息，表示成功打开 Excel 文件
     }
     else{
-        qWarning() << "open execel is error!" << endl;  // 输出警告信息，表示打开 Excel 文件出错
+        qWarning() << "open execel is error!";  // 输出警告信息，表示打开 Excel 文件出错
     }
 
     // 获取 Excel 表格的行数和列数
@@ -128,7 +128,7 @@ void MainWindow::Slot1(){//打开Excel
             if(!value.isNull())  {// 如果值不为空
                 QString valstr = value.toString();  // 将值转换为字符串
 
-                qDebug() << "i:" << i << "j:" << j << "valstr:" << valstr << endl;  // 输出调试信息，显示单元格的行列及值
+                qDebug() << "i:" << i << "j:" << j << "valstr:" << valstr;  // 输出调试信息，显示单元格的行列及值
 
                 // 创建一个新的表格项，并设置其文本为单元格的值
                 QTableWidgetItem *itemlog = new QTableWidgetItem();
@@ -175,7 +175,7 @@ void MainWindow::Slot2(){//打开TXT
         list = line.split(',');  // 使用逗号分割每行文本内容，并存储到列表 list 中
 
         if(list.size() != 6){  // 如果分割后的列表长度不为 6，说明数据格式错误，输出错误信息并返回
-            qDebug()<<"txt data size is error!"<<endl;
+            qDebug()<<"txt data size is error!";
             return;
         }
         if(rowId < 0 || rowId >= 6){  // 如果行号小于 0 或大于等于 6，重置为 0

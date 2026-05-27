@@ -1,0 +1,16 @@
+services:
+  insightqt-analysis:
+    build:
+      context: .
+      dockerfile: analysis_service/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATA_DIR: /data
+    volumes:
+      - ./Statistical_Analysis:/data:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

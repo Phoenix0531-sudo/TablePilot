@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+from fastapi import FastAPI, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
-from .analysis import list_datasets, profile_dataset
+from .agent import answer_question
+from .analysis import list_datasets, load_table, profile_dataset, profile_uploaded_table
 
 app = FastAPI(
     title="InsightQt Analysis Service",
@@ -14,6 +18,11 @@ app = FastAPI(
 
 class AnalyzeRequest(BaseModel):
     filename: str = Field(..., min_length=1, description="Dataset filename under the configured data directory.")
+
+
+class AgentRequest(BaseModel):
+    filename: str = Field(..., min_length=1)
+    question: str = Field(..., min_length=1)
 
 
 @app.get("/health")
@@ -30,6 +39,32 @@ def datasets() -> dict[str, object]:
 def analyze(request: AnalyzeRequest) -> dict[str, object]:
     try:
         return profile_dataset(request.filename)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/api/analyze-upload")
+async def analyze_upload(file: UploadFile) -> dict[str, object]:
+    suffix = Path(file.filename or "").suffix.lower()
+    try:
+        with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            temp_file.write(await file.read())
+            temp_path = Path(temp_file.name)
+        df = load_table(temp_path)
+        return profile_uploaded_table(file.filename or temp_path.name, df)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        if "temp_path" in locals() and temp_path.exists():
+            temp_path.unlink()
+
+
+@app.post("/api/agent/query")
+def agent_query(request: AgentRequest) -> dict[str, object]:
+    try:
+        return answer_question(request.filename, request.question)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

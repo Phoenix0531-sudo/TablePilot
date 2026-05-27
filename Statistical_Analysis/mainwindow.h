@@ -2,7 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include "xlsxdocument.h"  // 引入处理Excel的头文件
 #include "qcustomplot.h"   // 引入绘图库的头文件
 #include <QLabel>          // 引入QLabel类
 
@@ -32,15 +31,13 @@ private:
     QAction* m_pAction5; // 功能标签5的动作
     QAction* m_pAction6; // 功能标签6的动作
     QAction* m_pAction7; // 功能标签7的动作
+    QAction* m_pAction8; // 智能分析动作
 
     // 创建工具栏、标签、状态栏、样式等
     void createToolBar();
     void createActions();
     void createStatusBar();
     void createStyle();
-
-    // 引入QXlsx头文件中的Document库来定义一个操作Excel的指针对象
-    QXlsx::Document *p_xlsx = nullptr;
 
     // 判断指定位置的单元格是否为空
     bool ItemEmpty(int x, int y);
@@ -71,6 +68,8 @@ private:
     int  SaveType;      // 保存类型
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件
     void SetStyleSheet(QWidget *pWidget, QString strQSS); // 设置样式表
+    void AnalyzeFileWithService(const QString &filePath);
+    void ShowServiceAnalysis(const QByteArray &payload);
 };
 
 #endif // MAINWINDOW_H

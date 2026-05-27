@@ -1,7 +1,34 @@
 #include "mainwindow.h"   // 包含自定义的MainWindow类的头文件
 #include "ui_mainwindow.h" // 包含自动生成的ui界面文件的头文件
+#include <QCoreApplication>
+#include <QDir>
 #include <QFileDialog>     // 包含文件对话框类的头文件
+#include <QFileInfo>
+#include <QHttpMultiPart>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>          // 包含标签类的头文件，用于创建标签部件
+#include <QMessageBox>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QEventLoop>
+
+namespace {
+QString ProjectPath(const QString &relativePath)
+{
+    QDir dir(QCoreApplication::applicationDirPath());
+    for (int i = 0; i < 6; ++i) {
+        QString candidate = dir.filePath(relativePath);
+        if (QFileInfo::exists(candidate)) {
+            return candidate;
+        }
+        dir.cdUp();
+    }
+    return QDir::current().filePath(relativePath);
+}
+}
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), // 调用基类的构造函数
@@ -49,26 +76,30 @@ void MainWindow::createToolBar(){// 创建工具栏
     ui->mainToolBar->addSeparator(); // 添加分隔符
     ui->mainToolBar->addAction(m_pAction6); // 添加另存为图片的动作
     ui->mainToolBar->addSeparator(); // 添加分隔符
+    ui->mainToolBar->addAction(m_pAction8); // 添加智能分析的动作
+    ui->mainToolBar->addSeparator(); // 添加分隔符
     ui->mainToolBar->addAction(m_pAction7); // 添加退出系统的动作
 }
 
 void MainWindow::createActions(){// 创建各个功能标签的动作
     //设置功能标签的图标，文字，以及该动作属于哪个父窗口
 
-    m_pAction1 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/1.png")),QString("打开excel(&O)"), this);
+    m_pAction1 = new QAction(QIcon(ProjectPath("qss/1.png")),QString("打开excel(&O)"), this);
     m_pAction1->setToolTip("打开excel");
-    m_pAction2 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/2.png")),QString("打开txt(&O)"), this);
+    m_pAction2 = new QAction(QIcon(ProjectPath("qss/2.png")),QString("打开txt(&O)"), this);
     m_pAction2->setToolTip("打开txt");
-    m_pAction3 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/3.png")),QString("数据统计(&S)"), this);
+    m_pAction3 = new QAction(QIcon(ProjectPath("qss/3.png")),QString("数据统计(&S)"), this);
     m_pAction3->setToolTip("数据统计");
-    m_pAction4 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/4.png")),QString("折线图(&L)"), this);
+    m_pAction4 = new QAction(QIcon(ProjectPath("qss/4.png")),QString("折线图(&L)"), this);
     m_pAction4->setToolTip("折线图");
-    m_pAction5 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/5.png")),QString("柱状图(&L)"), this);
+    m_pAction5 = new QAction(QIcon(ProjectPath("qss/5.png")),QString("柱状图(&L)"), this);
     m_pAction5->setToolTip("柱状图");
-    m_pAction6 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/6.png")),QString("另存为图片(&S)"), this);
+    m_pAction6 = new QAction(QIcon(ProjectPath("qss/6.png")),QString("另存为图片(&S)"), this);
     m_pAction6->setToolTip("另存为图片");
-    m_pAction7 = new QAction(QIcon(("D:/information/Projects/Statistical_Analysis/qss/7.png")),QString("退出系统(&T)"), this);
+    m_pAction7 = new QAction(QIcon(ProjectPath("qss/7.png")),QString("退出系统(&T)"), this);
     m_pAction7->setToolTip("退出系统");
+    m_pAction8 = new QAction(QString("智能分析(&A)"), this);
+    m_pAction8->setToolTip("调用本地 InsightQt 分析服务");
 
     // 连接各个动作的触发信号到槽函数
     connect(m_pAction1, SIGNAL(triggered()),this, SLOT(Slot1()));
@@ -78,6 +109,17 @@ void MainWindow::createActions(){// 创建各个功能标签的动作
     connect(m_pAction5, SIGNAL(triggered()),this, SLOT(Slot5()));
     connect(m_pAction6, SIGNAL(triggered()),this, SLOT(Slot6()));
     connect(m_pAction7, SIGNAL(triggered()),this, SLOT(Slot7()));
+    connect(m_pAction8, &QAction::triggered, this, [this]() {
+        QString filePath = QFileDialog::getOpenFileName(
+            this,
+            QStringLiteral("选择数据文件"),
+            QString(),
+            QStringLiteral("Data file(*.xls *.xlsx *.csv *.txt)")
+        );
+        if (!filePath.isEmpty()) {
+            AnalyzeFileWithService(filePath);
+        }
+    });
 }
 
 void MainWindow::createStatusBar(){// 创建状态栏并添加信息标签
@@ -89,59 +131,15 @@ void MainWindow::createStatusBar(){// 创建状态栏并添加信息标签
 }
 
 void MainWindow::Slot1(){//打开Excel
-    ////ui->tableWidget->clear();  // 清除表格控件中的内容（该行代码被注释掉了）
-
     isExit = true;  // 标记 isExit 为 true，表示退出状态（这个变量在代码中未定义，可能是 MainWindow 类的成员变量）
 
-    // 打开文件对话框，让用户选择 Excel 文件，获取选择的文件路径
-    QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择Excel文件"), "D:\\information\\Projects\\Statistical_Analysis\\Statistical_Analysis", QStringLiteral("Exel file(*.xls *.xlsx)"));
+    QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择Excel文件"), QString(), QStringLiteral("Excel file(*.xls *.xlsx)"));
     if(filePath.isEmpty())  // 如果文件路径为空，说明用户取消了选择，直接返回
         return;
 
-    // 清空状态栏标签的内容
     info_Label->clear();
-    // 设置状态栏标签的文本为选择的文件路径
     info_Label->setText(filePath);
-
-    // 如果 p_xlsx 对象不存在，则创建一个新的 QXlsx::Document 对象，并指定文件路径和父对象为当前窗口
-    if(!p_xlsx){
-        p_xlsx = new QXlsx::Document(filePath, this);
-    }
-
-    // 如果成功加载 Excel 文件
-    if(p_xlsx->load()){
-        qInfo() << "open execel is ok!";  // 输出信息，表示成功打开 Excel 文件
-    }
-    else{
-        qWarning() << "open execel is error!";  // 输出警告信息，表示打开 Excel 文件出错
-    }
-
-    // 获取 Excel 表格的行数和列数
-    int rowLen    = p_xlsx->dimension().rowCount();
-    int columnLen = p_xlsx->dimension().columnCount();
-
-    // 遍历 Excel 表格的所有单元格
-    for(int i = 0; i <= rowLen; i++){
-        for(int j = 0; j <= columnLen; j++){
-            // 读取当前单元格的值
-            QVariant value = p_xlsx->read(i, j);
-            if(!value.isNull())  {// 如果值不为空
-                QString valstr = value.toString();  // 将值转换为字符串
-
-                qDebug() << "i:" << i << "j:" << j << "valstr:" << valstr;  // 输出调试信息，显示单元格的行列及值
-
-                // 创建一个新的表格项，并设置其文本为单元格的值
-                QTableWidgetItem *itemlog = new QTableWidgetItem();
-                itemlog->setText(valstr);
-
-                // 将表格项添加到表格控件中的指定位置
-                ui->tableWidget->setItem(i - 1, j - 1, itemlog);
-            }
-        }
-    }
-
-    delete p_xlsx;  // 删除 QXlsx::Document 对象
-    p_xlsx = nullptr;  // 将指针置空，防止悬空指针
+    AnalyzeFileWithService(filePath);
 }
 
 void MainWindow::Slot2(){//打开TXT
@@ -153,7 +151,7 @@ void MainWindow::Slot2(){//打开TXT
     ////ui->tableWidget->clear();  // 清空表格控件中的内容（该行代码被注释掉了）
 
     // 打开文件对话框，让用户选择 TXT 文件，获取选择的文件路径
-    QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择TXT文件"), "D:\\information\\Projects\\Statistical_Analysis\\Statistical_Analysis", QStringLiteral("Exel file(*.txt)"));
+    QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择TXT文件"), QString(), QStringLiteral("Text file(*.txt)"));
     if(filePath.isEmpty())  // 如果文件路径为空，说明用户取消了选择，直接返回
         return;
 
@@ -956,13 +954,13 @@ void MainWindow::on_pushButton_clicked() {
 //
 void MainWindow::createStyle() {
     // 设置主工具栏的样式表
-    SetStyleSheet(ui->mainToolBar, "D:/information/Projects/Statistical_Analysis/qss/blue1.qss");
+    SetStyleSheet(ui->mainToolBar, ProjectPath("qss/blue1.qss"));
 
     // 设置中央窗口部件的样式表
-    SetStyleSheet(ui->centralWidget, "D:/information/Projects/Statistical_Analysis/qss/blue1.qss");
+    SetStyleSheet(ui->centralWidget, ProjectPath("qss/blue1.qss"));
 
     // 设置状态栏的样式表
-    SetStyleSheet(ui->statusBar, "D:/information/Projects/Statistical_Analysis/qss/blue1.qss");
+    SetStyleSheet(ui->statusBar, ProjectPath("qss/blue1.qss"));
 
     // 设置表格部件的列宽
 //    ui->tableWidget->horizontalHeader()->setSectionResizeMode(1,QHeaderView::Stretch);
@@ -981,16 +979,119 @@ void MainWindow::SetStyleSheet(QWidget* pWidget, QString strQSS) {
 
     // 打开样式表文件
     QFile qss(strQSS);
-    qss.open(QFile::ReadOnly);
-
-    // 读取样式表内容并设置给部件
-    pWidget->setStyleSheet(qss.readAll());
-
-    // 检查是否成功读取到样式表内容
-    if (qss.readAll() == "") {
+    if (!qss.open(QFile::ReadOnly)) {
         return;
     }
 
+    // 读取样式表内容并设置给部件
+    QByteArray content = qss.readAll();
+
+    // 检查是否成功读取到样式表内容
+    if (content.isEmpty()) {
+        return;
+    }
+
+    pWidget->setStyleSheet(content);
+
     // 关闭文件
     qss.close();
+}
+
+void MainWindow::AnalyzeFileWithService(const QString &filePath)
+{
+    QFileInfo fileInfo(filePath);
+    QFile *file = new QFile(filePath);
+    if (!file->open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, QStringLiteral("InsightQt 分析服务"), QStringLiteral("无法读取所选文件。"));
+        delete file;
+        return;
+    }
+
+    QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+    QHttpPart filePart;
+    filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/octet-stream"));
+    filePart.setHeader(
+        QNetworkRequest::ContentDispositionHeader,
+        QVariant(QString("form-data; name=\"file\"; filename=\"%1\"").arg(fileInfo.fileName()))
+    );
+    filePart.setBodyDevice(file);
+    file->setParent(multiPart);
+    multiPart->append(filePart);
+
+    QNetworkAccessManager manager;
+    QNetworkRequest request(QUrl("http://127.0.0.1:8000/api/analyze-upload"));
+    QNetworkReply *reply = manager.post(request, multiPart);
+    multiPart->setParent(reply);
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        QString message = QStringLiteral("无法连接本地分析服务。请先运行：\n\ndocker compose up --build\n\n错误：%1")
+                              .arg(reply->errorString());
+        reply->deleteLater();
+        QMessageBox::warning(this, QStringLiteral("InsightQt 分析服务"), message);
+        return;
+    }
+
+    QByteArray payload = reply->readAll();
+    reply->deleteLater();
+    ShowServiceAnalysis(payload);
+}
+
+void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
+{
+    QJsonParseError parseError;
+    QJsonDocument document = QJsonDocument::fromJson(payload, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        QMessageBox::warning(this, QStringLiteral("InsightQt 分析服务"), QStringLiteral("分析服务返回了无法解析的数据。"));
+        return;
+    }
+
+    QJsonObject root = document.object();
+    QJsonObject dataset = root.value("dataset").toObject();
+    QJsonObject quality = root.value("quality").toObject();
+    QJsonArray insights = root.value("insights").toArray();
+    QJsonArray anomalies = root.value("anomalies").toArray();
+    QJsonArray trends = root.value("trends").toArray();
+
+    QStringList lines;
+    lines << QStringLiteral("数据集：%1").arg(dataset.value("filename").toString());
+    lines << QStringLiteral("规模：%1 行 x %2 列，数值列 %3 个")
+                 .arg(dataset.value("rows").toInt())
+                 .arg(dataset.value("columns").toInt())
+                 .arg(dataset.value("numeric_columns").toInt());
+    lines << QStringLiteral("数据质量：%1 / 100（%2）")
+                 .arg(quality.value("score").toInt())
+                 .arg(quality.value("level").toString());
+    lines << QStringLiteral("异常点数量：%1").arg(quality.value("anomaly_count").toInt());
+
+    if (!trends.isEmpty()) {
+        QJsonObject trend = trends.first().toObject();
+        lines << QStringLiteral("最明显趋势：第 %1 列 %2")
+                     .arg(trend.value("column").toString())
+                     .arg(trend.value("direction").toString());
+    }
+
+    lines << "";
+    lines << QStringLiteral("分析摘要：");
+    for (const QJsonValue &value : insights) {
+        lines << QStringLiteral("- %1").arg(value.toString());
+    }
+
+    if (!anomalies.isEmpty()) {
+        lines << "";
+        lines << QStringLiteral("优先复核的异常点：");
+        for (int i = 0; i < anomalies.size() && i < 3; ++i) {
+            QJsonObject anomaly = anomalies.at(i).toObject();
+            lines << QStringLiteral("- 行 %1，列 %2，值 %3，z-score %4")
+                         .arg(anomaly.value("row").toInt())
+                         .arg(anomaly.value("column").toString())
+                         .arg(anomaly.value("value").toDouble())
+                         .arg(anomaly.value("z_score").toDouble());
+        }
+    }
+
+    QMessageBox::information(this, QStringLiteral("InsightQt 智能分析"), lines.join("\n"));
 }

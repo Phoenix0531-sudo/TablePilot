@@ -61,6 +61,17 @@ def load_table(path: Path) -> pd.DataFrame:
 def profile_dataset(filename: str, data_dir: Path | None = None) -> dict[str, Any]:
     path = resolve_dataset(filename, data_dir)
     df = load_table(path)
+    return profile_table(path.name, path.suffix.lower(), df)
+
+
+def profile_uploaded_table(filename: str, df: pd.DataFrame) -> dict[str, Any]:
+    suffix = Path(filename).suffix.lower()
+    if suffix not in SUPPORTED_EXTENSIONS:
+        raise ValueError(f"Unsupported dataset type: {suffix}")
+    return profile_table(Path(filename).name, suffix, df)
+
+
+def profile_table(filename: str, extension: str, df: pd.DataFrame) -> dict[str, Any]:
     numeric_df = df.apply(pd.to_numeric, errors="coerce")
     usable_numeric = numeric_df.dropna(axis=1, how="all")
     missing_cells = int(df.isna().sum().sum())
@@ -83,18 +94,24 @@ def profile_dataset(filename: str, data_dir: Path | None = None) -> dict[str, An
         )
 
     anomalies = detect_anomalies(usable_numeric)
+    correlations = calculate_correlations(usable_numeric)
+    trends = detect_trends(usable_numeric)
+    quality = score_data_quality(df, usable_numeric, missing_cells, anomalies)
     return {
         "dataset": {
-            "filename": path.name,
-            "extension": path.suffix.lower(),
+            "filename": filename,
+            "extension": extension,
             "rows": int(df.shape[0]),
             "columns": int(df.shape[1]),
             "numeric_columns": int(len(usable_numeric.columns)),
             "missing_cells": missing_cells,
         },
+        "quality": quality,
         "columns": column_profiles,
         "anomalies": anomalies,
-        "insights": build_insights(df, usable_numeric, missing_cells, anomalies),
+        "correlations": correlations,
+        "trends": trends,
+        "insights": build_insights(df, usable_numeric, missing_cells, anomalies, quality, trends),
     }
 
 
@@ -121,15 +138,96 @@ def detect_anomalies(numeric_df: pd.DataFrame, threshold: float = 2.5) -> list[d
     return results[:20]
 
 
+def calculate_correlations(numeric_df: pd.DataFrame, limit: int = 10) -> list[dict[str, Any]]:
+    if len(numeric_df.columns) < 2:
+        return []
+    corr = numeric_df.corr(numeric_only=True)
+    pairs = []
+    columns = list(corr.columns)
+    for i, left in enumerate(columns):
+        for right in columns[i + 1 :]:
+            value = corr.at[left, right]
+            if pd.isna(value):
+                continue
+            pairs.append(
+                {
+                    "left": str(left),
+                    "right": str(right),
+                    "correlation": _safe_float(value),
+                    "strength": correlation_strength(float(value)),
+                }
+            )
+    return sorted(pairs, key=lambda item: abs(item["correlation"] or 0), reverse=True)[:limit]
+
+
+def detect_trends(numeric_df: pd.DataFrame) -> list[dict[str, Any]]:
+    trends = []
+    for column in numeric_df.columns:
+        series = numeric_df[column].dropna().reset_index(drop=True)
+        if len(series) < 3:
+            continue
+        first = float(series.iloc[0])
+        last = float(series.iloc[-1])
+        slope = (last - first) / max(len(series) - 1, 1)
+        direction = "flat"
+        if slope > 0:
+            direction = "up"
+        elif slope < 0:
+            direction = "down"
+        trends.append(
+            {
+                "column": str(column),
+                "direction": direction,
+                "slope": _safe_float(slope),
+                "first": _safe_float(first),
+                "last": _safe_float(last),
+            }
+        )
+    return sorted(trends, key=lambda item: abs(item["slope"] or 0), reverse=True)
+
+
+def score_data_quality(
+    raw_df: pd.DataFrame,
+    numeric_df: pd.DataFrame,
+    missing_cells: int,
+    anomalies: list[dict[str, Any]],
+) -> dict[str, Any]:
+    total_cells = max(int(raw_df.shape[0] * raw_df.shape[1]), 1)
+    numeric_ratio = len(numeric_df.columns) / max(raw_df.shape[1], 1)
+    missing_penalty = min(35, (missing_cells / total_cells) * 100)
+    anomaly_penalty = min(25, len(anomalies) * 2)
+    score = round(max(0, min(100, 70 + numeric_ratio * 30 - missing_penalty - anomaly_penalty)))
+    level = "high" if score >= 80 else "medium" if score >= 60 else "low"
+    return {
+        "score": score,
+        "level": level,
+        "numeric_ratio": _safe_float(numeric_ratio),
+        "missing_ratio": _safe_float(missing_cells / total_cells),
+        "anomaly_count": len(anomalies),
+    }
+
+
+def correlation_strength(value: float) -> str:
+    magnitude = abs(value)
+    if magnitude >= 0.8:
+        return "strong"
+    if magnitude >= 0.5:
+        return "moderate"
+    return "weak"
+
+
 def build_insights(
     raw_df: pd.DataFrame,
     numeric_df: pd.DataFrame,
     missing_cells: int,
     anomalies: list[dict[str, Any]],
+    quality: dict[str, Any],
+    trends: list[dict[str, Any]],
 ) -> list[str]:
     insights = [
         f"Loaded {raw_df.shape[0]} rows and {raw_df.shape[1]} columns.",
         f"Detected {len(numeric_df.columns)} numeric columns for statistical profiling.",
+        f"Data quality is {quality['level']} with a score of {quality['score']}/100.",
     ]
     if missing_cells:
         insights.append(f"Found {missing_cells} missing cells; downstream analysis should account for incomplete data.")
@@ -139,6 +237,11 @@ def build_insights(
         insights.append(f"Detected {len(anomalies)} high z-score cells for review.")
     else:
         insights.append("No high z-score anomalies were detected with the default threshold.")
+    if trends:
+        strongest = trends[0]
+        insights.append(
+            f"The strongest simple trend is column {strongest['column']} moving {strongest['direction']}."
+        )
     return insights
 
 

@@ -6,6 +6,7 @@
 # 添加Qt核心、GUI、窗口部件和打印支持模块
 QT       += core gui
 QT       += widgets printsupport
+QT       += network
 
 # 如果Qt主要版本号大于4，则添加窗口部件模块
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -41,10 +42,6 @@ HEADERS += \
 
 FORMS += \
         mainwindow.ui
-
-# 添加头文件和库文件的搜索路径
-INCLUDEPATH += $$PWD/../QXsl/header
-LIBS        += $$PWD/../QXsl/lib/libQXlsx.a
 
 # Default rules for deployment.
 # 在不同平台上指定部署目标路径

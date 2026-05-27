@@ -6,6 +6,8 @@
 #include <QDockWidget>
 #include <QLabel>          // 引入QLabel类
 #include <QTextEdit>
+#include <QJsonArray>
+#include <QJsonObject>
 
 namespace Ui {
 class MainWindow;
@@ -74,9 +76,17 @@ private:
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件
     void SetStyleSheet(QWidget *pWidget, QString strQSS); // 设置样式表
     void AnalyzeFileWithService(const QString &filePath);
+    void CheckAnalysisService();
     void ShowServiceAnalysis(const QByteArray &payload);
     void PopulateTableFromService(const QJsonObject &root);
+    void PopulateStatsFromService(const QJsonObject &root);
     QString FormatServiceAnalysis(const QJsonObject &root) const;
+    QList<int> NumericTableColumns(int limit = -1) const;
+    QVector<double> NumericColumnValues(int column) const;
+    QVector<double> NumericRowIndex(int size) const;
+    QString ColumnLabel(int column) const;
+    void RenderDynamicLineChart();
+    void RenderDynamicBarChart();
 };
 
 #endif // MAINWINDOW_H

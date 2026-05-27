@@ -15,6 +15,8 @@
 #include <QNetworkRequest>
 #include <QEventLoop>
 #include <QHeaderView>
+#include <limits>
+#include <numeric>
 
 namespace {
 QString ProjectPath(const QString &relativePath)
@@ -38,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent) :
     SaveType(0)   // 初始化保存类型为0
 {
     ui->setupUi(this); // 设置ui界面，将自动生成的ui界面应用到当前窗口上
+    setWindowTitle(QStringLiteral("InsightQt AI Workbench"));
 
     InitWidget(); // 调用初始化窗口部件和对象的函数
     InitObject(); // 调用初始化对象的函数
@@ -57,6 +60,7 @@ void MainWindow::InitWidget(){
 
 void MainWindow::InitObject(){
     // 初始化对象
+    CheckAnalysisService();
 }
 
 void MainWindow::createToolBar(){// 创建工具栏
@@ -155,6 +159,42 @@ void MainWindow::createInsightPanel()
     addDockWidget(Qt::RightDockWidgetArea, insightDock);
 }
 
+void MainWindow::CheckAnalysisService()
+{
+    QNetworkAccessManager manager;
+    QNetworkRequest request(QUrl("http://127.0.0.1:8000/health"));
+    QNetworkReply *reply = manager.get(request);
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    if (reply->error() == QNetworkReply::NoError) {
+        statusBar()->showMessage(QStringLiteral("Analysis service connected"));
+        if (insightText) {
+            insightText->setPlainText(QStringLiteral(
+                "InsightQt AI Workbench\n"
+                "======================\n"
+                "Analysis service: connected\n\n"
+                "Open an Excel, CSV, or TXT table to start dynamic profiling.\n"
+                "The workbench will infer schema, score data quality, recommend analyses, and render dynamic charts."
+            ));
+        }
+    } else {
+        statusBar()->showMessage(QStringLiteral("Analysis service offline"));
+        if (insightText) {
+            insightText->setPlainText(QStringLiteral(
+                "InsightQt AI Workbench\n"
+                "======================\n"
+                "Analysis service: offline\n\n"
+                "Start the local service from the project root:\n\n"
+                "docker compose up --build\n\n"
+                "Then open Excel, CSV, or TXT data from the toolbar."
+            ));
+        }
+    }
+    reply->deleteLater();
+}
+
 void MainWindow::Slot1(){//打开Excel
     isExit = true;  // 标记 isExit 为 true，表示退出状态（这个变量在代码中未定义，可能是 MainWindow 类的成员变量）
 
@@ -168,340 +208,18 @@ void MainWindow::Slot1(){//打开Excel
 }
 
 void MainWindow::Slot2(){//打开TXT
-    isExit = true;  // 标记 isExit 为 true，表示退出状态
-
-    QString str[6];  // 创建一个长度为 6 的字符串数组 str，用于存储每行的文本内容
-    QList<QByteArray> list;  // 创建一个 QByteArray 类型的列表 list，用于存储每行文本内容的分割结果
-
-    ////ui->tableWidget->clear();  // 清空表格控件中的内容（该行代码被注释掉了）
-
-    // 打开文件对话框，让用户选择 TXT 文件，获取选择的文件路径
     QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择TXT文件"), QString(), QStringLiteral("Text file(*.txt)"));
     if(filePath.isEmpty())  // 如果文件路径为空，说明用户取消了选择，直接返回
         return;
 
-    info_Label->clear();  // 清空状态栏标签的内容
-    info_Label->setText(filePath);  // 设置状态栏标签的文本为选择的文件路径
-
-    QFile file;  // 创建 QFile 对象，用于操作文件
-    file.setFileName(filePath);  // 设置文件名
-
-    if (!file.open(QIODevice::ReadOnly|QIODevice::Text)){  // 如果无法以只读文本模式打开文件，输出错误信息并返回
-        qDebug()<<"open file error!";
-        return;
-    }
-
-    int rowId = 0;  // 初始化行号为 0
-
-    while (!file.atEnd()){  // 循环读取文件的每一行内容，直到文件末尾
-        QByteArray line = file.readLine();  // 读取一行文本内容，并存储为 QByteArray 类型的对象 line
-        list = line.split(',');  // 使用逗号分割每行文本内容，并存储到列表 list 中
-
-        if(list.size() != 6){  // 如果分割后的列表长度不为 6，说明数据格式错误，输出错误信息并返回
-            qDebug()<<"txt data size is error!";
-            return;
-        }
-        if(rowId < 0 || rowId >= 6){  // 如果行号小于 0 或大于等于 6，重置为 0
-            rowId = 0;
-        }
-        for(int i=0;i<6;i++){  // 遍历列表中的每个元素
-            str[i] = list.at(i);  // 将列表中的元素存储到字符串数组 str 中的对应位置
-            QTableWidgetItem *itemlog = new QTableWidgetItem();  // 创建一个新的表格项
-            itemlog->setText(str[i]);  // 设置表格项的文本为当前字符串数组中的值
-
-            ui->tableWidget->setItem(rowId, i, itemlog);  // 将表格项添加到表格控件中的指定位置
-        }
-
-        rowId = rowId + 1;  // 行号加一，准备处理下一行数据
-    }
-    file.close();  // 关闭文件
+    isExit = true;
+    info_Label->clear();
+    info_Label->setText(filePath);
+    AnalyzeFileWithService(filePath);
 }
 
 void MainWindow::Slot3(){//数据统计
-    // 获取表格控件的行数和列数
-    int rowLen    = ui->tableWidget->rowCount();
-    int columnLen = ui->tableWidget->columnCount();
-
-    // 创建一个长度为 6 的字符串数组 str 和用于存储最大值和最小值的字符串变量 strmax 和 strmin
-    QString str[6];
-    QString strmax,strmin;
-
-    // 如果行数和列数不等于 6，则直接返回，不进行统计操作
-    if(rowLen != 6 && columnLen != 6){
-        return;
-    }
-
-    for(int j=0;j<columnLen;j++){// 遍历每列数据，进行统计操作
-
-        // 如果第 0 行第 j 列的单元格不为空，则将其转换为整数并存储到对应的数组中，否则不进行处理
-        if(ui->tableWidget->item(0,j) != 0)
-        A[j] = ui->tableWidget->item(0,j)->text().toInt();
-        if(ui->tableWidget->item(1,j) != 0)
-        B[j] = ui->tableWidget->item(1,j)->text().toInt();
-        if(ui->tableWidget->item(2,j) != 0)
-        C[j] = ui->tableWidget->item(2,j)->text().toInt();
-        if(ui->tableWidget->item(3,j) != 0)
-        D[j] = ui->tableWidget->item(3,j)->text().toInt();
-        if(ui->tableWidget->item(4,j) != 0)
-        E[j] = ui->tableWidget->item(4,j)->text().toInt();
-        if(ui->tableWidget->item(5,j) != 0)
-        F[j] = ui->tableWidget->item(5,j)->text().toInt();
-
-        // 求和
-        sumA = sumA + A[j];
-        sumB = sumB + B[j];
-        sumC = sumC + C[j];
-        sumD = sumD + D[j];
-        sumE = sumE + E[j];
-        sumF = sumF + F[j];
-    }
-    //sum
-    // 将每列的和设置到tablewidget_2的第四行
-    str[0].setNum(sumA);
-    QTableWidgetItem *itemlog = new QTableWidgetItem();
-    itemlog->setText(str[0]);
-    ui->tableWidget_2->setItem(3,0,itemlog);
-
-    str[1].setNum(sumB);
-    QTableWidgetItem *itemlog1 = new QTableWidgetItem();
-    itemlog1->setText(str[1]);
-    ui->tableWidget_2->setItem(3,1,itemlog1);
-
-    str[2].setNum(sumC);
-    QTableWidgetItem *itemlog2 = new QTableWidgetItem();
-    itemlog2->setText(str[2]);
-    ui->tableWidget_2->setItem(3,2,itemlog2);
-
-    str[3].setNum(sumD);
-    QTableWidgetItem *itemlog3 = new QTableWidgetItem();
-    itemlog3->setText(str[3]);
-    ui->tableWidget_2->setItem(3,3,itemlog3);
-
-    str[4].setNum(sumE);
-    QTableWidgetItem *itemlog4 = new QTableWidgetItem();
-    itemlog4->setText(str[4]);
-    ui->tableWidget_2->setItem(3,4,itemlog4);
-
-    str[5].setNum(sumF);
-    QTableWidgetItem *itemlog5 = new QTableWidgetItem();
-    itemlog5->setText(str[5]);
-    ui->tableWidget_2->setItem(3,5,itemlog5);
-
-    //reg
-    // 计算每列数据的平均值
-    regA = sumA/columnLen;
-    regB = sumB/columnLen;
-    regC = sumC/columnLen;
-    regD = sumD/columnLen;
-    regE = sumE/columnLen;
-    regF = sumF/columnLen;
-
-    // 将平均值转换为字符串并设置到字符串数组中
-    str[0].setNum(regA);
-    // 创建一个新的表格项，并设置其文本为平均值
-    QTableWidgetItem *itemlog00 = new QTableWidgetItem();
-    itemlog00->setText(str[0]);
-    // 将表格项添加到表格控件中的指定位置
-    ui->tableWidget_2->setItem(0,0,itemlog00);
-
-    str[1].setNum(regB);
-    QTableWidgetItem *itemlog111 = new QTableWidgetItem();
-    itemlog111->setText(str[1]);
-    ui->tableWidget_2->setItem(0,1,itemlog111);
-
-    str[2].setNum(regC);
-    QTableWidgetItem *itemlog222 = new QTableWidgetItem();
-    itemlog222->setText(str[2]);
-    ui->tableWidget_2->setItem(0,2,itemlog222);
-
-    str[3].setNum(regD);
-    QTableWidgetItem *itemlog33 = new QTableWidgetItem();
-    itemlog33->setText(str[3]);
-    ui->tableWidget_2->setItem(0,3,itemlog33);
-
-    str[4].setNum(regE);
-    QTableWidgetItem *itemlog44 = new QTableWidgetItem();
-    itemlog44->setText(str[4]);
-    ui->tableWidget_2->setItem(0,4,itemlog44);
-
-    str[5].setNum(regF);
-    QTableWidgetItem *itemlog55 = new QTableWidgetItem();
-    itemlog55->setText(str[5]);
-    ui->tableWidget_2->setItem(0,5,itemlog55);
-
-    //min max
-    // 定义六个 QVector 对象，分别用于存储每一列的数据
-    QVector <int> AVect,BVect,CVect,DVect,EVect,FVect;
-
-    //A
-    // 对于数组 A 的每个元素，将其值存储到 AVect 中
-    for(int i = 0; i < 6; i++) {
-        int aa = A[i];  // 获取数组 A 中索引为 i 的元素的值
-        AVect.push_back(aa);  // 将该值添加到 AVect 中
-    }
-
-    // 使用标准库函数 std::max_element 找到 AVect 中的最大元素
-    auto maxa = std::max_element(std::begin(AVect), std::end(AVect));
-    // 使用标准库函数 std::min_element 找到 AVect 中的最小元素
-    auto mina = std::min_element(std::begin(AVect), std::end(AVect));
-
-    // 将找到的最小值和最大值分别赋值给 minA 和 maxA
-    minA = *mina;  // 将 mina 指向的元素值赋给 minA
-    maxA = *maxa;  // 将 maxa 指向的元素值赋给 maxA
-
-    // 将最大值转换为字符串，并设置给 strmax
-    strmax.setNum(maxA);
-    // 创建一个新的 QTableWidgetItem 对象，设置其文本为 strmax
-    QTableWidgetItem *itemlog10 = new QTableWidgetItem();
-    itemlog10->setText(strmax);
-    // 将该 QTableWidgetItem 对象添加到表格控件 ui->tableWidget_2 的第 1 行、第 0 列
-    ui->tableWidget_2->setItem(1, 0, itemlog10);
-
-    // 将最小值转换为字符串，并设置给 strmin
-    strmin.setNum(minA);
-    // 创建一个新的 QTableWidgetItem 对象，设置其文本为 strmin
-    QTableWidgetItem *itemlog20 = new QTableWidgetItem();
-    itemlog20->setText(strmin);
-    // 将该 QTableWidgetItem 对象添加到表格控件 ui->tableWidget_2 的第 2 行、第 0 列
-    ui->tableWidget_2->setItem(2, 0, itemlog20);
-
-    //B
-    for(int i=0;i<6;i++)
-    {
-      int bb = B[i];
-      BVect.push_back(bb);
-    }
-
-    auto maxb = std::max_element(std::begin(BVect), std::end(BVect));
-    auto minb = std::min_element(std::begin(BVect), std::end(BVect));
-
-    minB = *minb;
-    maxB = *maxb;
-
-    strmax.setNum(maxB);
-    QTableWidgetItem *itemlog11 = new QTableWidgetItem();
-    itemlog11->setText(strmax);
-    ui->tableWidget_2->setItem(1,1,itemlog11);
-
-    strmin.setNum(minB);
-    QTableWidgetItem *itemlog21 = new QTableWidgetItem();
-    itemlog21->setText(strmin);
-    ui->tableWidget_2->setItem(2,1,itemlog21);
-
-    //C
-    for(int i=0;i<6;i++)
-    {
-      int cc = C[i];
-      CVect.push_back(cc);
-    }
-
-    auto maxc = std::max_element(std::begin(CVect), std::end(CVect));
-    auto minc = std::min_element(std::begin(CVect), std::end(CVect));
-
-    minC = *minc;
-    maxC = *maxc;
-
-    strmax.setNum(maxC);
-    QTableWidgetItem *itemlog12 = new QTableWidgetItem();
-    itemlog12->setText(strmax);
-    ui->tableWidget_2->setItem(1,2,itemlog12);
-
-    strmin.setNum(minC);
-    QTableWidgetItem *itemlog22 = new QTableWidgetItem();
-    itemlog22->setText(strmin);
-    ui->tableWidget_2->setItem(2,2,itemlog22);
-
-    //D
-    for(int i=0;i<6;i++)
-    {
-      int dd = D[i];
-      DVect.push_back(dd);
-    }
-
-    auto maxd = std::max_element(std::begin(DVect), std::end(DVect));
-    auto mind = std::min_element(std::begin(DVect), std::end(DVect));
-
-    minD = *mind;
-    maxD = *maxd;
-
-    strmax.setNum(maxD);
-    QTableWidgetItem *itemlog13 = new QTableWidgetItem();
-    itemlog13->setText(strmax);
-    ui->tableWidget_2->setItem(1,3,itemlog13);
-
-    strmin.setNum(minD);
-    QTableWidgetItem *itemlog23 = new QTableWidgetItem();
-    itemlog23->setText(strmin);
-    ui->tableWidget_2->setItem(2,3,itemlog23);
-
-    //E
-    for(int i=0;i<6;i++)
-    {
-      int ee = E[i];
-      EVect.push_back(ee);
-    }
-
-    auto maxe = std::max_element(std::begin(EVect), std::end(EVect));
-    auto mine = std::min_element(std::begin(EVect), std::end(EVect));
-
-    minE = *mine;
-    maxE = *maxe;
-
-    strmax.setNum(maxE);
-    QTableWidgetItem *itemlog14 = new QTableWidgetItem();
-    itemlog14->setText(strmax);
-    ui->tableWidget_2->setItem(1,4,itemlog14);
-
-    strmin.setNum(minE);
-    QTableWidgetItem *itemlog24 = new QTableWidgetItem();
-    itemlog24->setText(strmin);
-    ui->tableWidget_2->setItem(2,4,itemlog24);
-
-    //F
-    for(int i=0;i<6;i++)
-    {
-      int ff = F[i];
-      FVect.push_back(ff);
-    }
-
-    auto maxf = std::max_element(std::begin(FVect), std::end(FVect));
-    auto minf = std::min_element(std::begin(FVect), std::end(FVect));
-
-    minF = *minf;
-    maxF = *maxf;
-
-    strmax.setNum(maxF);
-    QTableWidgetItem *itemlog15 = new QTableWidgetItem();
-    itemlog15->setText(strmax);
-    ui->tableWidget_2->setItem(1,5,itemlog15);
-
-    strmin.setNum(minF);
-    QTableWidgetItem *itemlog25 = new QTableWidgetItem();
-    itemlog25->setText(strmin);
-    ui->tableWidget_2->setItem(2,5,itemlog25);
-
-    //clear
-    sumA = 0;
-    sumB = 0;
-    sumC = 0;
-    sumD = 0;
-    sumE = 0;
-    sumF = 0;
-
-    regA = 0;
-    regB = 0;
-    regC = 0;
-    regD = 0;
-    regE = 0;
-    regF = 0;
-
-    AVect.clear();
-    BVect.clear();
-    CVect.clear();
-    DVect.clear();
-    EVect.clear();
-    FVect.clear();
-
+    PopulateStatsFromService(QJsonObject());
 }
 
 //根据用户的操作，切换显示不同类型的图表，提供不同的数据可视化展示
@@ -611,238 +329,7 @@ bool MainWindow::ItemEmpty(int x, int y){
 }
 
 void MainWindow::on_pushButton_2_clicked(){//柱状图
-    if(!isExit){
-        return;
-    }
-    //如果有柱状图，则清除
-    int plottableCount = ui->widget_2->plottableCount();
-    //plottableCount是已有的柱状图数量，如果不为0，则表示已经有了柱状图数据
-    if (plottableCount != 0){
-        ui->widget_2->clearPlottables();
-    }
-    //新建柱状图bars，并与指定的x轴y轴联系起来
-    //QCPAxis来自QCustomPlot，用于绘制坐标轴
-    QCPAxis *xAxis = ui->widget_2->xAxis;
-    QCPAxis *yAxis = ui->widget_2->yAxis;
-    QCPBars *bars  = new QCPBars(xAxis,yAxis);
-
-    bars->setAntialiased(false);//禁用抗锯齿
-    bars->setName("销售量");//设置柱状图名称为销售量
-
-//    bars->setPen(QPen(QColor(0,160,140)));
-//    bars->setBrush(QColor(20,68,106));
-
-    //向量==动态数组，是STL中的的一种容器，可以无需管理内存
-    // 定义用于存储柱状图 X 轴刻度值的向量
-    QVector<double> ticks;
-    // 定义用于存储柱状图 Y 轴数据值的向量
-    QVector<double> buyData;
-    // 定义用于存储柱状图 X 轴刻度标签的向量
-    QVector<QString> labels;
-
-    // 清空之前可能存在的数据
-    ticks.clear();
-    buyData.clear();
-    labels.clear();
-
-    // 设置 X 轴刻度值和刻度标签
-    ticks << 1 << 2 << 3 << 4 << 5 << 6;
-    labels << "A" << "B" << "C" << "D" << "E" << "F";
-
-    // 创建一个智能指针，用于管理自定义的文本刻度
-    QSharedPointer<QCPAxisTickerText> textTicker(new QCPAxisTickerText);
-    // 添加刻度和标签
-    textTicker->addTicks(ticks, labels);
-    // 将自定义文本刻度设置给 X 轴
-    xAxis->setTicker(textTicker);
-
-    // 设置 X 轴刻度标签旋转角度为 60 度
-    xAxis->setTickLabelRotation(60);
-    // 关闭 X 轴次刻度
-    xAxis->setSubTicks(false);
-    // 设置 X 轴刻度长度，第一个参数为主刻度长度，第二个参数为次刻度长度
-    xAxis->setTickLength(0, 4);
-    // 设置 X 轴范围
-    xAxis->setRange(0, 7);
-    // 设置 X 轴标签
-    xAxis->setLabel("种类");
-    // 设置 X 轴上端箭头样式
-    xAxis->setUpperEnding(QCPLineEnding::esSpikeArrow);
-
-    // 设置 Y 轴填充距离
-    yAxis->setPadding(36);
-    // 设置 Y 轴标签
-    yAxis->setLabel("销售量");
-    // 设置 Y 轴上端箭头样式
-    yAxis->setUpperEnding(QCPLineEnding::esSpikeArrow);
-
-
-
-    if(ui->comboBox->currentIndex() == 0){
-        // 如果下拉框当前选中的索引为0，表示选择了某种操作方式
-        // 循环遍历6次，将每行第一列的数据提取出来并转换为整数，放入buyData向量中
-        for(int i=0; i<6; i++){
-            int ff;
-            // 检查单元格是否为空
-            if(ui->tableWidget->item(i,0) != 0){
-                // 获取单元格的文本内容并转换为整数
-                ff = ui->tableWidget->item(i,0)->text().toInt();
-            }
-
-            // 将提取的整数值转换为double类型，并存入buyData向量
-            buyData.push_back((double)ff);
-        }
-
-        // 使用标准库函数max_element和min_element找到buyData向量中的最大值和最小值
-        auto maxf = std::max_element(std::begin(buyData), std::end(buyData));
-        auto minf = std::min_element(std::begin(buyData), std::end(buyData));
-
-        // 将找到的最大值和最小值保存到minF和maxF变量中
-        minF = *minf;
-        maxF = *maxf;
-
-        // 设置y轴的范围，使得柱状图能够容纳最大值和最小值，并在上下各增加50的空间
-        yAxis->setRange(minF-50, maxF+50);
-
-        // 设置柱状图的数据，x轴的刻度为ticks向量，y轴的数据为buyData向量
-        bars->setData(ticks, buyData);
-
-        // 设置柱状图的画笔颜色为红色（RGB为(180,0,120)），并设置透明度为70%
-        bars->setPen(QPen(QColor(180,0,120)));
-        // 设置柱状图的填充颜色为红色（RGB为(180,0,120)），并设置透明度为70%
-        bars->setBrush(QColor(180,0,120,70));
-    }
-
-
-    else if(ui->comboBox->currentIndex() == 1){
-        //z
-        for(int i=0;i<6;i++)
-        {
-          int ff;
-          if(ui->tableWidget->item(i,1) != 0){
-             ff = ui->tableWidget->item(i,1)->text().toInt();
-          }
-
-          buyData.push_back((double)ff);
-        }
-
-        auto maxf = std::max_element(std::begin(buyData), std::end(buyData));
-        auto minf = std::min_element(std::begin(buyData), std::end(buyData));
-
-        minF = *minf;
-        maxF = *maxf;
-
-        yAxis->setRange(minF-50,maxF+50);
-        bars->setData(ticks,buyData);
-
-        bars->setPen(QPen(QColor(255,156,0)));
-        bars->setBrush(QColor(255,156,0,70));
-    }
-
-    else if(ui->comboBox->currentIndex() == 2){
-        //z
-        for(int i=0;i<6;i++){
-          int ff;
-          if(ui->tableWidget->item(i,2) != 0)
-          {
-             ff = ui->tableWidget->item(i,2)->text().toInt();
-          }
-
-          buyData.push_back((double)ff);
-        }
-
-        auto maxf = std::max_element(std::begin(buyData), std::end(buyData));
-        auto minf = std::min_element(std::begin(buyData), std::end(buyData));
-
-        minF = *minf;
-        maxF = *maxf;
-
-        yAxis->setRange(minF-50,maxF+50);
-        bars->setData(ticks,buyData);
-
-        bars->setPen(QPen(QColor(0,255,255)));
-        bars->setBrush(QColor(0,255,255,70));
-    }
-
-    else if(ui->comboBox->currentIndex() == 3){
-        //z
-        for(int i=0;i<6;i++){
-          int ff;
-          if(ui->tableWidget->item(i,3) != 0)
-          {
-             ff = ui->tableWidget->item(i,3)->text().toInt();
-          }
-
-          buyData.push_back((double)ff);
-        }
-
-        auto maxf = std::max_element(std::begin(buyData), std::end(buyData));
-        auto minf = std::min_element(std::begin(buyData), std::end(buyData));
-
-        minF = *minf;
-        maxF = *maxf;
-
-        yAxis->setRange(minF-50,maxF+50);
-        bars->setData(ticks,buyData);
-
-        bars->setPen(QPen(QColor(0,168,150)));
-        bars->setBrush(QColor(0,168,150,70));
-    }
-
-    else if(ui->comboBox->currentIndex() == 4){
-        //z
-        for(int i=0;i<6;i++){
-          int ff;
-          if(ui->tableWidget->item(i,4) != 0)
-          {
-             ff = ui->tableWidget->item(i,4)->text().toInt();
-          }
-
-          buyData.push_back((double)ff);
-        }
-
-        auto maxf = std::max_element(std::begin(buyData), std::end(buyData));
-        auto minf = std::min_element(std::begin(buyData), std::end(buyData));
-
-        minF = *minf;
-        maxF = *maxf;
-
-        yAxis->setRange(minF-50,maxF+50);
-        bars->setData(ticks,buyData);
-
-        bars->setPen(QPen(QColor(10,100,65)));
-        bars->setBrush(QColor(10,100,65,70));
-    }
-
-    else if(ui->comboBox->currentIndex() == 5){
-        //z
-        for(int i=0;i<6;i++){
-          int ff;
-          if(ui->tableWidget->item(i,5) != 0)
-          {
-             ff = ui->tableWidget->item(i,5)->text().toInt();
-          }
-
-          buyData.push_back((double)ff);
-        }
-
-        auto maxf = std::max_element(std::begin(buyData), std::end(buyData));
-        auto minf = std::min_element(std::begin(buyData), std::end(buyData));
-
-        minF = *minf;
-        maxF = *maxf;
-
-        yAxis->setRange(minF-50,maxF+50);
-        bars->setData(ticks,buyData);
-
-        bars->setPen(QPen(QColor(0,0,255)));
-        bars->setBrush(QColor(0,0,255,70));
-    }
-
-    else
-    {}
-    bars->setData(ticks,buyData);//将数据设置到bars中
-    ui->widget_2->replot();
+    RenderDynamicBarChart();
 }
 
 void MainWindow::on_pushButton_3_clicked(){
@@ -853,127 +340,7 @@ void MainWindow::on_pushButton_3_clicked(){
 }
 
 void MainWindow::on_pushButton_clicked() {
-    // 获取指向 QCustomPlot 控件的指针
-    QCustomPlot *p_line = ui->widget;
-
-    // 如果指针为空或者程序不处于退出状态，则直接返回，不执行后续操作
-    if(p_line == nullptr || !isExit) {
-        return;
-    }
-
-    // 获取当前绘图区域中的绘图项数量
-    int plottableCount = ui->widget->plottableCount();
-    // 如果绘图项数量不为0，则清除所有的绘图项
-    if (plottableCount != 0) {
-        ui->widget->clearPlottables();
-    }
-
-    // 获取表格的行数和列数
-    int rowLen    = ui->tableWidget->rowCount();
-    int columnLen = ui->tableWidget->columnCount();
-
-    // 定义用于存储数据的向量
-    QVector <double> xData;
-    QVector <double> yData1, yData2, yData3, yData4, yData5, yData6;
-    QVector <double> saleVal;
-
-    // 清空存储数据的向量
-    xData.clear();
-    yData1.clear();
-    yData2.clear();
-    yData3.clear();
-    yData4.clear();
-    yData5.clear();
-    yData6.clear();
-    saleVal.clear();
-
-    // 设置 x 轴的标签和范围
-    p_line->xAxis->setLabel("月份");
-    p_line->xAxis->setRange(1, 6);
-
-    // 设置 y 轴的标签
-    p_line->yAxis->setLabel("销售量");
-
-    // 从表格中提取数据并存储到 saleVal 向量中
-    for(int i = 0; i < rowLen; i++) {
-        for(int j = 0; j < columnLen; j++) {
-            int sv = ui->tableWidget->item(i, j)->text().toInt();
-            saleVal.push_back((double)sv);
-        }
-    }
-
-    // 获取 saleVal 向量中的最大值和最小值
-    auto maxf = std::max_element(std::begin(saleVal), std::end(saleVal));
-    auto minf = std::min_element(std::begin(saleVal), std::end(saleVal));
-
-    int minL = *minf;
-    int maxL = *maxf;
-
-    // 设置 y 轴的范围
-    p_line->yAxis->setRange(minL - 10, maxL + 10);
-
-    p_line->addGraph();
-    p_line->addGraph();
-    p_line->addGraph();
-    p_line->addGraph();
-    p_line->addGraph();
-    p_line->addGraph();
-
-    // 添加绘图对象
-    for(int i = 1; i < 7; i++) {
-        xData << i;
-    }
-
-    // 从表格中提取数据并存储到对应的 yData 向量中
-    for(int j = 0; j < columnLen; j++) {
-        if(ui->tableWidget->item(0, j) != 0)
-            yData1 << ui->tableWidget->item(0, j)->text().toInt();
-
-        if(ui->tableWidget->item(1, j) != 0)
-            yData2 << ui->tableWidget->item(1, j)->text().toInt();
-
-        if(ui->tableWidget->item(2, j) != 0)
-            yData3 << ui->tableWidget->item(2, j)->text().toInt();
-
-        if(ui->tableWidget->item(3, j) != 0)
-            yData4 << ui->tableWidget->item(3, j)->text().toInt();
-
-        if(ui->tableWidget->item(4, j) != 0)
-            yData5 << ui->tableWidget->item(4, j)->text().toInt();
-
-        if(ui->tableWidget->item(5, j) != 0)
-            yData6 << ui->tableWidget->item(5, j)->text().toInt();
-    }
-
-    // 将数据设置到绘图对象中
-    p_line->graph(0)->setData(xData, yData1);
-    p_line->graph(1)->setData(xData, yData2);
-    p_line->graph(2)->setData(xData, yData3);
-    p_line->graph(3)->setData(xData, yData4);
-    p_line->graph(4)->setData(xData, yData5);
-    p_line->graph(5)->setData(xData, yData6);
-
-    // 设置图例和绘图样式
-    p_line->graph(0)->setPen(QPen(QColor(255,165,0)));
-    p_line->graph(0)->setName("A");
-
-    p_line->graph(1)->setPen(QPen(QColor(0,128,0)));
-    p_line->graph(1)->setName("B");
-
-    p_line->graph(2)->setPen(QPen(QColor(65,105,225)));
-    p_line->graph(2)->setName("C");
-
-    p_line->graph(3)->setPen(QPen(QColor(149,0,234)));
-    p_line->graph(3)->setName("D");
-
-    p_line->graph(4)->setPen(QPen(QColor(128,0,128)));
-    p_line->graph(4)->setName("E");
-
-    p_line->graph(5)->setPen(QPen(QColor(255,165,0)));
-    p_line->graph(5)->setName("F");
-
-    // 重新绘制图形
-    p_line->replot();
+    RenderDynamicLineChart();
 }
 
 //
@@ -1088,6 +455,7 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
 {
     QJsonObject preview = root.value("preview").toObject();
     QJsonArray rows = preview.value("rows").toArray();
+    QJsonArray columns = preview.value("columns").toArray();
     if (rows.isEmpty()) {
         return;
     }
@@ -1100,7 +468,7 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
 
     QStringList headers;
     for (int column = 0; column < columnCount; ++column) {
-        headers << QString::number(column + 1);
+        headers << (column < columns.size() ? columns.at(column).toString() : QString::number(column + 1));
     }
     ui->tableWidget->setHorizontalHeaderLabels(headers);
 
@@ -1121,6 +489,71 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
     }
 
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    PopulateStatsFromService(root);
+    RenderDynamicLineChart();
+}
+
+void MainWindow::PopulateStatsFromService(const QJsonObject &root)
+{
+    QJsonArray columns = root.value("columns").toArray();
+    QVector<QJsonObject> numericProfiles;
+    for (const QJsonValue &value : columns) {
+        QJsonObject item = value.toObject();
+        if (item.value("semantic_type").toString() == "numeric") {
+            numericProfiles.push_back(item);
+        }
+    }
+
+    if (numericProfiles.isEmpty()) {
+        QList<int> numericColumns = NumericTableColumns(12);
+        ui->tableWidget_2->clear();
+        ui->tableWidget_2->setRowCount(5);
+        ui->tableWidget_2->setColumnCount(numericColumns.size());
+        ui->tableWidget_2->setVerticalHeaderLabels(QStringList() << "count" << "mean" << "min" << "median" << "max");
+        QStringList headers;
+        for (int column : numericColumns) {
+            headers << ColumnLabel(column);
+            QVector<double> values = NumericColumnValues(column);
+            std::sort(values.begin(), values.end());
+            if (values.isEmpty()) {
+                continue;
+            }
+            int outColumn = headers.size() - 1;
+            double sum = std::accumulate(values.begin(), values.end(), 0.0);
+            QList<double> stats = {
+                static_cast<double>(values.size()),
+                sum / values.size(),
+                values.first(),
+                values.at(values.size() / 2),
+                values.last(),
+            };
+            for (int row = 0; row < stats.size(); ++row) {
+                ui->tableWidget_2->setItem(row, outColumn, new QTableWidgetItem(QString::number(stats[row], 'g', 10)));
+            }
+        }
+        ui->tableWidget_2->setHorizontalHeaderLabels(headers);
+        return;
+    }
+
+    int visibleColumns = std::min(static_cast<int>(numericProfiles.size()), 12);
+    ui->tableWidget_2->clear();
+    ui->tableWidget_2->setRowCount(6);
+    ui->tableWidget_2->setColumnCount(visibleColumns);
+    ui->tableWidget_2->setVerticalHeaderLabels(QStringList() << "count" << "mean" << "std" << "min" << "median" << "max");
+
+    QStringList headers;
+    for (int column = 0; column < visibleColumns; ++column) {
+        QJsonObject profile = numericProfiles.at(column);
+        headers << profile.value("column").toString();
+        QStringList keys = {"count", "mean", "std", "min", "median", "max"};
+        for (int row = 0; row < keys.size(); ++row) {
+            QJsonValue value = profile.value(keys[row]);
+            QString text = value.isDouble() ? QString::number(value.toDouble(), 'g', 10) : value.toVariant().toString();
+            ui->tableWidget_2->setItem(row, column, new QTableWidgetItem(text));
+        }
+    }
+    ui->tableWidget_2->setHorizontalHeaderLabels(headers);
+    ui->tableWidget_2->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 }
 
 QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
@@ -1131,6 +564,11 @@ QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
     QJsonArray anomalies = root.value("anomalies").toArray();
     QJsonArray trends = root.value("trends").toArray();
     QJsonArray correlations = root.value("correlations").toArray();
+    QJsonArray recommendations = root.value("analysis_recommendations").toArray();
+    QJsonArray charts = root.value("chart_recommendations").toArray();
+    QJsonArray schema = root.value("schema").toArray();
+    QJsonArray toolTrace = root.value("tool_trace").toArray();
+    QJsonObject source = root.value("source").toObject();
 
     QStringList lines;
     lines << QStringLiteral("InsightQt AI Analysis");
@@ -1140,11 +578,33 @@ QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
                  .arg(dataset.value("rows").toInt())
                  .arg(dataset.value("columns").toInt());
     lines << QStringLiteral("Numeric columns: %1").arg(dataset.value("numeric_columns").toInt());
+    lines << QStringLiteral("Date columns: %1").arg(dataset.value("date_columns").toInt());
+    lines << QStringLiteral("Category columns: %1").arg(dataset.value("category_columns").toInt());
     lines << QStringLiteral("Quality: %1 / 100 (%2)")
                  .arg(quality.value("score").toInt())
                  .arg(quality.value("level").toString());
     lines << QStringLiteral("Missing ratio: %1").arg(quality.value("missing_ratio").toDouble());
+    lines << QStringLiteral("Duplicate rows: %1").arg(quality.value("duplicate_rows").toInt());
     lines << QStringLiteral("Anomalies: %1").arg(quality.value("anomaly_count").toInt());
+    if (!source.isEmpty()) {
+        lines << QStringLiteral("Parser: %1, delimiter: %2, encoding: %3, header: %4")
+                     .arg(source.value("parser").toString())
+                     .arg(source.value("delimiter").toString("-"))
+                     .arg(source.value("encoding").toString("-"))
+                     .arg(source.value("has_header").toBool() ? "yes" : "no");
+    }
+
+    if (!schema.isEmpty()) {
+        lines << "";
+        lines << QStringLiteral("Schema");
+        for (int i = 0; i < schema.size() && i < 8; ++i) {
+            QJsonObject item = schema.at(i).toObject();
+            lines << QStringLiteral("- %1: %2 (%3)")
+                         .arg(item.value("name").toString())
+                         .arg(item.value("semantic_type").toString())
+                         .arg(item.value("role_hint").toString());
+        }
+    }
 
     if (!trends.isEmpty()) {
         QJsonObject trend = trends.first().toObject();
@@ -1167,6 +627,28 @@ QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
                      .arg(corr.value("strength").toString());
     }
 
+    if (!recommendations.isEmpty()) {
+        lines << "";
+        lines << QStringLiteral("Recommended Analysis");
+        for (int i = 0; i < recommendations.size() && i < 5; ++i) {
+            QJsonObject item = recommendations.at(i).toObject();
+            lines << QStringLiteral("- %1: %2")
+                         .arg(item.value("type").toString())
+                         .arg(item.value("title").toString());
+        }
+    }
+
+    if (!charts.isEmpty()) {
+        QJsonObject chart = charts.first().toObject();
+        lines << "";
+        lines << QStringLiteral("Chart Recommendation");
+        lines << QStringLiteral("- %1, x=%2, y=%3")
+                     .arg(chart.value("chart_type").toString())
+                     .arg(chart.value("x").toString())
+                     .arg(chart.value("y").toString());
+        lines << QStringLiteral("- %1").arg(chart.value("reason").toString());
+    }
+
     lines << "";
     lines << QStringLiteral("Evidence Summary");
     for (const QJsonValue &value : insights) {
@@ -1186,7 +668,156 @@ QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
         }
     }
 
+    if (!toolTrace.isEmpty()) {
+        lines << "";
+        lines << QStringLiteral("Tool Trace");
+        for (const QJsonValue &value : toolTrace) {
+            lines << QStringLiteral("- %1").arg(value.toString());
+        }
+    }
+
     lines << "";
     lines << QStringLiteral("Note: This is an analytical summary, not a business recommendation.");
     return lines.join("\n");
+}
+
+QList<int> MainWindow::NumericTableColumns(int limit) const
+{
+    QList<int> columns;
+    int rowCount = ui->tableWidget->rowCount();
+    int columnCount = ui->tableWidget->columnCount();
+    for (int column = 0; column < columnCount; ++column) {
+        int numericCount = 0;
+        int nonEmptyCount = 0;
+        for (int row = 0; row < rowCount; ++row) {
+            QTableWidgetItem *item = ui->tableWidget->item(row, column);
+            if (!item || item->text().trimmed().isEmpty()) {
+                continue;
+            }
+            nonEmptyCount++;
+            bool ok = false;
+            item->text().toDouble(&ok);
+            if (ok) {
+                numericCount++;
+            }
+        }
+        if (nonEmptyCount > 0 && numericCount >= std::max(1, static_cast<int>(nonEmptyCount * 0.8))) {
+            columns << column;
+            if (limit > 0 && columns.size() >= limit) {
+                break;
+            }
+        }
+    }
+    return columns;
+}
+
+QVector<double> MainWindow::NumericColumnValues(int column) const
+{
+    QVector<double> values;
+    for (int row = 0; row < ui->tableWidget->rowCount(); ++row) {
+        QTableWidgetItem *item = ui->tableWidget->item(row, column);
+        if (!item) {
+            continue;
+        }
+        bool ok = false;
+        double value = item->text().toDouble(&ok);
+        if (ok) {
+            values << value;
+        }
+    }
+    return values;
+}
+
+QVector<double> MainWindow::NumericRowIndex(int size) const
+{
+    QVector<double> index;
+    for (int i = 0; i < size; ++i) {
+        index << i + 1;
+    }
+    return index;
+}
+
+QString MainWindow::ColumnLabel(int column) const
+{
+    QTableWidgetItem *header = ui->tableWidget->horizontalHeaderItem(column);
+    if (header && !header->text().isEmpty()) {
+        return header->text();
+    }
+    return QStringLiteral("Column %1").arg(column + 1);
+}
+
+void MainWindow::RenderDynamicLineChart()
+{
+    QCustomPlot *plot = ui->widget;
+    if (!plot || ui->tableWidget->rowCount() == 0) {
+        return;
+    }
+    plot->clearGraphs();
+    plot->legend->setVisible(true);
+    QList<int> columns = NumericTableColumns(5);
+    if (columns.isEmpty()) {
+        plot->replot();
+        return;
+    }
+
+    double minY = std::numeric_limits<double>::max();
+    double maxY = std::numeric_limits<double>::lowest();
+    QVector<QColor> colors = {QColor(22, 119, 255), QColor(0, 150, 136), QColor(255, 152, 0), QColor(156, 39, 176), QColor(76, 175, 80)};
+    for (int i = 0; i < columns.size(); ++i) {
+        QVector<double> y = NumericColumnValues(columns[i]);
+        QVector<double> x = NumericRowIndex(y.size());
+        if (y.isEmpty()) {
+            continue;
+        }
+        for (double value : y) {
+            minY = std::min(minY, value);
+            maxY = std::max(maxY, value);
+        }
+        plot->addGraph();
+        plot->graph(plot->graphCount() - 1)->setData(x, y);
+        plot->graph(plot->graphCount() - 1)->setName(ColumnLabel(columns[i]));
+        plot->graph(plot->graphCount() - 1)->setPen(QPen(colors[i % colors.size()], 2));
+    }
+    plot->xAxis->setLabel("Row");
+    plot->yAxis->setLabel("Value");
+    plot->xAxis->setRange(1, std::max(2, ui->tableWidget->rowCount()));
+    if (minY <= maxY) {
+        double padding = std::max(1.0, (maxY - minY) * 0.1);
+        plot->yAxis->setRange(minY - padding, maxY + padding);
+    }
+    plot->replot();
+}
+
+void MainWindow::RenderDynamicBarChart()
+{
+    QCustomPlot *plot = ui->widget_2;
+    if (!plot || ui->tableWidget->rowCount() == 0) {
+        return;
+    }
+    plot->clearPlottables();
+    plot->clearGraphs();
+
+    QList<int> columns = NumericTableColumns(1);
+    if (columns.isEmpty()) {
+        plot->replot();
+        return;
+    }
+
+    QVector<double> values = NumericColumnValues(columns.first());
+    QVector<double> ticks = NumericRowIndex(values.size());
+    QCPBars *bars = new QCPBars(plot->xAxis, plot->yAxis);
+    bars->setData(ticks, values);
+    bars->setName(ColumnLabel(columns.first()));
+    bars->setPen(QPen(QColor(22, 119, 255)));
+    bars->setBrush(QColor(22, 119, 255, 90));
+
+    auto minmax = std::minmax_element(values.begin(), values.end());
+    plot->xAxis->setLabel("Row");
+    plot->yAxis->setLabel(ColumnLabel(columns.first()));
+    plot->xAxis->setRange(0, std::max(2, static_cast<int>(values.size()) + 1));
+    if (minmax.first != values.end()) {
+        double padding = std::max(1.0, (*minmax.second - *minmax.first) * 0.1);
+        plot->yAxis->setRange(*minmax.first - padding, *minmax.second + padding);
+    }
+    plot->replot();
 }

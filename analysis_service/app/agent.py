@@ -28,15 +28,20 @@ def plan_question(question: str) -> AgentPlan:
 def answer_question(filename: str, question: str) -> dict[str, Any]:
     plan = plan_question(question)
     profile = profile_dataset(filename)
+    tools = profile.get("tool_trace", plan.tools)
     return {
         "question": question,
         "intent": plan.intent,
-        "tools_used": plan.tools,
-        "tool_trace": [f"-> {tool}" for tool in plan.tools],
+        "tools_used": tools,
+        "tool_trace": [f"-> {tool}" for tool in tools],
         "answer": compose_answer(plan.intent, profile),
         "evidence": {
             "dataset": profile["dataset"],
+            "source": profile.get("source", {}),
+            "schema": profile.get("schema", []),
             "quality": profile["quality"],
+            "recommendations": profile.get("analysis_recommendations", []),
+            "chart_recommendations": profile.get("chart_recommendations", []),
             "top_anomalies": profile["anomalies"][:5],
             "top_correlations": profile["correlations"][:5],
             "top_trends": profile["trends"][:5],
@@ -61,7 +66,7 @@ def compose_answer(intent: str, profile: dict[str, Any]) -> str:
             lines.append("No high z-score anomalies were detected with the default threshold.")
     elif intent == "data_quality":
         lines.append(
-            f"Missing ratio is {quality['missing_ratio']}; numeric ratio is {quality['numeric_ratio']}."
+            f"Missing ratio is {quality['missing_ratio']}; analyzable ratio is {quality['analyzable_ratio']}."
         )
     elif intent == "trend_review":
         if profile["trends"]:

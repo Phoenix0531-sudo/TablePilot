@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches:
+      - main
       - modern-ai-analysis-workbench
       - master
   pull_request:
@@ -21,7 +22,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: python -m pip install -r analysis_service/requirements.txt
+        run: python -m pip install -r analysis_service/requirements-dev.txt
 
       - name: Run tests
         env:
@@ -37,3 +38,19 @@ jobs:
 
       - name: Build analysis service image
         run: docker compose build
+
+  package-metadata:
+    name: Python package metadata
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate package metadata
+        working-directory: analysis_service
+        run: python -m pip install -e ".[dev]"

@@ -1,0 +1,9 @@
+date,city,product,channel,sales,cost,profit
+2026-01-01,Shanghai,Laptop,Online,12000,8800,3200
+2026-01-02,Shanghai,Phone,Retail,8600,6100,2500
+2026-01-03,Beijing,Laptop,Online,13200,9300,3900
+2026-01-04,Shenzhen,Tablet,Retail,5200,3600,1600
+2026-01-05,Beijing,Phone,Online,9100,6500,2600
+2026-01-06,Shanghai,Tablet,Partner,4800,3300,1500
+2026-01-07,Shenzhen,Laptop,Online,14600,10100,4500
+2026-01-08,Beijing,Tablet,Partner,5400,3800,1600

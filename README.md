@@ -1,100 +1,57 @@
 # InsightQt AI Workbench
 
-> English version follows the Chinese version.
+![CI](https://github.com/Phoenix0531-sudo/QT_Statistical_Analysis/actions/workflows/ci.yml/badge.svg?branch=modern-ai-analysis-workbench)
 
-## 中文说明
+> 中文说明在前，English version follows.
 
-InsightQt AI Workbench 是一个从旧版 Qt/C++ 统计分析工具演进而来的本地智能数据分析工作台。原项目可以读取 Excel/TXT 销售数据、计算基础统计量、绘制折线图和柱状图，并导出图表。第一轮现代化保留了 Qt 桌面端，同时新增了 Docker 化的 Python 分析服务，为后续机器学习、Agent 编排和自然语言分析报告打基础。
+## 中文
 
-原始 Qt 版本保留在：
+InsightQt AI Workbench 是一个由旧版 Qt/C++ 统计分析工具升级而来的本地智能表格数据分析工作台。项目采用 **Qt/C++ 桌面端 + Dockerized Python/FastAPI 分析服务** 的组合：Qt 负责本地桌面交互、表格和图表展示，Python 服务负责动态表格解析、字段识别、数据质量评分、分析推荐和 Agent 风格工具链。
 
-```text
-legacy-qt-statistical-analysis
-```
+原始版本保留在 `legacy-qt-statistical-analysis`。现代化版本在 `modern-ai-analysis-workbench`。
 
-现代化开发分支：
+### 核心能力
 
-```text
-modern-ai-analysis-workbench
-```
+- 支持 Excel、CSV、TXT 表格数据。
+- TXT/CSV 自动识别编码与分隔符，包括 comma、tab、semicolon、pipe、whitespace。
+- 自动判断是否存在表头。
+- 自动识别字段类型：numeric、date、category、text、empty、high-cardinality。
+- 动态表格展示，不再限制 6 行 6 列。
+- 动态统计表，只对数值列生成 count、mean、std、min、median、max。
+- 动态图表，自动选择 Top 数值列，避免固定 A-F 和固定月份。
+- 数据质量评分：缺失值、重复行、异常值、字段可分析性、样本量。
+- 分析推荐：趋势、分组对比、相关性、异常复核、缺失值检查。
+- Chart Recommendation：根据 schema 推荐 line/bar/none。
+- Agent Tool Trace：展示从加载数据到生成 insight 的分析路径。
+- Markdown 报告接口，为后续桌面端导出报告和 Release 版本打底。
 
-### 当前能力
-
-- Qt/C++ 桌面端：保留原有数据表格、统计、图表和导出功能。
-- Qt/C++ 桌面端智能分析：可以把用户选择的 Excel/TXT/CSV 上传到本地分析服务。
-- Python 分析服务：读取或接收 Excel、TXT、CSV 数据并返回结构化数据画像。
-- 数据画像：行列数量、数值列数量、缺失值、每列均值/标准差/最小值/中位数/最大值。
-- 智能分析：数据质量评分、趋势检测、相关性分析、z-score 异常复核。
-- Agent 接口：根据问题意图选择 overview、data quality、trend、correlation、anomaly 等分析路径。
-- Docker 运行：分析服务可以通过 `docker compose` 一键启动。
-
-### 架构方向
+### 架构
 
 ```mermaid
 flowchart LR
-    A["Qt/C++ Desktop Client"] --> B["Local FastAPI Analysis Service"]
-    B --> C["Data Loader"]
-    B --> D["Statistical Profiler"]
-    B --> E["Anomaly Detection"]
-    B --> F["Deterministic Agent Layer"]
+    A["Qt/C++ Desktop Workbench"] --> B["FastAPI Local Analysis Service"]
+    B --> C["Encoding & Delimiter Detection"]
+    B --> D["Header & Schema Inference"]
+    B --> E["Quality / Trends / Correlations / Anomalies"]
+    B --> F["Recommendations & Tool Trace"]
+    B --> G["Markdown Report"]
 ```
 
-### 运行 Python 分析服务
+### 快速运行
 
-使用 Docker：
+启动分析服务：
 
 ```bash
 docker compose up --build
 ```
 
-访问：
+检查服务：
 
 ```text
 http://127.0.0.1:8000/health
-http://127.0.0.1:8000/api/datasets
 ```
 
-分析示例数据：
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/analyze ^
-  -H "Content-Type: application/json" ^
-  -d "{\"filename\":\"销售数据.txt\"}"
-```
-
-上传任意本地数据文件分析：
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/analyze-upload ^
-  -F "file=@Statistical_Analysis/销售数据.txt"
-```
-
-Agent 风格查询：
-
-```bash
-curl -X POST http://127.0.0.1:8000/api/agent/query ^
-  -H "Content-Type: application/json" ^
-  -d "{\"filename\":\"销售数据.txt\",\"question\":\"这份数据有没有异常？\"}"
-```
-
-本地 Python 运行：
-
-```bash
-cd analysis_service
-python -m pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-测试：
-
-```bash
-cd analysis_service
-python -m pytest -q
-```
-
-### Qt 桌面端
-
-项目入口：
+Qt 桌面端入口：
 
 ```text
 Statistical_Analysis/Statistical_Analysis.pro
@@ -106,70 +63,11 @@ Statistical_Analysis/Statistical_Analysis.pro
 Qt 6.11.1 MinGW 64-bit
 ```
 
-第一轮现代化已经把 `.pro` 中的旧绝对路径改为相对路径，并为 MinGW 添加了 QCustomPlot 兼容参数。旧版 Excel 解析库 `QXsl/lib/libQXlsx.a` 是 32 位静态库，不能直接用于当前 64 位 Qt 6 环境。后续路线是让 Qt 端调用本地 Python 分析服务，逐步移除 Qt 端对旧 QXlsx 的主路径依赖。
+打开 Qt 程序后，可以选择 Excel、CSV 或 TXT 文件。桌面端会上传文件到本地服务，并动态刷新表格、统计表、图表和右侧 AI Insight 面板。
 
-第二轮现代化已经移除了 Qt 端对旧 QXlsx 静态库的编译依赖。Excel/TXT/CSV 智能分析由本地 FastAPI 服务承担，Qt 工具栏中的“智能分析”会将用户选择的数据文件上传到 `http://127.0.0.1:8000/api/analyze-upload` 并展示摘要。
+### API 示例
 
-### 后续计划
-
-- 增加更完整的右侧 AI Insight 面板，替代当前弹窗摘要。
-- 增加本地 Ollama / OpenAI 的增强解释层。
-- 增加中英文 UI 和更专业的分析工作台界面。
-- 增加打包发布流程。
-
-## English
-
-InsightQt AI Workbench is a modernization of an older Qt/C++ statistical analysis desktop application. The original application reads Excel/TXT sales data, computes basic statistics, renders line/bar charts, and exports charts. This first modernization pass keeps the Qt desktop client while adding a Dockerized Python analysis service as the foundation for future machine learning, Agent orchestration, and natural-language reporting.
-
-The original Qt version is preserved in:
-
-```text
-legacy-qt-statistical-analysis
-```
-
-Modernization branch:
-
-```text
-modern-ai-analysis-workbench
-```
-
-### Current Capabilities
-
-- Qt/C++ desktop client: keeps the original table, statistics, charting, and export workflow.
-- Qt/C++ smart analysis: uploads selected Excel/TXT/CSV files to the local analysis service.
-- Python analysis service: loads or receives Excel, TXT, and CSV datasets and returns structured profiling results.
-- Data profiling: rows, columns, numeric columns, missing cells, mean, standard deviation, min, median, and max.
-- Smart analysis: data quality score, trend detection, correlation analysis, and z-score anomaly review.
-- Agent endpoint: routes questions to overview, data quality, trend, correlation, or anomaly workflows.
-- Docker runtime: the analysis service can be started with `docker compose`.
-
-### Architecture Direction
-
-```mermaid
-flowchart LR
-    A["Qt/C++ Desktop Client"] --> B["Local FastAPI Analysis Service"]
-    B --> C["Data Loader"]
-    B --> D["Statistical Profiler"]
-    B --> E["Anomaly Detection"]
-    B --> F["Deterministic Agent Layer"]
-```
-
-### Run the Python Analysis Service
-
-With Docker:
-
-```bash
-docker compose up --build
-```
-
-Open:
-
-```text
-http://127.0.0.1:8000/health
-http://127.0.0.1:8000/api/datasets
-```
-
-Analyze a sample dataset:
+分析仓库内数据：
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/analyze ^
@@ -177,14 +75,14 @@ curl -X POST http://127.0.0.1:8000/api/analyze ^
   -d "{\"filename\":\"销售数据.txt\"}"
 ```
 
-Analyze an uploaded local file:
+上传任意本地表格：
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/analyze-upload ^
-  -F "file=@Statistical_Analysis/销售数据.txt"
+  -F "file=@samples/sales_sample.csv"
 ```
 
-Agent-style query:
+Agent 风格查询：
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/agent/query ^
@@ -192,24 +90,92 @@ curl -X POST http://127.0.0.1:8000/api/agent/query ^
   -d "{\"filename\":\"销售数据.txt\",\"question\":\"这份数据有没有异常？\"}"
 ```
 
-Run locally with Python:
+生成 Markdown 报告：
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/report/markdown ^
+  -H "Content-Type: application/json" ^
+  -d "{\"filename\":\"销售数据.txt\"}"
+```
+
+### 本地开发
 
 ```bash
 cd analysis_service
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
 uvicorn app.main:app --reload
 ```
 
-Tests:
+### 示例数据
 
-```bash
-cd analysis_service
-python -m pytest -q
+`samples/` 包含多种用于验证动态解析能力的数据：
+
+- `sales_sample.csv`
+- `mixed_schema_sample.csv`
+- `missing_values_sample.csv`
+- `time_series_sample.csv`
+- `txt_tab_sample.txt`
+- `txt_space_sample.txt`
+
+### 工程化状态
+
+- Docker Compose 运行分析服务。
+- GitHub Actions 验证 Python 测试、Docker build 和 Python package metadata。
+- `analysis_service/pyproject.toml` 提供 Python 包元数据。
+- `LICENSE` 使用 MIT License。
+- `GITHUB_ABOUT.md` 提供 GitHub About 文案和 topics。
+
+Release 安装包暂未生成。后续可以在 UI 稳定后加入 Windows 打包流程，例如 Qt deploy + 服务启动脚本 + GitHub Release。
+
+## English
+
+InsightQt AI Workbench modernizes an older Qt/C++ statistical desktop tool into a local intelligent table analysis workbench. It combines a **Qt/C++ desktop client** with a **Dockerized Python/FastAPI analysis service**. Qt handles local desktop interaction, tables, and charts; Python handles dynamic parsing, schema inference, data quality scoring, recommendations, and Agent-style tool traces.
+
+The original version is preserved in `legacy-qt-statistical-analysis`. Modern work lives in `modern-ai-analysis-workbench`.
+
+### Capabilities
+
+- Supports Excel, CSV, and TXT table data.
+- Detects text encodings and delimiters, including comma, tab, semicolon, pipe, and whitespace.
+- Infers whether a header row exists.
+- Infers semantic column types: numeric, date, category, text, empty, and high-cardinality.
+- Dynamic table display with no fixed 6x6 assumption.
+- Dynamic statistics table for numeric columns: count, mean, std, min, median, max.
+- Dynamic charting over top numeric columns instead of fixed A-F fields.
+- Data quality scoring based on missing values, duplicates, anomalies, analyzability, and sample size.
+- Analysis recommendations for trends, group comparisons, correlations, anomaly review, and missing values.
+- Chart recommendations based on the inferred schema.
+- Agent Tool Trace from table loading to insight generation.
+- Markdown report endpoint for future desktop report export and Release packaging.
+
+### Architecture
+
+```mermaid
+flowchart LR
+    A["Qt/C++ Desktop Workbench"] --> B["FastAPI Local Analysis Service"]
+    B --> C["Encoding & Delimiter Detection"]
+    B --> D["Header & Schema Inference"]
+    B --> E["Quality / Trends / Correlations / Anomalies"]
+    B --> F["Recommendations & Tool Trace"]
+    B --> G["Markdown Report"]
 ```
 
-### Qt Desktop Client
+### Quick Start
 
-Project entry:
+Start the analysis service:
+
+```bash
+docker compose up --build
+```
+
+Health check:
+
+```text
+http://127.0.0.1:8000/health
+```
+
+Qt desktop entry:
 
 ```text
 Statistical_Analysis/Statistical_Analysis.pro
@@ -221,6 +187,34 @@ Recommended Kit:
 Qt 6.11.1 MinGW 64-bit
 ```
 
-This pass changes the old absolute paths in the `.pro` file to relative project paths and adds a MinGW compatibility flag for QCustomPlot. The legacy Excel library `QXsl/lib/libQXlsx.a` is a 32-bit static library and cannot be linked directly into the current 64-bit Qt 6 environment. The modernization path is to let the Qt client call the local Python analysis service and gradually remove the Qt-side dependency on the old QXlsx main path.
+After launching the Qt app, open an Excel, CSV, or TXT file. The desktop client uploads the file to the local analysis service and refreshes the table, statistics, chart, and AI Insight panel dynamically.
 
-The second modernization pass removes the Qt-side build dependency on the legacy QXlsx static library. Excel/TXT/CSV smart analysis is handled by the local FastAPI service. The Qt toolbar action `智能分析` uploads the selected file to `http://127.0.0.1:8000/api/analyze-upload` and displays an evidence-based summary.
+### Development
+
+```bash
+cd analysis_service
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+uvicorn app.main:app --reload
+```
+
+### Sample Data
+
+The `samples/` directory includes datasets for dynamic parser validation:
+
+- `sales_sample.csv`
+- `mixed_schema_sample.csv`
+- `missing_values_sample.csv`
+- `time_series_sample.csv`
+- `txt_tab_sample.txt`
+- `txt_space_sample.txt`
+
+### Engineering Notes
+
+- Docker Compose runs the local analysis service.
+- GitHub Actions validates service tests, Docker build, and package metadata.
+- `analysis_service/pyproject.toml` defines Python package metadata.
+- `LICENSE` uses MIT License.
+- `GITHUB_ABOUT.md` contains suggested GitHub About copy and topics.
+
+Windows installer packaging is intentionally left for a later Release pass after the UI is finalized.

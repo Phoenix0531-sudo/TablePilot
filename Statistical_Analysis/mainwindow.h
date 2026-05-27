@@ -3,7 +3,9 @@
 
 #include <QMainWindow>
 #include "qcustomplot.h"   // 引入绘图库的头文件
+#include <QDockWidget>
 #include <QLabel>          // 引入QLabel类
+#include <QTextEdit>
 
 namespace Ui {
 class MainWindow;
@@ -38,6 +40,7 @@ private:
     void createActions();
     void createStatusBar();
     void createStyle();
+    void createInsightPanel();
 
     // 判断指定位置的单元格是否为空
     bool ItemEmpty(int x, int y);
@@ -64,12 +67,16 @@ private slots:
 
 private:
     QLabel *info_Label; // 信息标签
+    QDockWidget *insightDock;
+    QTextEdit *insightText;
     bool isExit;        // 是否退出标志
     int  SaveType;      // 保存类型
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件
     void SetStyleSheet(QWidget *pWidget, QString strQSS); // 设置样式表
     void AnalyzeFileWithService(const QString &filePath);
     void ShowServiceAnalysis(const QByteArray &payload);
+    void PopulateTableFromService(const QJsonObject &root);
+    QString FormatServiceAnalysis(const QJsonObject &root) const;
 };
 
 #endif // MAINWINDOW_H

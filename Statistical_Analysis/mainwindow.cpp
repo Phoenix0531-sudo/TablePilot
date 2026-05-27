@@ -14,6 +14,7 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QEventLoop>
+#include <QHeaderView>
 
 namespace {
 QString ProjectPath(const QString &relativePath)
@@ -51,6 +52,7 @@ void MainWindow::InitWidget(){
     createToolBar();    // 调用创建工具栏的函数
     createStatusBar(); // 调用创建状态栏的函数
     createStyle();      // 调用创建样式的函数
+    createInsightPanel();
 }
 
 void MainWindow::InitObject(){
@@ -128,6 +130,29 @@ void MainWindow::createStatusBar(){// 创建状态栏并添加信息标签
     info_Label->setObjectName(tr("StatusLabel")); // 设置标签对象名称
     info_Label->setText(tr("")); // 设置标签初始文本为空
     ui->statusBar->addWidget(info_Label); // 将标签添加到状态栏
+}
+
+void MainWindow::createInsightPanel()
+{
+    insightDock = new QDockWidget(QStringLiteral("AI Insight"), this);
+    insightDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    insightDock->setMinimumWidth(360);
+
+    insightText = new QTextEdit(insightDock);
+    insightText->setReadOnly(true);
+    insightText->setPlaceholderText(QStringLiteral("选择数据文件后，这里会显示智能分析摘要、数据质量和复核线索。"));
+    insightText->setStyleSheet(
+        "QTextEdit {"
+        "background:#fbfaf7;"
+        "border:1px solid #d7d1c5;"
+        "padding:12px;"
+        "font-size:13px;"
+        "line-height:1.45;"
+        "}"
+    );
+
+    insightDock->setWidget(insightText);
+    addDockWidget(Qt::RightDockWidgetArea, insightDock);
 }
 
 void MainWindow::Slot1(){//打开Excel
@@ -1050,48 +1075,118 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     }
 
     QJsonObject root = document.object();
+    PopulateTableFromService(root);
+
+    QString summary = FormatServiceAnalysis(root);
+    insightText->setPlainText(summary);
+    insightDock->show();
+    info_Label->setText(QStringLiteral("智能分析完成"));
+    statusBar()->showMessage(QStringLiteral("InsightQt analysis completed"), 5000);
+}
+
+void MainWindow::PopulateTableFromService(const QJsonObject &root)
+{
+    QJsonObject preview = root.value("preview").toObject();
+    QJsonArray rows = preview.value("rows").toArray();
+    if (rows.isEmpty()) {
+        return;
+    }
+
+    int rowCount = rows.size();
+    int columnCount = rows.first().toArray().size();
+    ui->tableWidget->clear();
+    ui->tableWidget->setRowCount(rowCount);
+    ui->tableWidget->setColumnCount(columnCount);
+
+    QStringList headers;
+    for (int column = 0; column < columnCount; ++column) {
+        headers << QString::number(column + 1);
+    }
+    ui->tableWidget->setHorizontalHeaderLabels(headers);
+
+    for (int row = 0; row < rowCount; ++row) {
+        QJsonArray cells = rows.at(row).toArray();
+        for (int column = 0; column < columnCount; ++column) {
+            QString text;
+            if (column < cells.size()) {
+                QJsonValue value = cells.at(column);
+                if (value.isDouble()) {
+                    text = QString::number(value.toDouble(), 'g', 12);
+                } else {
+                    text = value.toVariant().toString();
+                }
+            }
+            ui->tableWidget->setItem(row, column, new QTableWidgetItem(text));
+        }
+    }
+
+    ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+}
+
+QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
+{
     QJsonObject dataset = root.value("dataset").toObject();
     QJsonObject quality = root.value("quality").toObject();
     QJsonArray insights = root.value("insights").toArray();
     QJsonArray anomalies = root.value("anomalies").toArray();
     QJsonArray trends = root.value("trends").toArray();
+    QJsonArray correlations = root.value("correlations").toArray();
 
     QStringList lines;
-    lines << QStringLiteral("数据集：%1").arg(dataset.value("filename").toString());
-    lines << QStringLiteral("规模：%1 行 x %2 列，数值列 %3 个")
+    lines << QStringLiteral("InsightQt AI Analysis");
+    lines << QStringLiteral("======================");
+    lines << QStringLiteral("Dataset: %1").arg(dataset.value("filename").toString());
+    lines << QStringLiteral("Shape: %1 rows x %2 columns")
                  .arg(dataset.value("rows").toInt())
-                 .arg(dataset.value("columns").toInt())
-                 .arg(dataset.value("numeric_columns").toInt());
-    lines << QStringLiteral("数据质量：%1 / 100（%2）")
+                 .arg(dataset.value("columns").toInt());
+    lines << QStringLiteral("Numeric columns: %1").arg(dataset.value("numeric_columns").toInt());
+    lines << QStringLiteral("Quality: %1 / 100 (%2)")
                  .arg(quality.value("score").toInt())
                  .arg(quality.value("level").toString());
-    lines << QStringLiteral("异常点数量：%1").arg(quality.value("anomaly_count").toInt());
+    lines << QStringLiteral("Missing ratio: %1").arg(quality.value("missing_ratio").toDouble());
+    lines << QStringLiteral("Anomalies: %1").arg(quality.value("anomaly_count").toInt());
 
     if (!trends.isEmpty()) {
         QJsonObject trend = trends.first().toObject();
-        lines << QStringLiteral("最明显趋势：第 %1 列 %2")
+        lines << "";
+        lines << QStringLiteral("Top Trend");
+        lines << QStringLiteral("- Column %1 is moving %2, slope %3")
                      .arg(trend.value("column").toString())
-                     .arg(trend.value("direction").toString());
+                     .arg(trend.value("direction").toString())
+                     .arg(trend.value("slope").toDouble());
+    }
+
+    if (!correlations.isEmpty()) {
+        QJsonObject corr = correlations.first().toObject();
+        lines << "";
+        lines << QStringLiteral("Top Correlation");
+        lines << QStringLiteral("- Column %1 vs %2: %3 (%4)")
+                     .arg(corr.value("left").toString())
+                     .arg(corr.value("right").toString())
+                     .arg(corr.value("correlation").toDouble())
+                     .arg(corr.value("strength").toString());
     }
 
     lines << "";
-    lines << QStringLiteral("分析摘要：");
+    lines << QStringLiteral("Evidence Summary");
     for (const QJsonValue &value : insights) {
         lines << QStringLiteral("- %1").arg(value.toString());
     }
 
     if (!anomalies.isEmpty()) {
         lines << "";
-        lines << QStringLiteral("优先复核的异常点：");
-        for (int i = 0; i < anomalies.size() && i < 3; ++i) {
+        lines << QStringLiteral("Review Queue");
+        for (int i = 0; i < anomalies.size() && i < 5; ++i) {
             QJsonObject anomaly = anomalies.at(i).toObject();
-            lines << QStringLiteral("- 行 %1，列 %2，值 %3，z-score %4")
-                         .arg(anomaly.value("row").toInt())
+            lines << QStringLiteral("- Row %1, column %2, value %3, z-score %4")
+                         .arg(anomaly.value("row").toInt() + 1)
                          .arg(anomaly.value("column").toString())
                          .arg(anomaly.value("value").toDouble())
                          .arg(anomaly.value("z_score").toDouble());
         }
     }
 
-    QMessageBox::information(this, QStringLiteral("InsightQt 智能分析"), lines.join("\n"));
+    lines << "";
+    lines << QStringLiteral("Note: This is an analytical summary, not a business recommendation.");
+    return lines.join("\n");
 }

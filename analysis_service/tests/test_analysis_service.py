@@ -28,6 +28,8 @@ def test_profiles_text_dataset():
     assert len(profile["columns"]) == 6
     assert "trends" in profile
     assert "correlations" in profile
+    assert profile["preview"]["returned_rows"] == 6
+    assert len(profile["preview"]["rows"][0]) == 6
     assert profile["insights"]
 
 
@@ -67,6 +69,7 @@ def test_upload_analysis_endpoint():
     body = response.json()
     assert body["dataset"]["filename"] == "sales.txt"
     assert body["dataset"]["rows"] == 6
+    assert body["preview"]["rows"][0][0] == 450
 
 
 def test_agent_query_endpoint():

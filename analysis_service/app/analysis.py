@@ -111,6 +111,7 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame) -> dict[str, 
         "anomalies": anomalies,
         "correlations": correlations,
         "trends": trends,
+        "preview": build_table_preview(df),
         "insights": build_insights(df, usable_numeric, missing_cells, anomalies, quality, trends),
     }
 
@@ -214,6 +215,29 @@ def correlation_strength(value: float) -> str:
     if magnitude >= 0.5:
         return "moderate"
     return "weak"
+
+
+def build_table_preview(df: pd.DataFrame, max_rows: int = 100) -> dict[str, Any]:
+    preview = df.head(max_rows)
+    rows = []
+    for _, row in preview.iterrows():
+        rows.append([to_json_cell(value) for value in row.tolist()])
+    return {
+        "columns": [str(column) for column in df.columns],
+        "rows": rows,
+        "returned_rows": len(rows),
+        "max_rows": max_rows,
+    }
+
+
+def to_json_cell(value: Any) -> Any:
+    if pd.isna(value):
+        return ""
+    if hasattr(value, "item"):
+        value = value.item()
+    if isinstance(value, float):
+        return _safe_float(value)
+    return value
 
 
 def build_insights(

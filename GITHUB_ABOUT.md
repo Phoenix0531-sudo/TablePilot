@@ -35,6 +35,5 @@ desktop-app
 visualization
 qt-desktop
 release-packaging
-portfolio-project
 local-first
 ```

@@ -232,6 +232,15 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[
     chart_recommendations = recommend_charts(schema, numeric_columns, date_columns, category_columns)
     analysis_recommendations = recommend_analysis(schema, numeric_columns, date_columns, category_columns, anomalies)
     quality = score_data_quality(df, schema, numeric_df, missing_cells, anomalies)
+    executive_brief = build_executive_brief(
+        df,
+        schema,
+        quality,
+        anomalies,
+        trends,
+        analysis_recommendations,
+        chart_recommendations,
+    )
     tool_trace = [
         "load_table",
         "detect_encoding",
@@ -264,6 +273,7 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[
         "trends": trends,
         "chart_recommendations": chart_recommendations,
         "analysis_recommendations": analysis_recommendations,
+        "executive_brief": executive_brief,
         "preview": build_table_preview(df),
         "tool_trace": tool_trace,
         "insights": build_insights(df, schema, missing_cells, anomalies, quality, trends, analysis_recommendations),
@@ -625,6 +635,50 @@ def build_insights(
     return insights
 
 
+def build_executive_brief(
+    df: pd.DataFrame,
+    schema: list[dict[str, Any]],
+    quality: dict[str, Any],
+    anomalies: list[dict[str, Any]],
+    trends: list[dict[str, Any]],
+    recommendations: list[dict[str, Any]],
+    chart_recommendations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    analyzable_fields = [item for item in schema if item["is_analyzable"]]
+    headline = (
+        f"Loaded {len(df)} rows and {len(df.columns)} columns with "
+        f"{len(analyzable_fields)} analyzable fields."
+    )
+    if trends:
+        strongest = trends[0]
+        headline += f" Strongest trend: {strongest['column']} moving {strongest['direction']}."
+    elif anomalies:
+        headline += f" {len(anomalies)} values need anomaly review."
+
+    confidence = "high" if quality["score"] >= 80 else "medium" if quality["score"] >= 60 else "low"
+    watchouts = []
+    if quality["missing_ratio"] > 0:
+        watchouts.append("Missing values may bias aggregates and charts.")
+    if anomalies:
+        watchouts.append("High z-score values should be reviewed before drawing conclusions.")
+    if len(df) < 10:
+        watchouts.append("Small sample size limits statistical confidence.")
+    if not watchouts:
+        watchouts.append("No major structural data quality warning was detected.")
+
+    next_moves = [item["title"] for item in recommendations[:3]]
+    if chart_recommendations:
+        chart = chart_recommendations[0]
+        next_moves.append(f"Render a {chart['chart_type']} chart for {chart.get('y') or 'available measures'}.")
+
+    return {
+        "headline": headline,
+        "confidence": confidence,
+        "watchouts": watchouts,
+        "next_moves": next_moves,
+    }
+
+
 def build_markdown_report(profile: dict[str, Any]) -> str:
     dataset = profile["dataset"]
     quality = profile["quality"]
@@ -647,6 +701,13 @@ def build_markdown_report(profile: dict[str, Any]) -> str:
         "## Key Findings",
     ]
     lines.extend(f"- {item}" for item in profile["insights"])
+    brief = profile.get("executive_brief", {})
+    if brief:
+        lines.extend(["", "## Executive Brief"])
+        lines.append(f"- Headline: {brief.get('headline', '')}")
+        lines.append(f"- Confidence: {brief.get('confidence', '')}")
+        lines.extend(f"- Watchout: {item}" for item in brief.get("watchouts", []))
+        lines.extend(f"- Next move: {item}" for item in brief.get("next_moves", []))
     lines.extend(["", "## Recommended Analysis"])
     lines.extend(f"- **{item['type']}**: {item['title']} - {item['reason']}" for item in profile["analysis_recommendations"])
     lines.extend(["", "## Tool Trace"])

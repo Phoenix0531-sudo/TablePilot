@@ -3,7 +3,7 @@
 Use this repository description:
 
 ```text
-InsightQt AI Workbench: a Qt/C++ desktop client with a Dockerized Python/FastAPI analysis service for dynamic table profiling, schema inference, data quality scoring, chart recommendations, and Agent-style tool traces.
+InsightQt AI Workbench: a Qt/C++ desktop AI data workbench with Dockerized FastAPI profiling, schema inference, data quality scoring, executive briefs, chart recommendations, and explainable tool traces.
 ```
 
 Suggested website:
@@ -23,6 +23,8 @@ docker
 data-analysis
 data-profiling
 schema-inference
+data-quality
+executive-brief
 agent
 desktop-app
 visualization

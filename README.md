@@ -20,10 +20,19 @@ InsightQt AI Workbench 是一个由旧版 Qt/C++ 统计分析工具升级而来�
 - 动态统计表，只对数值列生成 count、mean、std、min、median、max。
 - 动态图表，自动选择 Top 数值列，避免固定 A-F 和固定月份。
 - 数据质量评分：缺失值、重复行、异常值、字段可分析性、样本量。
+- Executive Brief：自动生成结论摘要、置信度、风险提示和下一步分析建议。
 - 分析推荐：趋势、分组对比、相关性、异常复核、缺失值检查。
 - Chart Recommendation：根据 schema 推荐 line/bar/none。
 - Agent Tool Trace：展示从加载数据到生成 insight 的分析路径。
 - Markdown 报告接口，为后续桌面端导出报告和 Release 版本打底。
+
+### 产品体验
+
+- 顶部工作台概览条展示服务状态、数据规模、质量分、字段结构和下一步建议。
+- 左侧为动态数据预览和数值画像，不再保留旧版固定 A-F / 1-6 月假设。
+- 中间图表区支持趋势视图和分布视图，并使用统一的数据工作台视觉风格。
+- 右侧 Insight Panel 以结构化 Brief 展示 Executive Summary、Watchouts、Recommended Next Moves、Schema Snapshot 和 Tool Trace。
+- UI 采用更接近金融/数据产品的低饱和界面：浅色画布、深色工具栏重点、绿色分析状态和琥珀色建议强调。
 
 ### 架构
 
@@ -147,7 +156,16 @@ The original version is preserved in `legacy-qt-statistical-analysis`. Modern wo
 - Analysis recommendations for trends, group comparisons, correlations, anomaly review, and missing values.
 - Chart recommendations based on the inferred schema.
 - Agent Tool Trace from table loading to insight generation.
+- Executive Brief with conclusion summary, confidence, watchouts, and next recommended analysis moves.
 - Markdown report endpoint for future desktop report export and Release packaging.
+
+### Product Experience
+
+- A top workbench overview strip shows service status, dataset shape, quality score, schema structure, and the next best analysis.
+- The left side contains dynamic data preview and numeric profiling without the old fixed A-F / six-month assumptions.
+- The chart area provides trend and distribution views with a consistent data-workbench visual style.
+- The right Insight Panel renders a structured brief with Executive Summary, Watchouts, Recommended Next Moves, Schema Snapshot, and Tool Trace.
+- The UI now uses a more portfolio-ready financial/data-product style: warm canvas, dark command surface, green analysis status, and amber recommendation accents.
 
 ### Architecture
 

@@ -29,6 +29,7 @@ venv/
 
 # Local Codex build scratch
 .codex-qt-build/
+.codex-qt-release/
 
 # OS/editor
 .DS_Store

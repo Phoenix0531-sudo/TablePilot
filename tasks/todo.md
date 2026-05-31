@@ -74,3 +74,31 @@
   - Qt 6.11.1 MinGW build: passed
   - `docker compose build`: passed
   - Docker runtime smoke: `/health`, `/api/analyze-upload`, `/api/agent/query`, and `/api/report/markdown` returned successfully
+
+# Modernization Pass 4
+
+## Plan
+
+- [x] Upgrade the Qt desktop UI from legacy course-project styling to a portfolio-ready data workbench.
+- [x] Add a top overview strip for service status, dataset shape, quality score, schema count, and next recommended analysis.
+- [x] Replace plain AI Insight text with a structured HTML brief.
+- [x] Add backend `executive_brief` output with headline, confidence, watchouts, and next moves.
+- [x] Remove old initial fixed month/A-F table state from the first screen.
+- [x] Replace legacy toolbar image assets with Qt standard icons and a compact command-bar layout.
+- [x] Update README and GitHub About positioning.
+- [x] Make `modern-ai-analysis-workbench` the GitHub default branch and keep only the legacy branch plus modern branch.
+- [x] Verify Python tests, Qt debug/release builds, Docker runtime, and release UI smoke.
+
+## Review
+
+- UI now opens as `InsightQt AI Workbench` with a product-style overview panel, neutral data-workbench palette, structured Insight Panel, dynamic empty state, and modernized toolbar.
+- Backend analysis now exposes an `executive_brief` object and includes it in Markdown reports.
+- GitHub About description, homepage, and topics were updated through the GitHub API.
+- GitHub default branch is now `modern-ai-analysis-workbench`; remote `main` and `master` were deleted. Remaining branches are `legacy-qt-statistical-analysis` and `modern-ai-analysis-workbench`.
+- Validation:
+  - `python -m pytest -q analysis_service\tests`: 15 passed
+  - Qt 6.11.1 MinGW debug build: passed
+  - Qt 6.11.1 MinGW release build: passed
+  - `docker compose build`: passed
+  - Docker runtime smoke: `/health`, `/api/analyze-upload`, and `/api/report/markdown` returned successfully with Executive Brief
+  - Release UI smoke: app opened with Qt runtime path and connected to the local analysis service

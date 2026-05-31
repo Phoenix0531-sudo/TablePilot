@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include "qcustomplot.h"   // 引入绘图库的头文件
 #include <QDockWidget>
+#include <QFrame>
 #include <QLabel>          // 引入QLabel类
 #include <QTextEdit>
 #include <QJsonArray>
@@ -42,17 +43,8 @@ private:
     void createActions();
     void createStatusBar();
     void createStyle();
+    void createOverviewPanel();
     void createInsightPanel();
-
-    // 判断指定位置的单元格是否为空
-    bool ItemEmpty(int x, int y);
-
-    // 一些统计数据的变量
-    int A[6] = {0}, B[6] = {0}, C[6] = {0}, D[6] = {0}, E[6] = {0}, F[6] = {0};
-    int sumA = 0, sumB = 0, sumC = 0, sumD = 0, sumE = 0, sumF = 0;
-    int regA = 0, regB = 0, regC = 0, regD = 0, regE = 0, regF = 0;
-    int minA = 0, minB = 0, minC = 0, minD = 0, minE = 0, minF = 0;
-    int maxA = 0, maxB = 0, maxC = 0, maxD = 0, maxE = 0, maxF = 0;
 
 // 槽函数，处理各个功能标签的点击事件
 private slots:
@@ -71,6 +63,11 @@ private:
     QLabel *info_Label; // 信息标签
     QDockWidget *insightDock;
     QTextEdit *insightText;
+    QLabel *serviceBadge;
+    QLabel *datasetCard;
+    QLabel *qualityCard;
+    QLabel *schemaCard;
+    QLabel *recommendationCard;
     bool isExit;        // 是否退出标志
     int  SaveType;      // 保存类型
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件
@@ -80,19 +77,16 @@ private:
     void ShowServiceAnalysis(const QByteArray &payload);
     void PopulateTableFromService(const QJsonObject &root);
     void PopulateStatsFromService(const QJsonObject &root);
+    void UpdateOverviewCards(const QJsonObject &root);
     QString FormatServiceAnalysis(const QJsonObject &root) const;
+    QString FormatInsightHtml(const QJsonObject &root) const;
     QList<int> NumericTableColumns(int limit = -1) const;
     QVector<double> NumericColumnValues(int column) const;
     QVector<double> NumericRowIndex(int size) const;
     QString ColumnLabel(int column) const;
     void RenderDynamicLineChart();
     void RenderDynamicBarChart();
+    void StylePlot(QCustomPlot *plot);
 };
 
 #endif // MAINWINDOW_H
-
-/*
-这段代码定义了一个MainWindow类，继承自QMainWindow，用于主窗口的显示和交互。该类包括一些私有成员变量、私有方法、私有槽函数和一些用于处理用户交互的公有槽函数。
-私有成员变量包括UI对象指针、Excel文档对象指针、一些统计数据的变量、保存类型等。
-私有方法包括初始化窗口部件和对象、创建工具栏、标签、状态栏、样式等。私有槽函数处理各个功能标签的点击事件，以及按钮的点击事件。
-*/

@@ -32,6 +32,8 @@ def test_profiles_text_dataset():
     assert profile["tool_trace"]
     assert "trends" in profile
     assert "correlations" in profile
+    assert profile["executive_brief"]["headline"]
+    assert profile["executive_brief"]["next_moves"]
     assert profile["preview"]["returned_rows"] == 6
     assert len(profile["preview"]["rows"][0]) == 6
     assert profile["insights"]
@@ -90,6 +92,7 @@ def test_markdown_report_endpoint():
 
     assert response.status_code == 200
     assert "# InsightQt Analysis Report" in response.text
+    assert "## Executive Brief" in response.text
 
 
 def test_dataset_alias_for_report_endpoint():

@@ -11,18 +11,19 @@ QToolBar {
     background: rgba(255, 255, 255, 235);
     border: none;
     border-bottom: 1px solid #e5e5ea;
-    spacing: 6px;
-    padding: 10px 16px;
+    spacing: 4px;
+    padding: 4px 12px;
 }
 
 QToolButton {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 14px;
-    padding: 7px 13px;
+    border-radius: 10px;
+    padding: 4px 10px;
     font-size: 13px;
     font-weight: 500;
     color: #1d1d1f;
+    min-height: 24px;
 }
 
 QToolButton:hover {

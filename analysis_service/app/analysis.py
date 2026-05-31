@@ -232,6 +232,7 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[
     chart_recommendations = recommend_charts(schema, numeric_columns, date_columns, category_columns)
     analysis_recommendations = recommend_analysis(schema, numeric_columns, date_columns, category_columns, anomalies)
     quality = score_data_quality(df, schema, numeric_df, missing_cells, anomalies)
+    analysis_plan = build_analysis_plan(schema, quality, anomalies, trends, correlations, analysis_recommendations)
     executive_brief = build_executive_brief(
         df,
         schema,
@@ -240,6 +241,7 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[
         trends,
         analysis_recommendations,
         chart_recommendations,
+        analysis_plan,
     )
     tool_trace = [
         "load_table",
@@ -273,6 +275,7 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[
         "trends": trends,
         "chart_recommendations": chart_recommendations,
         "analysis_recommendations": analysis_recommendations,
+        "analysis_plan": analysis_plan,
         "executive_brief": executive_brief,
         "preview": build_table_preview(df),
         "tool_trace": tool_trace,
@@ -332,6 +335,12 @@ def role_hint(name: str, semantic_type: str) -> str:
     lowered = name.lower()
     if semantic_type == "date" or any(token in lowered for token in ["date", "time", "日期", "时间"]):
         return "time_axis"
+    if any(token in lowered for token in ["id", "编号", "编码", "code", "订单号", "客户号"]):
+        return "identifier"
+    if any(token in lowered for token in ["target", "label", "标签", "目标", "结果"]):
+        return "target"
+    if any(token in lowered for token in ["revenue", "sales", "amount", "price", "cost", "profit", "收入", "销售", "金额", "价格", "成本", "利润"]):
+        return "business_measure"
     if semantic_type == "numeric":
         return "measure"
     if semantic_type == "category":
@@ -643,10 +652,11 @@ def build_executive_brief(
     trends: list[dict[str, Any]],
     recommendations: list[dict[str, Any]],
     chart_recommendations: list[dict[str, Any]],
+    analysis_plan: dict[str, Any],
 ) -> dict[str, Any]:
     analyzable_fields = [item for item in schema if item["is_analyzable"]]
     headline = (
-        f"Loaded {len(df)} rows and {len(df.columns)} columns with "
+        f"{analysis_plan['dataset_story']} Loaded {len(df)} rows and {len(df.columns)} columns with "
         f"{len(analyzable_fields)} analyzable fields."
     )
     if trends:
@@ -667,6 +677,7 @@ def build_executive_brief(
         watchouts.append("No major structural data quality warning was detected.")
 
     next_moves = [item["title"] for item in recommendations[:3]]
+    next_moves.extend(step["title"] for step in analysis_plan["steps"][:2] if step["title"] not in next_moves)
     if chart_recommendations:
         chart = chart_recommendations[0]
         next_moves.append(f"Render a {chart['chart_type']} chart for {chart.get('y') or 'available measures'}.")
@@ -677,6 +688,102 @@ def build_executive_brief(
         "watchouts": watchouts,
         "next_moves": next_moves,
     }
+
+
+def build_analysis_plan(
+    schema: list[dict[str, Any]],
+    quality: dict[str, Any],
+    anomalies: list[dict[str, Any]],
+    trends: list[dict[str, Any]],
+    correlations: list[dict[str, Any]],
+    recommendations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    roles = {
+        "time_axis": [item["name"] for item in schema if item["role_hint"] == "time_axis"],
+        "dimensions": [item["name"] for item in schema if item["role_hint"] == "dimension"],
+        "measures": [item["name"] for item in schema if item["role_hint"] in {"measure", "business_measure"}],
+        "identifiers": [item["name"] for item in schema if item["role_hint"] == "identifier"],
+    }
+    dataset_story = infer_dataset_story(schema, roles)
+
+    steps: list[dict[str, str]] = []
+    if quality["score"] < 80 or quality["missing_ratio"] > 0:
+        steps.append(
+            {
+                "stage": "quality_gate",
+                "title": "Run data quality gate before interpretation",
+                "why": "Missing values, duplicates, anomalies, and small samples can distort downstream conclusions.",
+            }
+        )
+    if roles["time_axis"] and roles["measures"]:
+        steps.append(
+            {
+                "stage": "trend",
+                "title": f"Trend review: {roles['measures'][0]} over {roles['time_axis'][0]}",
+                "why": "A time axis and numeric measure were detected, so temporal movement is likely meaningful.",
+            }
+        )
+    if roles["dimensions"] and roles["measures"]:
+        steps.append(
+            {
+                "stage": "segment",
+                "title": f"Segment comparison: {roles['measures'][0]} by {roles['dimensions'][0]}",
+                "why": "A categorical dimension can explain variance in the selected measure.",
+            }
+        )
+    if correlations:
+        strongest = correlations[0]
+        steps.append(
+            {
+                "stage": "relationship",
+                "title": f"Relationship review: {strongest['left']} vs {strongest['right']}",
+                "why": f"The strongest observed correlation is {strongest['correlation']} ({strongest['strength']}).",
+            }
+        )
+    if anomalies:
+        steps.append(
+            {
+                "stage": "review_queue",
+                "title": "Review high-deviation records",
+                "why": "Detected values far from their column distribution; these may be errors or important events.",
+            }
+        )
+    if not steps and recommendations:
+        steps.append(
+            {
+                "stage": recommendations[0]["type"],
+                "title": recommendations[0]["title"],
+                "why": recommendations[0]["reason"],
+            }
+        )
+    if not steps:
+        steps.append(
+            {
+                "stage": "overview",
+                "title": "Start with schema and distribution overview",
+                "why": "The file has limited analyzable structure, so profiling should come before interpretation.",
+            }
+        )
+
+    return {
+        "dataset_story": dataset_story,
+        "roles": roles,
+        "confidence": "high" if quality["score"] >= 80 and len(steps) >= 2 else "medium" if quality["score"] >= 60 else "low",
+        "steps": steps[:5],
+    }
+
+
+def infer_dataset_story(schema: list[dict[str, Any]], roles: dict[str, list[str]]) -> str:
+    names = " ".join(item["name"].lower() for item in schema)
+    if any(token in names for token in ["sales", "revenue", "order", "customer", "销售", "收入", "订单", "客户"]):
+        return "This looks like a sales or operations table."
+    if any(token in names for token in ["price", "cost", "profit", "amount", "finance", "金额", "价格", "成本", "利润"]):
+        return "This looks like a financial or transaction table."
+    if roles["time_axis"] and roles["measures"]:
+        return "This looks like a time-series measurement table."
+    if roles["dimensions"] and roles["measures"]:
+        return "This looks like a dimensional analysis table."
+    return "This looks like a generic tabular dataset."
 
 
 def build_markdown_report(profile: dict[str, Any]) -> str:
@@ -708,6 +815,12 @@ def build_markdown_report(profile: dict[str, Any]) -> str:
         lines.append(f"- Confidence: {brief.get('confidence', '')}")
         lines.extend(f"- Watchout: {item}" for item in brief.get("watchouts", []))
         lines.extend(f"- Next move: {item}" for item in brief.get("next_moves", []))
+    plan = profile.get("analysis_plan", {})
+    if plan:
+        lines.extend(["", "## Analysis Plan"])
+        lines.append(f"- Dataset story: {plan.get('dataset_story', '')}")
+        lines.append(f"- Planner confidence: {plan.get('confidence', '')}")
+        lines.extend(f"- {item['stage']}: {item['title']} - {item['why']}" for item in plan.get("steps", []))
     lines.extend(["", "## Recommended Analysis"])
     lines.extend(f"- **{item['type']}**: {item['title']} - {item['reason']}" for item in profile["analysis_recommendations"])
     lines.extend(["", "## Tool Trace"])

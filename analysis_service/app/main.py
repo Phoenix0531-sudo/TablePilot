@@ -13,7 +13,7 @@ from .analysis import build_markdown_report, list_datasets, load_table_with_meta
 app = FastAPI(
     title="InsightQt Analysis Service",
     description="Local data profiling service for the Qt statistical analysis workbench.",
-    version="0.3.0",
+    version="0.4.0",
 )
 
 

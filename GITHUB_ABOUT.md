@@ -3,7 +3,7 @@
 Use this repository description:
 
 ```text
-InsightQt AI Workbench: a Qt/C++ desktop AI data workbench with Dockerized FastAPI profiling, schema inference, data quality scoring, executive briefs, chart recommendations, and explainable tool traces.
+InsightQt AI Workbench: a Qt/C++ desktop AI data workbench with Dockerized FastAPI profiling, schema inference, data quality scoring, analysis planning, executive briefs, dynamic charts, release packaging, and explainable tool traces.
 ```
 
 Suggested website:
@@ -25,8 +25,11 @@ data-profiling
 schema-inference
 data-quality
 executive-brief
+analysis-planner
 agent
 desktop-app
 visualization
+qt-desktop
+release-packaging
 portfolio-project
 ```

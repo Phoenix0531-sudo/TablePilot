@@ -1,5 +1,6 @@
 #include "mainwindow.h"   // 包含自定义的MainWindow类的头文件
 #include "ui_mainwindow.h" // 包含自动生成的ui界面文件的头文件
+#include <QAbstractItemView>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFileDialog>     // 包含文件对话框类的头文件
@@ -9,16 +10,19 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>          // 包含标签类的头文件，用于创建标签部件
+#include <QMap>
 #include <QMessageBox>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QProcess>
 #include <QStyle>
 #include <QEventLoop>
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFrame>
+#include <QTimer>
 #include <limits>
 #include <numeric>
 
@@ -212,14 +216,15 @@ void MainWindow::createInsightPanel()
 
 void MainWindow::CheckAnalysisService()
 {
-    QNetworkAccessManager manager;
-    QNetworkRequest request(QUrl("http://127.0.0.1:8000/health"));
-    QNetworkReply *reply = manager.get(request);
-    QEventLoop loop;
-    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+    if (!IsAnalysisServiceHealthy()) {
+        statusBar()->showMessage(QStringLiteral("Starting local analysis service..."));
+        if (serviceBadge) {
+            serviceBadge->setText(QStringLiteral("<b>Service</b><br><span>starting</span>"));
+        }
+        TryStartAnalysisService();
+    }
 
-    if (reply->error() == QNetworkReply::NoError) {
+    if (IsAnalysisServiceHealthy(6000)) {
         statusBar()->showMessage(QStringLiteral("Analysis service connected"));
         if (serviceBadge) {
             serviceBadge->setText(QStringLiteral("<b>Service</b><br><span class='ok'>connected</span>"));
@@ -228,25 +233,69 @@ void MainWindow::CheckAnalysisService()
             insightText->setHtml(QStringLiteral(
                 "<h2>InsightQt AI Workbench</h2>"
                 "<p class='muted'>Analysis service is connected.</p>"
-                "<div class='callout'>Open an Excel, CSV, or TXT table to start dynamic profiling. "
-                "The workbench will infer schema, score data quality, recommend analyses, and render dynamic charts.</div>"
+                "<div class='callout'>Drop into the workbench by opening an Excel, CSV, or TXT table. "
+                "InsightQt will infer schema, score data quality, plan the next analysis, and render dynamic charts.</div>"
             ));
         }
-    } else {
-        statusBar()->showMessage(QStringLiteral("Analysis service offline"));
-        if (serviceBadge) {
-            serviceBadge->setText(QStringLiteral("<b>Service</b><br><span>offline</span>"));
-        }
-        if (insightText) {
-            insightText->setHtml(QStringLiteral(
-                "<h2>InsightQt AI Workbench</h2>"
-                "<p class='muted'>Analysis service is offline.</p>"
-                "<div class='callout warn'>Start the local service from the project root:<br><code>docker compose up --build</code></div>"
-                "<p>Then open Excel, CSV, or TXT data from the toolbar.</p>"
-            ));
-        }
+        return;
     }
+
+    statusBar()->showMessage(QStringLiteral("Analysis service offline"));
+    if (serviceBadge) {
+        serviceBadge->setText(QStringLiteral("<b>Service</b><br><span>offline</span>"));
+    }
+    if (insightText) {
+        insightText->setHtml(QStringLiteral(
+            "<h2>InsightQt AI Workbench</h2>"
+            "<p class='muted'>Analysis service is offline.</p>"
+            "<div class='callout warn'>The app tried to start Docker Compose automatically. "
+            "If Docker Desktop is not running, start it and reopen a file.</div>"
+            "<p>Manual fallback: run <code>docker compose up --build</code> from the project root.</p>"
+        ));
+    }
+}
+
+bool MainWindow::IsAnalysisServiceHealthy(int timeoutMs)
+{
+    QNetworkAccessManager manager;
+    QNetworkRequest request(QUrl("http://127.0.0.1:8000/health"));
+    QNetworkReply *reply = manager.get(request);
+    QEventLoop loop;
+    QTimer timer;
+    timer.setSingleShot(true);
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    timer.start(timeoutMs);
+    loop.exec();
+
+    if (timer.isActive()) {
+        timer.stop();
+    } else if (reply->isRunning()) {
+        reply->abort();
+    }
+    const bool ok = reply->error() == QNetworkReply::NoError;
     reply->deleteLater();
+    return ok;
+}
+
+bool MainWindow::TryStartAnalysisService()
+{
+    QString projectRoot = ProjectPath("docker-compose.yml");
+    if (projectRoot.endsWith("docker-compose.yml")) {
+        projectRoot = QFileInfo(projectRoot).absolutePath();
+    }
+
+    QString program = QStringLiteral("docker");
+    QStringList args = {QStringLiteral("compose"), QStringLiteral("up"), QStringLiteral("-d")};
+    const bool started = QProcess::startDetached(program, args, projectRoot);
+    if (!started && insightText) {
+        insightText->setHtml(QStringLiteral(
+            "<h2>Service Start Failed</h2>"
+            "<div class='callout warn'>InsightQt could not start Docker Compose automatically. "
+            "Start Docker Desktop, then run <code>docker compose up --build</code>.</div>"
+        ));
+    }
+    return started;
 }
 
 void MainWindow::Slot1(){//打开Excel
@@ -262,7 +311,7 @@ void MainWindow::Slot1(){//打开Excel
 }
 
 void MainWindow::Slot2(){//打开TXT
-    QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择TXT文件"), QString(), QStringLiteral("Text file(*.txt)"));
+    QString filePath = QFileDialog::getOpenFileName(this, QStringLiteral("选择TXT/CSV文件"), QString(), QStringLiteral("Table text file(*.txt *.csv)"));
     if(filePath.isEmpty())  // 如果文件路径为空，说明用户取消了选择，直接返回
         return;
 
@@ -397,11 +446,24 @@ void MainWindow::createStyle() {
     ui->groupBox->setTitle(QStringLiteral("Data Preview"));
     ui->groupBox_2->setTitle(QStringLiteral("Numeric Profile"));
     ui->stackedWidget->setCurrentIndex(0);
-    ui->comboBox->hide();
+    ui->pushButton->setText(QStringLiteral("Refresh trend"));
+    ui->pushButton_2->setText(QStringLiteral("Refresh distribution"));
+    ui->comboBox->clear();
+    ui->comboBox->addItem(QStringLiteral("Auto measure"), -1);
+    ui->comboBox->setToolTip(QStringLiteral("选择分布图使用的数值字段"));
+    connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+        if (ui->stackedWidget->currentIndex() == 1) {
+            RenderDynamicBarChart();
+        }
+    });
     ui->comboBox_2->hide();
     ui->pushButton_3->hide();
     ui->tableWidget->setAlternatingRowColors(true);
     ui->tableWidget_2->setAlternatingRowColors(true);
+    ui->tableWidget->setSortingEnabled(true);
+    ui->tableWidget_2->setSortingEnabled(true);
+    ui->tableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableWidget_2->setSelectionBehavior(QAbstractItemView::SelectColumns);
     ui->tableWidget->clear();
     ui->tableWidget->setRowCount(0);
     ui->tableWidget->setColumnCount(0);
@@ -412,6 +474,9 @@ void MainWindow::createStyle() {
     ui->tableWidget_2->verticalHeader()->setDefaultSectionSize(34);
     ui->tableWidget->horizontalHeader()->setMinimumSectionSize(92);
     ui->tableWidget_2->horizontalHeader()->setMinimumSectionSize(92);
+    StylePlot(ui->widget);
+    StylePlot(ui->widget_2);
+    StylePlot(ui->widget_3);
 }
 
 void MainWindow::SetStyleSheet(QWidget* pWidget, QString strQSS) {
@@ -442,6 +507,18 @@ void MainWindow::SetStyleSheet(QWidget* pWidget, QString strQSS) {
 
 void MainWindow::AnalyzeFileWithService(const QString &filePath)
 {
+    if (!IsAnalysisServiceHealthy()) {
+        TryStartAnalysisService();
+        if (!IsAnalysisServiceHealthy(7000)) {
+            QMessageBox::warning(
+                this,
+                QStringLiteral("InsightQt 分析服务"),
+                QStringLiteral("本地分析服务暂未就绪。请确认 Docker Desktop 已启动，或在项目根目录运行 docker compose up --build。")
+            );
+            return;
+        }
+    }
+
     QFileInfo fileInfo(filePath);
     QFile *file = new QFile(filePath);
     if (!file->open(QIODevice::ReadOnly)) {
@@ -493,7 +570,10 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     }
 
     QJsonObject root = document.object();
+    lastProfile = root;
     PopulateTableFromService(root);
+    ApplyTableQualityDecorations(root);
+    UpdateFieldSelectors(root);
     UpdateOverviewCards(root);
 
     insightText->setHtml(FormatInsightHtml(root));
@@ -522,6 +602,19 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
         headers << (column < columns.size() ? columns.at(column).toString() : QString::number(column + 1));
     }
     ui->tableWidget->setHorizontalHeaderLabels(headers);
+    QJsonArray schema = root.value("schema").toArray();
+    for (int column = 0; column < columnCount && column < schema.size(); ++column) {
+        QJsonObject item = schema.at(column).toObject();
+        QTableWidgetItem *headerItem = ui->tableWidget->horizontalHeaderItem(column);
+        if (headerItem) {
+            headerItem->setToolTip(
+                QStringLiteral("%1 | role: %2 | missing: %3")
+                    .arg(item.value("semantic_type").toString())
+                    .arg(item.value("role_hint").toString())
+                    .arg(item.value("missing_count").toInt())
+            );
+        }
+    }
 
     for (int row = 0; row < rowCount; ++row) {
         QJsonArray cells = rows.at(row).toArray();
@@ -542,6 +635,68 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     PopulateStatsFromService(root);
     RenderDynamicLineChart();
+}
+
+void MainWindow::ApplyTableQualityDecorations(const QJsonObject &root)
+{
+    QJsonArray schema = root.value("schema").toArray();
+    for (int column = 0; column < ui->tableWidget->columnCount() && column < schema.size(); ++column) {
+        QJsonObject field = schema.at(column).toObject();
+        QColor headerColor(238, 242, 232);
+        const QString type = field.value("semantic_type").toString();
+        if (type == "numeric") {
+            headerColor = QColor(231, 244, 239);
+        } else if (type == "date") {
+            headerColor = QColor(232, 240, 250);
+        } else if (type == "category") {
+            headerColor = QColor(246, 240, 226);
+        }
+        QTableWidgetItem *header = ui->tableWidget->horizontalHeaderItem(column);
+        if (header) {
+            header->setBackground(headerColor);
+        }
+
+        for (int row = 0; row < ui->tableWidget->rowCount(); ++row) {
+            QTableWidgetItem *cell = ui->tableWidget->item(row, column);
+            if (cell && cell->text().trimmed().isEmpty()) {
+                cell->setBackground(QColor(255, 242, 217));
+                cell->setToolTip(QStringLiteral("Missing value"));
+            }
+        }
+    }
+
+    QJsonArray anomalies = root.value("anomalies").toArray();
+    QMap<QString, int> columnIndex;
+    for (int column = 0; column < ui->tableWidget->columnCount(); ++column) {
+        columnIndex.insert(ColumnLabel(column), column);
+    }
+    for (const QJsonValue &value : anomalies) {
+        QJsonObject anomaly = value.toObject();
+        int row = anomaly.value("row").toInt(-1);
+        int column = columnIndex.value(anomaly.value("column").toString(), -1);
+        if (row >= 0 && row < ui->tableWidget->rowCount() && column >= 0) {
+            QTableWidgetItem *cell = ui->tableWidget->item(row, column);
+            if (cell) {
+                cell->setBackground(QColor(255, 229, 229));
+                cell->setToolTip(QStringLiteral("Anomaly candidate, z-score %1").arg(anomaly.value("z_score").toDouble()));
+            }
+        }
+    }
+}
+
+void MainWindow::UpdateFieldSelectors(const QJsonObject &root)
+{
+    QJsonArray schema = root.value("schema").toArray();
+    ui->comboBox->blockSignals(true);
+    ui->comboBox->clear();
+    ui->comboBox->addItem(QStringLiteral("Auto measure"), -1);
+    for (int column = 0; column < schema.size(); ++column) {
+        QJsonObject field = schema.at(column).toObject();
+        if (field.value("semantic_type").toString() == "numeric") {
+            ui->comboBox->addItem(field.value("name").toString(), column);
+        }
+    }
+    ui->comboBox->blockSignals(false);
 }
 
 void MainWindow::PopulateStatsFromService(const QJsonObject &root)
@@ -613,6 +768,7 @@ void MainWindow::UpdateOverviewCards(const QJsonObject &root)
     QJsonObject quality = root.value("quality").toObject();
     QJsonArray schema = root.value("schema").toArray();
     QJsonArray recommendations = root.value("analysis_recommendations").toArray();
+    QJsonObject plan = root.value("analysis_plan").toObject();
     QJsonObject source = root.value("source").toObject();
 
     if (datasetCard) {
@@ -637,10 +793,10 @@ void MainWindow::UpdateOverviewCards(const QJsonObject &root)
         if (!recommendations.isEmpty()) {
             title = recommendations.first().toObject().value("title").toString();
         }
-        recommendationCard->setText(QStringLiteral("<b>Next best analysis</b><br><span>%1</span><br><small>%2 / %3</small>")
+        QString story = plan.value("dataset_story").toString();
+        recommendationCard->setText(QStringLiteral("<b>Next best analysis</b><br><span>%1</span><br><small>%2</small>")
                                         .arg(title.toHtmlEscaped())
-                                        .arg(source.value("parser").toString().toHtmlEscaped())
-                                        .arg(source.value("delimiter").toString("-").toHtmlEscaped()));
+                                        .arg((story.isEmpty() ? source.value("parser").toString() : story).toHtmlEscaped()));
     }
 }
 
@@ -775,6 +931,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     QJsonObject quality = root.value("quality").toObject();
     QJsonObject source = root.value("source").toObject();
     QJsonObject brief = root.value("executive_brief").toObject();
+    QJsonObject plan = root.value("analysis_plan").toObject();
     QJsonArray schema = root.value("schema").toArray();
     QJsonArray insights = root.value("insights").toArray();
     QJsonArray anomalies = root.value("anomalies").toArray();
@@ -801,6 +958,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
         ".value{font-size:20px;font-weight:700;color:#0f766e;}"
         ".pill{display:inline-block;border:1px solid #d8ddd2;border-radius:999px;padding:4px 8px;margin:3px;background:#f3f6ef;}"
         ".callout{border-left:4px solid #0f766e;background:#f2f7f4;padding:9px 10px;margin:10px 0;}"
+        ".step{border-left:3px solid #d89b24;background:#fff8e8;margin:8px 0;padding:8px 10px;}"
         "li{margin:4px 0;}"
         "code{background:#eef2e8;padding:2px 4px;border-radius:4px;}"
         "</style>"
@@ -827,6 +985,20 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 html << QStringLiteral("<li>%1</li>").arg(value.toString().toHtmlEscaped());
             }
             html << QStringLiteral("</ul>");
+        }
+    }
+
+    if (!plan.isEmpty()) {
+        html << QStringLiteral("<h2>Analysis Planner</h2>");
+        html << QStringLiteral("<div class='callout'><b>%1</b><br><span class='muted'>Planner confidence: %2</span></div>")
+                    .arg(plan.value("dataset_story").toString().toHtmlEscaped())
+                    .arg(plan.value("confidence").toString().toHtmlEscaped());
+        QJsonArray steps = plan.value("steps").toArray();
+        for (int i = 0; i < steps.size() && i < 4; ++i) {
+            QJsonObject step = steps.at(i).toObject();
+            html << QStringLiteral("<div class='step'><b>%1</b><br><span class='muted'>%2</span></div>")
+                        .arg(step.value("title").toString().toHtmlEscaped())
+                        .arg(step.value("why").toString().toHtmlEscaped());
         }
     }
 
@@ -1027,7 +1199,13 @@ void MainWindow::RenderDynamicBarChart()
     plot->clearItems();
     StylePlot(plot);
 
-    QList<int> columns = NumericTableColumns(1);
+    QList<int> columns;
+    int selectedColumn = ui->comboBox->currentData().toInt();
+    if (selectedColumn >= 0) {
+        columns << selectedColumn;
+    } else {
+        columns = NumericTableColumns(1);
+    }
     if (columns.isEmpty()) {
         plot->replot();
         return;

@@ -3,9 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - main
       - modern-ai-analysis-workbench
-      - master
   pull_request:
 
 jobs:
@@ -38,6 +36,41 @@ jobs:
 
       - name: Build analysis service image
         run: docker compose build
+
+  api-smoke:
+    name: API smoke test
+    runs-on: ubuntu-latest
+    needs: docker-build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start analysis service
+        run: docker compose up -d --build
+
+      - name: Wait for health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Exercise upload and report endpoints
+        run: |
+          curl -fsS -X POST http://127.0.0.1:8000/api/analyze-upload \
+            -F "file=@samples/mixed_schema_sample.csv" | tee /tmp/profile.json
+          grep -q "analysis_plan" /tmp/profile.json
+          curl -fsS -X POST http://127.0.0.1:8000/api/report/markdown \
+            -H "Content-Type: application/json" \
+            -d '{"filename":"销售数据.txt"}' | grep -q "Analysis Plan"
+
+      - name: Stop service
+        if: always()
+        run: docker compose down
 
   package-metadata:
     name: Python package metadata

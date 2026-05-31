@@ -68,16 +68,21 @@ private:
     QLabel *qualityCard;
     QLabel *schemaCard;
     QLabel *recommendationCard;
+    QJsonObject lastProfile;
     bool isExit;        // 是否退出标志
     int  SaveType;      // 保存类型
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件
     void SetStyleSheet(QWidget *pWidget, QString strQSS); // 设置样式表
     void AnalyzeFileWithService(const QString &filePath);
     void CheckAnalysisService();
+    bool IsAnalysisServiceHealthy(int timeoutMs = 2500);
+    bool TryStartAnalysisService();
     void ShowServiceAnalysis(const QByteArray &payload);
     void PopulateTableFromService(const QJsonObject &root);
     void PopulateStatsFromService(const QJsonObject &root);
     void UpdateOverviewCards(const QJsonObject &root);
+    void UpdateFieldSelectors(const QJsonObject &root);
+    void ApplyTableQualityDecorations(const QJsonObject &root);
     QString FormatServiceAnalysis(const QJsonObject &root) const;
     QString FormatInsightHtml(const QJsonObject &root) const;
     QList<int> NumericTableColumns(int limit = -1) const;

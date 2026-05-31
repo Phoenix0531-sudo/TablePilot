@@ -20,18 +20,22 @@ InsightQt AI Workbench 是一个由旧版 Qt/C++ 统计分析工具升级而来�
 - 动态统计表，只对数值列生成 count、mean、std、min、median、max。
 - 动态图表，自动选择 Top 数值列，避免固定 A-F 和固定月份。
 - 数据质量评分：缺失值、重复行、异常值、字段可分析性、样本量。
+- Analysis Planner：根据字段角色、数据质量、趋势、相关性和异常自动编排下一步分析流程。
 - Executive Brief：自动生成结论摘要、置信度、风险提示和下一步分析建议。
 - 分析推荐：趋势、分组对比、相关性、异常复核、缺失值检查。
 - Chart Recommendation：根据 schema 推荐 line/bar/none。
 - Agent Tool Trace：展示从加载数据到生成 insight 的分析路径。
 - Markdown 报告接口，为后续桌面端导出报告和 Release 版本打底。
+- Windows Release 脚本：提供 Qt deploy + 分析服务文件打包 + 一键启动脚本。
 
 ### 产品体验
 
 - 顶部工作台概览条展示服务状态、数据规模、质量分、字段结构和下一步建议。
+- 程序启动时会自动检测本地分析服务；服务离线时会尝试通过 Docker Compose 拉起。
 - 左侧为动态数据预览和数值画像，不再保留旧版固定 A-F / 1-6 月假设。
+- 数据预览支持字段类型提示、缺失值高亮和异常候选高亮。
 - 中间图表区支持趋势视图和分布视图，并使用统一的数据工作台视觉风格。
-- 右侧 Insight Panel 以结构化 Brief 展示 Executive Summary、Watchouts、Recommended Next Moves、Schema Snapshot 和 Tool Trace。
+- 右侧 Insight Panel 以结构化 Brief 展示 Executive Summary、Analysis Planner、Watchouts、Recommended Next Moves、Schema Snapshot 和 Tool Trace。
 - UI 采用更接近金融/数据产品的低饱和界面：浅色画布、深色工具栏重点、绿色分析状态和琥珀色建议强调。
 
 ### 架构
@@ -42,7 +46,7 @@ flowchart LR
     B --> C["Encoding & Delimiter Detection"]
     B --> D["Header & Schema Inference"]
     B --> E["Quality / Trends / Correlations / Anomalies"]
-    B --> F["Recommendations & Tool Trace"]
+    B --> F["Analysis Planner & Tool Trace"]
     B --> G["Markdown Report"]
 ```
 
@@ -73,6 +77,31 @@ Qt 6.11.1 MinGW 64-bit
 ```
 
 打开 Qt 程序后，可以选择 Excel、CSV 或 TXT 文件。桌面端会上传文件到本地服务，并动态刷新表格、统计表、图表和右侧 AI Insight 面板。
+
+如果 Docker Desktop 已运行，桌面端会尝试自动启动本地分析服务；手动启动命令仍然保留，方便开发和排错。
+
+### Windows 发布包
+
+本仓库提供发布包脚本，但不会把构建产物提交到仓库：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging\build-windows-release.ps1
+```
+
+默认 Qt 路径：
+
+```text
+E:\1_Code\QT\6.11.1\mingw_64
+E:\1_Code\QT\Tools\mingw1310_64
+```
+
+脚本会生成：
+
+```text
+dist/InsightQt-AI-Workbench.zip
+```
+
+发布包内的 `start-insightqt.ps1` 会先启动 Docker Compose 分析服务，再打开 Qt 桌面端。
 
 ### API 示例
 
@@ -135,7 +164,7 @@ uvicorn app.main:app --reload
 - `LICENSE` 使用 MIT License。
 - `GITHUB_ABOUT.md` 提供 GitHub About 文案和 topics。
 
-Release 安装包暂未生成。后续可以在 UI 稳定后加入 Windows 打包流程，例如 Qt deploy + 服务启动脚本 + GitHub Release。
+正式 GitHub Release 暂未发布。当前已经具备本地生成 Windows zip 发布包的脚本，最终截图和 Release 资产可在 UI 最终确认后上传。
 
 ## English
 
@@ -153,18 +182,22 @@ The original version is preserved in `legacy-qt-statistical-analysis`. Modern wo
 - Dynamic statistics table for numeric columns: count, mean, std, min, median, max.
 - Dynamic charting over top numeric columns instead of fixed A-F fields.
 - Data quality scoring based on missing values, duplicates, anomalies, analyzability, and sample size.
+- Analysis Planner that turns schema, quality, trend, correlation, and anomaly evidence into a recommended workflow.
 - Analysis recommendations for trends, group comparisons, correlations, anomaly review, and missing values.
 - Chart recommendations based on the inferred schema.
 - Agent Tool Trace from table loading to insight generation.
 - Executive Brief with conclusion summary, confidence, watchouts, and next recommended analysis moves.
 - Markdown report endpoint for future desktop report export and Release packaging.
+- Windows release scripts for Qt deployment, service files, and one-command startup.
 
 ### Product Experience
 
 - A top workbench overview strip shows service status, dataset shape, quality score, schema structure, and the next best analysis.
+- The desktop app checks the local analysis service on startup and can try to start Docker Compose automatically.
 - The left side contains dynamic data preview and numeric profiling without the old fixed A-F / six-month assumptions.
+- Data preview highlights missing values and anomaly candidates, and column headers expose inferred field types.
 - The chart area provides trend and distribution views with a consistent data-workbench visual style.
-- The right Insight Panel renders a structured brief with Executive Summary, Watchouts, Recommended Next Moves, Schema Snapshot, and Tool Trace.
+- The right Insight Panel renders a structured brief with Executive Summary, Analysis Planner, Watchouts, Recommended Next Moves, Schema Snapshot, and Tool Trace.
 - The UI now uses a more portfolio-ready financial/data-product style: warm canvas, dark command surface, green analysis status, and amber recommendation accents.
 
 ### Architecture
@@ -175,7 +208,7 @@ flowchart LR
     B --> C["Encoding & Delimiter Detection"]
     B --> D["Header & Schema Inference"]
     B --> E["Quality / Trends / Correlations / Anomalies"]
-    B --> F["Recommendations & Tool Trace"]
+    B --> F["Analysis Planner & Tool Trace"]
     B --> G["Markdown Report"]
 ```
 
@@ -207,6 +240,24 @@ Qt 6.11.1 MinGW 64-bit
 
 After launching the Qt app, open an Excel, CSV, or TXT file. The desktop client uploads the file to the local analysis service and refreshes the table, statistics, chart, and AI Insight panel dynamically.
 
+If Docker Desktop is running, the desktop app can try to start the local analysis service automatically. The manual Docker command remains available for development and troubleshooting.
+
+### Windows Release Package
+
+The repository includes a local packaging script. Build artifacts are intentionally ignored by git:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File packaging\build-windows-release.ps1
+```
+
+The script creates:
+
+```text
+dist/InsightQt-AI-Workbench.zip
+```
+
+The generated package includes `start-insightqt.ps1`, which starts the Docker Compose analysis service and then opens the Qt desktop workbench.
+
 ### Development
 
 ```bash
@@ -235,4 +286,4 @@ The `samples/` directory includes datasets for dynamic parser validation:
 - `LICENSE` uses MIT License.
 - `GITHUB_ABOUT.md` contains suggested GitHub About copy and topics.
 
-Windows installer packaging is intentionally left for a later Release pass after the UI is finalized.
+An official GitHub Release has not been published yet. The repository now includes the local Windows zip packaging workflow; final screenshots and release assets can be attached after the UI is approved.

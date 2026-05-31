@@ -40,6 +40,7 @@ def answer_question(filename: str, question: str) -> dict[str, Any]:
             "source": profile.get("source", {}),
             "schema": profile.get("schema", []),
             "quality": profile["quality"],
+            "analysis_plan": profile.get("analysis_plan", {}),
             "recommendations": profile.get("analysis_recommendations", []),
             "chart_recommendations": profile.get("chart_recommendations", []),
             "top_anomalies": profile["anomalies"][:5],

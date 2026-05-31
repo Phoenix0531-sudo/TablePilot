@@ -4,15 +4,15 @@
 }
 
 QMainWindow, QWidget#centralWidget {
-    background: #f4f2ea;
+    background: #f1efe6;
 }
 
 QToolBar {
-    background: #fcfbf6;
+    background: #141a17;
     border: none;
-    border-bottom: 1px solid #d8ddd2;
+    border-bottom: 1px solid #28322d;
     spacing: 8px;
-    padding: 8px 14px;
+    padding: 9px 14px;
 }
 
 QToolButton {
@@ -21,22 +21,22 @@ QToolButton {
     border-radius: 8px;
     padding: 7px 9px;
     font-size: 12px;
-    color: #32382f;
+    color: #f2f5ed;
 }
 
 QToolButton:hover {
-    background: #eef4ef;
-    border-color: #cbd8ca;
+    background: #25342e;
+    border-color: #4f6359;
 }
 
 QToolButton:pressed {
-    background: #dfeadf;
+    background: #0f766e;
 }
 
 QFrame#heroPanel {
     background: #fbfaf5;
-    border: 1px solid #d8ddd2;
-    border-radius: 10px;
+    border: 1px solid #cfd8ca;
+    border-radius: 6px;
 }
 
 QLabel#eyebrowLabel {
@@ -48,7 +48,7 @@ QLabel#eyebrowLabel {
 
 QLabel#heroTitle {
     color: #151914;
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 800;
 }
 
@@ -60,7 +60,7 @@ QLabel#heroSubtitle {
 QLabel#statusCard, QLabel#metricCard, QLabel#metricCardWide {
     background: #ffffff;
     border: 1px solid #dce1d7;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 10px 12px;
     font-size: 12px;
 }
@@ -76,7 +76,7 @@ QLabel#metricCardWide {
 QGroupBox {
     background: #fbfaf5;
     border: 1px solid #d8ddd2;
-    border-radius: 10px;
+    border-radius: 6px;
     margin-top: 12px;
     padding: 14px 10px 10px 10px;
     font-size: 13px;
@@ -96,7 +96,7 @@ QTableWidget, QTableView {
     background: #fffefa;
     alternate-background-color: #f5f7f0;
     border: 1px solid #d8ddd2;
-    border-radius: 7px;
+    border-radius: 6px;
     gridline-color: #e2e5dc;
     selection-background-color: #dbece6;
     selection-color: #17211a;
@@ -118,11 +118,16 @@ QHeaderView::section {
     font-weight: 700;
 }
 
+QTableWidget::item:selected {
+    background: #cfe7df;
+    color: #111713;
+}
+
 QPushButton {
     background: #20342d;
     color: #ffffff;
     border: 1px solid #20342d;
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 7px 13px;
     font-size: 12px;
     font-weight: 700;
@@ -140,7 +145,7 @@ QPushButton:pressed {
 QComboBox {
     background: #ffffff;
     border: 1px solid #d8ddd2;
-    border-radius: 7px;
+    border-radius: 6px;
     padding: 6px 28px 6px 10px;
     font-size: 12px;
 }
@@ -158,7 +163,7 @@ QDockWidget {
 }
 
 QDockWidget::title {
-    background: #20342d;
+    background: #141a17;
     color: #ffffff;
     padding: 9px 10px;
     text-align: left;
@@ -169,6 +174,12 @@ QTextEdit#insightText {
     border: 1px solid #d8ddd2;
     padding: 14px;
     font-size: 13px;
+}
+
+QCustomPlot {
+    background: #fffefa;
+    border: 1px solid #d8ddd2;
+    border-radius: 6px;
 }
 
 QStatusBar {

@@ -102,3 +102,28 @@
   - `docker compose build`: passed
   - Docker runtime smoke: `/health`, `/api/analyze-upload`, and `/api/report/markdown` returned successfully with Executive Brief
   - Release UI smoke: app opened with Qt runtime path and connected to the local analysis service
+
+# Modernization Pass 5
+
+## Plan
+
+- [x] Add deterministic Analysis Planner output for dataset story, field roles, planner confidence, and recommended workflow steps.
+- [x] Show the planner in the desktop Insight Panel alongside the Executive Brief.
+- [x] Add service auto-detection and Docker Compose auto-start attempt from the Qt desktop app.
+- [x] Improve data preview with schema tooltips, missing-value highlighting, anomaly highlighting, sorting, and field selector support.
+- [x] Add Windows release packaging scripts for Qt deploy plus local service startup.
+- [x] Expand CI with an API smoke test that exercises upload and report endpoints.
+- [x] Update README, GitHub About copy, package metadata, and validation notes.
+
+## Review
+
+- Backend now returns `analysis_plan` with dataset story, field roles, planner confidence, and workflow steps.
+- Desktop UI now shows the planner, highlights missing/anomaly cells, exposes schema tooltips, and can try to start Docker Compose automatically.
+- Windows release zip generation now works locally through `packaging/build-windows-release.ps1`.
+- Validation:
+  - `python -m pytest -q analysis_service\tests`: 15 passed
+  - Qt 6.11.1 MinGW release build: passed
+  - `docker compose build`: passed
+  - Docker runtime smoke: `/health`, `/api/analyze-upload`, and `/api/report/markdown` returned successfully with Analysis Plan
+  - Packaging script created `dist/InsightQt-AI-Workbench.zip`
+  - Packaged UI smoke: executable launched successfully

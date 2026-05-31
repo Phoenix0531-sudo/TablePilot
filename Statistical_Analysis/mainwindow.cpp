@@ -1709,7 +1709,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
         QString summary = localAi.value("summary").toString();
         html << QStringLiteral("<h2>%1</h2><div class='callout'><b>%2</b><br><span class='muted'>%3</span>%4</div>")
                     .arg(label(QStringLiteral("Local AI Layer"), QStringLiteral("本地 AI 层")))
-                    .arg(label(QStringLiteral("Ollama status"), QStringLiteral("Ollama 状态")).toHtmlEscaped() + QStringLiteral(": ") + status.toHtmlEscaped())
+                    .arg(label(QStringLiteral("Local AI status"), QStringLiteral("本地 AI 状态")).toHtmlEscaped() + QStringLiteral(": ") + status.toHtmlEscaped())
                     .arg(localAi.value("guardrail").toString().toHtmlEscaped())
                     .arg(summary.isEmpty() ? QString() : QStringLiteral("<p>%1</p>").arg(summary.toHtmlEscaped()));
     }

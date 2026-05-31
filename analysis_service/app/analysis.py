@@ -1046,19 +1046,29 @@ def build_insight_cards(
 
 
 def build_local_ai_enhancement(profile: dict[str, Any]) -> dict[str, Any]:
-    enabled = os.getenv("TABLEPILOT_ENABLE_OLLAMA", "").lower() in {"1", "true", "yes"}
-    model = os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
-    endpoint = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434/api/generate")
+    enabled = any(
+        os.getenv(name, "").lower() in {"1", "true", "yes"}
+        for name in ["TABLEPILOT_ENABLE_LOCAL_AI", "TABLEPILOT_ENABLE_OLLAMA"]
+    )
+    provider = os.getenv("TABLEPILOT_LOCAL_AI_PROVIDER", "").lower().strip()
+    base_url = os.getenv("LOCAL_LLM_BASE_URL", "").rstrip("/")
+    if not provider:
+        provider = "openai-compatible" if base_url else "ollama"
+    model = os.getenv("LOCAL_LLM_MODEL") or os.getenv("OLLAMA_MODEL", "qwen2.5:1.5b")
     if not enabled:
         return {
-            "provider": "ollama",
+            "provider": provider,
             "model": model,
             "status": "disabled",
             "summary": None,
-            "guardrail": "AI wording is disabled; deterministic evidence is used.",
+            "guardrail": "Local AI wording is disabled; deterministic evidence is used.",
         }
 
     prompt = build_ollama_prompt(profile)
+    if provider in {"openai-compatible", "llama", "llamacpp", "lmstudio"}:
+        return call_openai_compatible_completion(prompt, model, base_url or "http://127.0.0.1:39281/v1", profile)
+
+    endpoint = os.getenv("OLLAMA_URL", "http://127.0.0.1:11434/api/generate")
     payload = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode("utf-8")
     request = urllib.request.Request(endpoint, data=payload, headers={"Content-Type": "application/json"}, method="POST")
     try:
@@ -1075,6 +1085,16 @@ def build_local_ai_enhancement(profile: dict[str, Any]) -> dict[str, Any]:
         }
 
     response_text = str(body.get("response", "")).strip()
+    guardrail = validate_local_ai_summary(response_text, profile)
+    if not guardrail["ok"]:
+        return {
+            "provider": "ollama",
+            "model": model,
+            "status": "guardrail_failed",
+            "summary": None,
+            "error": guardrail["reason"],
+            "guardrail": "The local model output was suppressed because it referenced unsupported evidence.",
+        }
     return {
         "provider": "ollama",
         "model": model,
@@ -1082,6 +1102,67 @@ def build_local_ai_enhancement(profile: dict[str, Any]) -> dict[str, Any]:
         "summary": response_text or None,
         "guardrail": "The local model can only rewrite the structured evidence; it must not add unsupported conclusions.",
     }
+
+
+def call_openai_compatible_completion(prompt: str, model: str, base_url: str, profile: dict[str, Any]) -> dict[str, Any]:
+    endpoint = f"{base_url.rstrip('/')}/completions"
+    payload = json.dumps(
+        {
+            "model": model,
+            "prompt": prompt,
+            "max_tokens": int(os.getenv("LOCAL_LLM_MAX_TOKENS", "220")),
+            "temperature": float(os.getenv("LOCAL_LLM_TEMPERATURE", "0.2")),
+        }
+    ).encode("utf-8")
+    request = urllib.request.Request(endpoint, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            body = json.loads(response.read().decode("utf-8"))
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        return {
+            "provider": "openai-compatible",
+            "model": model,
+            "status": "unavailable",
+            "summary": None,
+            "error": str(exc),
+            "guardrail": "The local /v1 completion endpoint was requested but not available; deterministic evidence remains authoritative.",
+        }
+
+    choices = body.get("choices", [])
+    response_text = ""
+    if choices:
+        first = choices[0]
+        response_text = str(first.get("text") or first.get("message", {}).get("content") or "").strip()
+    guardrail = validate_local_ai_summary(response_text, profile)
+    if not guardrail["ok"]:
+        return {
+            "provider": "openai-compatible",
+            "model": model,
+            "status": "guardrail_failed",
+            "summary": None,
+            "error": guardrail["reason"],
+            "usage": body.get("usage", {}),
+            "guardrail": "The local model output was suppressed because it referenced unsupported evidence.",
+        }
+    return {
+        "provider": "openai-compatible",
+        "model": model,
+        "status": "generated" if response_text else "empty",
+        "summary": response_text or None,
+        "usage": body.get("usage", {}),
+        "guardrail": "The local model can only rewrite the structured evidence; it must not add unsupported conclusions.",
+    }
+
+
+def validate_local_ai_summary(summary: str, profile: dict[str, Any]) -> dict[str, Any]:
+    if not summary:
+        return {"ok": True, "reason": ""}
+    allowed_fields = {str(item["name"]).lower() for item in profile.get("schema", [])}
+    referenced_metric_tokens = {token.lower() for token in re.findall(r"\bmetric_[a-zA-Z0-9_]+\b", summary)}
+    unsupported = sorted(token for token in referenced_metric_tokens if token not in allowed_fields)
+    if unsupported:
+        return {"ok": False, "reason": f"Unsupported field reference(s): {', '.join(unsupported)}"}
+    return {"ok": True, "reason": ""}
 
 
 def build_ollama_prompt(profile: dict[str, Any]) -> str:
@@ -1096,8 +1177,8 @@ def build_ollama_prompt(profile: dict[str, Any]) -> str:
         evidence_lines.append(f"- {card['title']}: {card['summary']} Evidence: {card['evidence']}")
     return (
         "You are TablePilot, a local evidence-grounded data analysis assistant. "
-        "Write a concise bilingual-friendly business analysis summary in English. "
-        "Do not invent facts beyond the evidence below.\n\n"
+        "Write a concise business analysis summary in English only. "
+        "Do not add translation, do not invent facts, and do not mention fields beyond the evidence below.\n\n"
         + "\n".join(evidence_lines)
     )
 

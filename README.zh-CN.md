@@ -20,7 +20,7 @@ TablePilot 是一个本地优先的桌面数据分析工作台，可以把混乱
 - 自动推断字段结构，而不是写死列名
 - 分析前先做数据质量评分和修复计划
 - 用可解释的分析规划替代黑盒输出
-- 可选 Ollama 本地模型润色，但结构化证据始终是事实来源
+- 可选本地模型润色，但结构化证据始终是事实来源
 - 桌面端支持中英文切换
 
 ## 名字是什么意思
@@ -38,7 +38,7 @@ TablePilot 是一个本地优先的桌面数据分析工作台，可以把混乱
 - **Session / Report System**：记录 profile ID、生成时间、Markdown 报告、HTML 报告，并支持桌面端导出。
 - **Qt 桌面端体验**：动态预览表格、工作表切换、图表、画像卡片和双语洞察面板。
 - **本地优先架构**：Python 分析服务通过 Docker 在本地运行。
-- **可选 Ollama 支持**：本地模型只负责表达增强，不负责创造事实。
+- **可选本地模型支持**：支持 Ollama 和 OpenAI-compatible llama.cpp 接口，本地模型只负责表达增强，不负责创造事实。
 - **确定性 Agent 风格接口**：可以围绕加载的数据集做问题回答。
 - **CI 覆盖**：解析逻辑、API、Docker build 和包元数据。
 - **Windows 发布脚本**：可以构建桌面端 zip 发布包。
@@ -60,7 +60,7 @@ FastAPI 分析服务
       +--> 趋势、相关性、异常
       +--> 洞察卡片和分析规划器
       +--> Markdown / HTML 报告和 Agent 风格回答
-      +--> 可选 Ollama 本地模型表达层
+      +--> 可选本地模型表达层
 ```
 
 ## 目录结构
@@ -136,18 +136,37 @@ New-Item -ItemType Directory -Force .tmp | Out-Null
 python -m pytest -q analysis_service\tests --basetemp .tmp\pytest
 ```
 
-## 本地 AI / Ollama
+## 本地 AI
 
-分析引擎默认是确定性的。Ollama 是可选增强层，只能基于结构化证据润色表达。
+分析引擎默认是确定性的。本地模型是可选增强层，只能基于结构化证据润色表达。
+
+OpenAI-compatible 本地 llama.cpp 接口：
 
 ```powershell
-$env:TABLEPILOT_ENABLE_OLLAMA = "1"
+$env:TABLEPILOT_ENABLE_LOCAL_AI = "1"
+$env:TABLEPILOT_LOCAL_AI_PROVIDER = "openai-compatible"
+$env:LOCAL_LLM_BASE_URL = "http://127.0.0.1:39281/v1"
+$env:LOCAL_LLM_MODEL = "qwen3-4b"
+docker compose up --build
+```
+
+模型冒烟测试：
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:39281/v1/models"
+```
+
+Ollama 仍然支持：
+
+```powershell
+$env:TABLEPILOT_ENABLE_LOCAL_AI = "1"
+$env:TABLEPILOT_LOCAL_AI_PROVIDER = "ollama"
 $env:OLLAMA_MODEL = "qwen2.5:1.5b"
 $env:OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 docker compose up --build
 ```
 
-如果 Ollama 没开启或不可用，TablePilot 仍然会正常使用规则分析，并在响应里显示本地 AI 状态。
+如果本地模型没开启、不可用，或者没有通过证据护栏，TablePilot 仍然会正常使用规则分析，并在响应里显示本地 AI 状态。当模型提到结构化画像中不存在的字段时，这段模型文本会被抑制，不会进入用户报告。
 
 ## 报告和会话接口
 
@@ -208,7 +227,7 @@ config/i18n.zh-CN.json
 - 增加拖拽上传启动页和最近文件。
 - 增加散点图、箱线图、热力图、分组对比等更多图表类型。
 - 增加基于修复计划的一键清洗后数据导出。
-- 增加本地 Ollama 冒烟测试模式。
+- 增加 OpenAI-compatible 和 Ollama 本地模型冒烟测试模式。
 - 最终 UI 稳定后，把真实截图加入项目主页。
 - 增加 Windows 发布包的 GitHub Release 自动化。
 

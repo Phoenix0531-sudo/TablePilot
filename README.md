@@ -20,7 +20,7 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 - schema inference instead of hard-coded columns
 - quality scoring and repair planning before analysis
 - explainable analysis planning instead of opaque output
-- optional local Ollama wording layer with deterministic evidence as the source of truth
+- optional local LLM wording layer with deterministic evidence as the source of truth
 - Chinese/English desktop UI
 
 ## Product Name
@@ -38,7 +38,7 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 - **Session and Report System** with profile IDs, generation time, Markdown reports, HTML reports, and desktop report export.
 - **Desktop-native Qt UI** with dynamic preview tables, sheet switching, charts, profile cards, and a bilingual insight panel.
 - **Local-first architecture**: the Python analysis service runs locally through Docker.
-- **Optional Ollama support**: local LLM wording can be enabled without making the LLM authoritative.
+- **Optional local LLM support**: Ollama and OpenAI-compatible llama.cpp endpoints can be enabled without making the LLM authoritative.
 - **Deterministic agent-style API** for question answering over loaded datasets.
 - **CI coverage** for parser behavior, API endpoints, Docker build, and package metadata.
 - **Windows release script** for building a distributable desktop package.
@@ -60,7 +60,7 @@ FastAPI Analysis Service
       +--> Trends, correlations, anomalies
       +--> Insight cards and analysis planner
       +--> Markdown / HTML reports and agent-style answers
-      +--> Optional Ollama wording layer
+      +--> Optional local LLM wording layer
 ```
 
 ## Repository Structure
@@ -136,18 +136,37 @@ New-Item -ItemType Directory -Force .tmp | Out-Null
 python -m pytest -q analysis_service\tests --basetemp .tmp\pytest
 ```
 
-## Local AI / Ollama
+## Local AI
 
-The analysis engine is deterministic by default. Ollama is optional and only rewrites evidence-grounded summaries.
+The analysis engine is deterministic by default. A local model is optional and only rewrites evidence-grounded summaries.
+
+OpenAI-compatible local llama.cpp endpoint:
 
 ```powershell
-$env:TABLEPILOT_ENABLE_OLLAMA = "1"
+$env:TABLEPILOT_ENABLE_LOCAL_AI = "1"
+$env:TABLEPILOT_LOCAL_AI_PROVIDER = "openai-compatible"
+$env:LOCAL_LLM_BASE_URL = "http://127.0.0.1:39281/v1"
+$env:LOCAL_LLM_MODEL = "qwen3-4b"
+docker compose up --build
+```
+
+Model smoke test:
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:39281/v1/models"
+```
+
+Ollama remains supported:
+
+```powershell
+$env:TABLEPILOT_ENABLE_LOCAL_AI = "1"
+$env:TABLEPILOT_LOCAL_AI_PROVIDER = "ollama"
 $env:OLLAMA_MODEL = "qwen2.5:1.5b"
 $env:OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
 docker compose up --build
 ```
 
-If Ollama is disabled or unavailable, TablePilot continues to run with deterministic analysis and reports the local AI status in the response.
+If the local model is disabled, unavailable, or fails the evidence guardrail, TablePilot continues to run with deterministic analysis and reports the local AI status in the response. Model text is suppressed when it references fields that are not present in the structured profile.
 
 ## Report and Session APIs
 
@@ -208,7 +227,7 @@ The current desktop UI already supports Chinese/English switching. These config 
 - Add drag-and-drop welcome screen and recent files.
 - Add more chart types: scatter, box plot, heatmap, and segment comparison.
 - Add one-click cleaned-data export after repair-plan review.
-- Add packaged Ollama smoke-test mode for local model validation.
+- Add packaged local-model smoke-test mode for OpenAI-compatible and Ollama endpoints.
 - Add screenshot-backed project page after final UI polish.
 - Add GitHub Release automation for Windows packages.
 

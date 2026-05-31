@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from app.analysis import load_table_with_metadata, list_datasets, profile_dataset, profile_table
+from app.analysis import load_table_with_metadata, list_datasets, profile_dataset, profile_table, validate_local_ai_summary
 from app.main import app
 
 
@@ -147,11 +147,45 @@ def test_demo_multi_sheet_workbook_can_select_detail_sheet():
 
 
 def test_local_ai_is_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("TABLEPILOT_ENABLE_LOCAL_AI", raising=False)
     monkeypatch.delenv("TABLEPILOT_ENABLE_OLLAMA", raising=False)
+    monkeypatch.delenv("LOCAL_LLM_BASE_URL", raising=False)
     profile = profile_dataset("tablepilot_demo_sales.xlsx", DEMO)
 
     assert profile["local_ai"]["provider"] == "ollama"
     assert profile["local_ai"]["status"] == "disabled"
+
+
+def test_local_ai_prefers_openai_compatible_provider_when_base_url_is_set(monkeypatch):
+    monkeypatch.delenv("TABLEPILOT_ENABLE_LOCAL_AI", raising=False)
+    monkeypatch.delenv("TABLEPILOT_ENABLE_OLLAMA", raising=False)
+    monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://127.0.0.1:39281/v1")
+    monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-4b")
+    profile = profile_dataset("tablepilot_demo_sales.xlsx", DEMO)
+
+    assert profile["local_ai"]["provider"] == "openai-compatible"
+    assert profile["local_ai"]["model"] == "qwen3-4b"
+    assert profile["local_ai"]["status"] == "disabled"
+
+
+def test_local_ai_openai_compatible_unavailable_falls_back(monkeypatch):
+    monkeypatch.setenv("TABLEPILOT_ENABLE_LOCAL_AI", "1")
+    monkeypatch.setenv("TABLEPILOT_LOCAL_AI_PROVIDER", "openai-compatible")
+    monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://127.0.0.1:1/v1")
+    monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-4b")
+    profile = profile_dataset("tablepilot_demo_sales.xlsx", DEMO)
+
+    assert profile["local_ai"]["provider"] == "openai-compatible"
+    assert profile["local_ai"]["status"] == "unavailable"
+    assert profile["executive_brief"]["headline"]
+
+
+def test_local_ai_guardrail_rejects_unknown_metric_reference():
+    profile = profile_dataset("time_series_demo.txt", DEMO)
+    result = validate_local_ai_summary("metric_d is volatile but metric_a is stable.", profile)
+
+    assert result["ok"] is False
+    assert "metric_d" in result["reason"]
 
 
 def test_markdown_report_endpoint():

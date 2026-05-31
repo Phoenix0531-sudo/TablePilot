@@ -12,18 +12,18 @@ QToolBar {
     border: none;
     border-bottom: 1px solid #e5e5ea;
     spacing: 2px;
-    padding: 5px 12px;
+    padding: 3px 12px;
 }
 
 QToolButton {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 9px;
-    padding: 4px 9px;
+    border-radius: 8px;
+    padding: 3px 9px;
     font-size: 13px;
     font-weight: 500;
     color: #1d1d1f;
-    min-height: 24px;
+    min-height: 22px;
 }
 
 QToolButton:hover {
@@ -52,6 +52,11 @@ QLabel#chartTitle {
 QLabel#chartSubtitle, QLabel#fieldLabel {
     color: #6e6e73;
     font-size: 12px;
+}
+
+QComboBox#sheetSelector {
+    min-height: 26px;
+    max-height: 28px;
 }
 
 QFrame#heroPanel {
@@ -159,11 +164,6 @@ QPushButton#suggestionButton {
     border: 1px solid #d1d1d6;
     border-radius: 12px;
     padding: 7px 10px;
-}
-
-QPushButton#suggestionButton:hover {
-    background: #f5f5f7;
-    border-color: #b8b8bd;
 }
 
 QPushButton#suggestionButton:disabled {

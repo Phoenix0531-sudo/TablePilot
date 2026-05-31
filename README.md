@@ -5,7 +5,7 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-TablePilot is a local-first desktop workbench for turning Excel, CSV, and TXT tables into explainable data profiles, quality scores, analysis plans, and visual summaries.
+TablePilot is a local-first desktop workbench for turning messy Excel, CSV, and TXT tables into explainable data profiles, quality scores, analysis plans, chart recommendations, and exportable reports.
 
 It modernizes an older Qt statistical analysis project into a hybrid C++/Python portfolio project: the desktop experience is built with Qt/C++, while a Dockerized FastAPI service handles parsing, profiling, planning, report generation, and API-level tests.
 
@@ -14,11 +14,13 @@ It modernizes an older Qt statistical analysis project into a hybrid C++/Python 
 Most small spreadsheet utilities assume a fixed table shape or a single demo file. TablePilot is designed for messier real-world files:
 
 - different row and column counts
-- Excel, CSV, and TXT inputs
-- delimiter detection for text-like tables
+- Excel workbooks with multiple sheets
+- CSV/TXT files with comma, tab, semicolon, pipe, or whitespace delimiters
+- non-first-row headers, empty rows, empty columns, duplicate fields, and total rows
 - schema inference instead of hard-coded columns
-- quality scoring before analysis
+- quality scoring and repair planning before analysis
 - explainable analysis planning instead of opaque output
+- optional local Ollama wording layer with deterministic evidence as the source of truth
 - Chinese/English desktop UI
 
 ## Product Name
@@ -27,12 +29,16 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 
 ## Highlights
 
-- **Dynamic table parsing** for Excel, CSV, and TXT files.
+- **Messy Table Autopilot** for Excel, CSV, and TXT files, including delimiter, encoding, header-row, empty-structure, summary-row, and multi-sheet handling.
 - **Schema inference** for numeric, date, category, text, empty, and high-cardinality fields.
-- **Data quality scoring** using missing values, duplicates, anomalies, sample size, and analyzability.
-- **Analysis Planner** that recommends next steps based on schema, trends, correlations, and anomalies.
-- **Desktop-native Qt UI** with dynamic preview tables, charts, profile cards, and a bilingual insight panel.
+- **Data Quality Repair Plan** using missing values, duplicates, duplicate fields, anomalies, sample size, and analyzability.
+- **Analysis Planner** that recommends next steps based on schema roles, trends, correlations, anomalies, and quality risks.
+- **Insight Cards** that package findings into user-facing cards with evidence and suggested actions.
+- **Dynamic Chart Studio** with recommended trend and distribution views, metric switching, generated chart subtitles, and professional empty states.
+- **Session and Report System** with profile IDs, generation time, Markdown reports, HTML reports, and desktop report export.
+- **Desktop-native Qt UI** with dynamic preview tables, sheet switching, charts, profile cards, and a bilingual insight panel.
 - **Local-first architecture**: the Python analysis service runs locally through Docker.
+- **Optional Ollama support**: local LLM wording can be enabled without making the LLM authoritative.
 - **Deterministic agent-style API** for question answering over loaded datasets.
 - **CI coverage** for parser behavior, API endpoints, Docker build, and package metadata.
 - **Windows release script** for building a distributable desktop package.
@@ -48,11 +54,13 @@ Qt/C++ Desktop Client
       v
 FastAPI Analysis Service
       |
-      +--> Parser and schema inference
-      +--> Quality scoring
+      +--> Messy table parser and sheet selector
+      +--> Schema inference and semantic roles
+      +--> Quality scoring and repair plan
       +--> Trends, correlations, anomalies
-      +--> Analysis planner
-      +--> Markdown report and agent-style answers
+      +--> Insight cards and analysis planner
+      +--> Markdown / HTML reports and agent-style answers
+      +--> Optional Ollama wording layer
 ```
 
 ## Repository Structure
@@ -62,7 +70,7 @@ Statistical_Analysis/          Qt/C++ desktop client
 analysis_service/              FastAPI analysis service
 analysis_service/tests/        Backend tests and fixtures
 config/                        Product config and bilingual UI copy
-demo/                          Demo workbook for manual review
+demo/                          Demo workbook, messy CSV, and time-series TXT files
 packaging/                     Windows release scripts
 site/                          GitHub Pages showcase
 qss/                           Desktop theme
@@ -88,11 +96,16 @@ Recommended kit:
 Qt 6.11.1 MinGW 64-bit
 ```
 
-Demo workbook:
+Demo files:
 
 ```text
 demo/tablepilot_demo_sales.xlsx
+demo/multi_sheet_operations.xlsx
+demo/quality_issues_demo.csv
+demo/time_series_demo.txt
 ```
+
+`tablepilot_demo_sales.xlsx` is the primary happy-path workbook. `multi_sheet_operations.xlsx` validates workbook sheet switching. `quality_issues_demo.csv` is intentionally messy and exercises the repair-plan flow. `time_series_demo.txt` validates whitespace-delimited TXT parsing and trend planning.
 
 ## API Smoke Test
 
@@ -114,6 +127,44 @@ Invoke-RestMethod `
 python -m pip install -r analysis_service/requirements-dev.txt
 $env:PYTHONPATH = "$PWD\analysis_service"
 python -m pytest -q analysis_service\tests
+```
+
+If Windows blocks pytest's default temp directory, use a project-local temp folder:
+
+```powershell
+New-Item -ItemType Directory -Force .tmp | Out-Null
+python -m pytest -q analysis_service\tests --basetemp .tmp\pytest
+```
+
+## Local AI / Ollama
+
+The analysis engine is deterministic by default. Ollama is optional and only rewrites evidence-grounded summaries.
+
+```powershell
+$env:TABLEPILOT_ENABLE_OLLAMA = "1"
+$env:OLLAMA_MODEL = "qwen2.5:1.5b"
+$env:OLLAMA_URL = "http://127.0.0.1:11434/api/generate"
+docker compose up --build
+```
+
+If Ollama is disabled or unavailable, TablePilot continues to run with deterministic analysis and reports the local AI status in the response.
+
+## Report and Session APIs
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:8000/api/report/markdown `
+  -ContentType "application/json" `
+  -Body '{"filename":"tablepilot_demo_sales.xlsx"}'
+```
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:8000/api/session/export `
+  -ContentType "application/json" `
+  -Body '{"filename":"tablepilot_demo_sales.xlsx"}'
 ```
 
 ## Windows Release Package
@@ -155,8 +206,9 @@ The current desktop UI already supports Chinese/English switching. These config 
 ## Roadmap
 
 - Add drag-and-drop welcome screen and recent files.
-- Add user-selectable chart dimensions and chart types.
-- Add structured report export from the desktop UI.
+- Add more chart types: scatter, box plot, heatmap, and segment comparison.
+- Add one-click cleaned-data export after repair-plan review.
+- Add packaged Ollama smoke-test mode for local model validation.
 - Add screenshot-backed project page after final UI polish.
 - Add GitHub Release automation for Windows packages.
 

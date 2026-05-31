@@ -3,7 +3,7 @@
 Repository description:
 
 ```text
-TablePilot：本地优先的表格分析工作台，把 Excel/CSV/TXT 转化为可解释的数据画像、质量评分和分析规划。 | Local-first table analysis workbench for explainable profiling, quality scoring, and analysis planning over Excel/CSV/TXT files.
+TablePilot：本地优先的复杂表格智能分析工作台，把混乱 Excel/CSV/TXT 转化为质量修复计划、洞察卡片和可解释报告。 | Local-first messy table analysis workbench for repair plans, insight cards, and explainable reports over Excel/CSV/TXT files.
 ```
 
 Website:
@@ -25,6 +25,11 @@ data-profiling
 schema-inference
 data-quality
 analysis-planner
+messy-data
+data-quality-repair
+insight-cards
+ollama
+local-ai
 executive-brief
 desktop-app
 visualization

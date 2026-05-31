@@ -1,7 +1,7 @@
 {
   "product_name": "TablePilot",
-  "eyebrow": "本地优先数据工作台",
-  "subtitle": "把 Excel、CSV 和 TXT 表格转化为可解释的数据画像、质量评分和分析规划。",
+  "eyebrow": "本地优先复杂表格智能分析",
+  "subtitle": "把混乱表格转化为质量修复计划、洞察卡片和可解释报告。",
   "open_excel": "打开 Excel",
   "open_text": "打开文本",
   "profile": "数据画像",
@@ -12,6 +12,11 @@
   "data_preview": "数据预览",
   "numeric_profile": "数值画像",
   "analysis_panel": "洞察面板",
+  "insight_cards": "洞察卡片",
+  "repair_plan": "数据质量修复计划",
+  "recommended_views": "推荐视图",
+  "local_ai": "本地 AI 层",
+  "export_report": "导出报告",
   "service_connected": "本地分析服务已连接。",
   "service_offline": "本地分析服务未连接。",
   "demo_dataset": "demo/tablepilot_demo_sales.xlsx"

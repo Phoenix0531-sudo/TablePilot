@@ -1,7 +1,7 @@
 {
   "product_name": "TablePilot",
-  "eyebrow": "LOCAL-FIRST DATA WORKBENCH",
-  "subtitle": "A desktop workbench that turns spreadsheets and table-like files into explainable analysis.",
+  "eyebrow": "LOCAL-FIRST MESSY TABLE AUTOPILOT",
+  "subtitle": "A desktop workbench that turns messy spreadsheets and table-like files into repair plans, insight cards, and explainable reports.",
   "open_excel": "Open Excel",
   "open_text": "Open Text",
   "profile": "Profile",
@@ -12,6 +12,11 @@
   "data_preview": "Data Preview",
   "numeric_profile": "Numeric Profile",
   "analysis_panel": "Analysis Panel",
+  "insight_cards": "Insight Cards",
+  "repair_plan": "Data Quality Repair Plan",
+  "recommended_views": "Recommended Views",
+  "local_ai": "Local AI Layer",
+  "export_report": "Export report",
   "service_connected": "Analysis service is connected.",
   "service_offline": "Analysis service is offline.",
   "demo_dataset": "demo/tablepilot_demo_sales.xlsx"

@@ -1,8 +1,10 @@
 {
   "product_name": "TablePilot",
-  "tagline": "Local-first table analysis workbench",
+  "tagline": "Local-first messy table analysis workbench",
   "default_language": "en",
   "analysis_service_url": "http://127.0.0.1:8000",
   "demo_dataset": "demo/tablepilot_demo_sales.xlsx",
+  "messy_demo_dataset": "demo/quality_issues_demo.csv",
+  "time_series_demo_dataset": "demo/time_series_demo.txt",
   "supported_formats": ["xlsx", "xls", "csv", "txt"]
 }

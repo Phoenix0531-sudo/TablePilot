@@ -30,6 +30,7 @@ venv/
 # Local Codex build scratch
 .codex-qt-build/
 .codex-qt-release/
+.tmp/
 .release-build/
 dist/
 release/

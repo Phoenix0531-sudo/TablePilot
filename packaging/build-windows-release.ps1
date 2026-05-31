@@ -58,6 +58,7 @@ Copy-Item -LiteralPath (Join-Path $Root "analysis_service\requirements.txt") -De
 Copy-Item -LiteralPath (Join-Path $Root "analysis_service\app") -Destination $ServiceDir -Recurse
 Copy-Item -LiteralPath (Join-Path $Root "demo") -Destination $PackageDir -Recurse
 Copy-Item -LiteralPath (Join-Path $Root "config") -Destination $PackageDir -Recurse
+Copy-Item -LiteralPath (Join-Path $Root "qss") -Destination $PackageDir -Recurse
 
 Compress-Archive -LiteralPath $PackageDir -DestinationPath (Join-Path $Root "dist\TablePilot.zip") -Force
 Write-Host "Release package created: $Root\dist\TablePilot.zip"

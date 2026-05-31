@@ -3,6 +3,7 @@
 #include <QAbstractItemView>
 #include <QCoreApplication>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>     // 包含文件对话框类的头文件
 #include <QFileInfo>
 #include <QHttpMultiPart>
@@ -23,6 +24,7 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QFrame>
+#include <QFont>
 #include <QTimer>
 #include <QSizePolicy>
 #include <limits>
@@ -51,9 +53,13 @@ MainWindow::MainWindow(QWidget *parent) :
     distributionChartTitleLabel(nullptr),
     distributionChartSubtitleLabel(nullptr),
     metricSelectorLabel(nullptr),
+    sheetSelectorLabel(nullptr),
     suggestTrendButton(nullptr),
     suggestDistributionButton(nullptr),
     suggestQualityButton(nullptr),
+    exportReportButton(nullptr),
+    sheetSelector(nullptr),
+    updatingSheetSelector(false),
     useChinese(false),
     isExit(false), // 初始化是否退出标志为false
     SaveType(0)   // 初始化保存类型为0
@@ -90,7 +96,7 @@ void MainWindow::createToolBar(){// 创建工具栏
     ui->mainToolBar->setMovable(false); // 设置工具栏不可移动
     ui->mainToolBar->setIconSize(QSize(1, 1)); // 文本化命令栏，避免旧式小图标干扰
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextOnly);
-    ui->mainToolBar->setFixedHeight(40);
+    ui->mainToolBar->setFixedHeight(36);
 
     ui->mainToolBar->addAction(m_pAction1);
     ui->mainToolBar->addAction(m_pAction2);
@@ -108,8 +114,8 @@ void MainWindow::createToolBar(){// 创建工具栏
     ui->mainToolBar->addAction(m_pAction7);
 
     for (QToolButton *button : ui->mainToolBar->findChildren<QToolButton*>()) {
-        button->setMinimumWidth(76);
-        button->setMaximumHeight(30);
+        button->setMinimumWidth(72);
+        button->setMaximumHeight(28);
     }
 }
 
@@ -256,9 +262,12 @@ void MainWindow::createInsightPanel()
     suggestDistributionButton->setObjectName(QStringLiteral("suggestionButton"));
     suggestQualityButton = new QPushButton(actionsPanel);
     suggestQualityButton->setObjectName(QStringLiteral("suggestionButton"));
+    exportReportButton = new QPushButton(actionsPanel);
+    exportReportButton->setObjectName(QStringLiteral("suggestionButton"));
     actionsLayout->addWidget(suggestTrendButton);
     actionsLayout->addWidget(suggestDistributionButton);
     actionsLayout->addWidget(suggestQualityButton);
+    actionsLayout->addWidget(exportReportButton);
     panelLayout->addWidget(actionsPanel);
 
     connect(suggestTrendButton, &QPushButton::clicked, this, [this]() {
@@ -273,6 +282,27 @@ void MainWindow::createInsightPanel()
     });
     connect(suggestQualityButton, &QPushButton::clicked, this, [this]() {
         FocusDataQuality();
+    });
+    connect(exportReportButton, &QPushButton::clicked, this, [this]() {
+        if (lastProfile.isEmpty()) {
+            return;
+        }
+        QString filename = QFileDialog::getSaveFileName(
+            this,
+            Text(QStringLiteral("Export session report"), QStringLiteral("导出会话报告")),
+            QStringLiteral("tablepilot-report.html"),
+            Text(QStringLiteral("HTML report (*.html);;Markdown report (*.md)"), QStringLiteral("HTML 报告 (*.html);;Markdown 报告 (*.md)"))
+        );
+        if (filename.isEmpty()) {
+            return;
+        }
+        QString content = insightText ? (filename.endsWith(QStringLiteral(".md"), Qt::CaseInsensitive) ? insightText->toPlainText() : insightText->toHtml()) : QString();
+        QFile file(filename);
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            file.write(content.toUtf8());
+            file.close();
+            statusBar()->showMessage(Text(QStringLiteral("Report exported"), QStringLiteral("报告已导出")), 4000);
+        }
     });
 
     insightDock->setWidget(panel);
@@ -298,8 +328,23 @@ void MainWindow::createChartHeaders()
         copy->addWidget(trendChartTitleLabel);
         copy->addWidget(trendChartSubtitleLabel);
         layout->addLayout(copy, 1);
+        sheetSelectorLabel = new QLabel(header);
+        sheetSelectorLabel->setObjectName(QStringLiteral("fieldLabel"));
+        sheetSelector = new QComboBox(header);
+        sheetSelector->setObjectName(QStringLiteral("sheetSelector"));
+        sheetSelector->setMinimumWidth(140);
+        sheetSelector->setVisible(false);
+        sheetSelectorLabel->setVisible(false);
+        layout->addWidget(sheetSelectorLabel);
+        layout->addWidget(sheetSelector);
         layout->addWidget(ui->pushButton);
         trendLayout->insertWidget(0, header);
+        connect(sheetSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+            if (updatingSheetSelector || currentFilePath.isEmpty() || !sheetSelector || sheetSelector->currentIndex() < 0) {
+                return;
+            }
+            AnalyzeFileWithService(currentFilePath, sheetSelector->currentText());
+        });
     }
 
     QHBoxLayout *distributionControls = findChild<QHBoxLayout*>(QStringLiteral("horizontalLayout"));
@@ -357,9 +402,11 @@ void MainWindow::ApplyLanguage()
         if (distributionChartTitleLabel) distributionChartTitleLabel->setText(QStringLiteral("分布视图"));
         if (distributionChartSubtitleLabel) distributionChartSubtitleLabel->setText(QStringLiteral("查看单个指标在各条记录中的分布。"));
         if (metricSelectorLabel) metricSelectorLabel->setText(QStringLiteral("指标"));
+        if (sheetSelectorLabel) sheetSelectorLabel->setText(QStringLiteral("工作表"));
         if (suggestTrendButton) suggestTrendButton->setText(QStringLiteral("查看趋势"));
         if (suggestDistributionButton) suggestDistributionButton->setText(QStringLiteral("查看分布"));
         if (suggestQualityButton) suggestQualityButton->setText(QStringLiteral("复核质量"));
+        if (exportReportButton) exportReportButton->setText(QStringLiteral("导出报告"));
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("本地 AI 数据工作台"));
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("面向复杂表格、销售数据和 TXT/CSV 文件的本地可解释分析工作台。"));
@@ -394,9 +441,11 @@ void MainWindow::ApplyLanguage()
         if (distributionChartTitleLabel) distributionChartTitleLabel->setText(QStringLiteral("Distribution View"));
         if (distributionChartSubtitleLabel) distributionChartSubtitleLabel->setText(QStringLiteral("Inspect one selected metric across records."));
         if (metricSelectorLabel) metricSelectorLabel->setText(QStringLiteral("Metric"));
+        if (sheetSelectorLabel) sheetSelectorLabel->setText(QStringLiteral("Sheet"));
         if (suggestTrendButton) suggestTrendButton->setText(QStringLiteral("Open trend"));
         if (suggestDistributionButton) suggestDistributionButton->setText(QStringLiteral("Open distribution"));
         if (suggestQualityButton) suggestQualityButton->setText(QStringLiteral("Review quality"));
+        if (exportReportButton) exportReportButton->setText(QStringLiteral("Export report"));
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("PRIVATE AI DATA WORKBENCH"));
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."));
@@ -690,6 +739,8 @@ void MainWindow::createStyle() {
     StylePlot(ui->widget);
     StylePlot(ui->widget_2);
     StylePlot(ui->widget_3);
+    RenderEmptyChart(ui->widget, Text(QStringLiteral("Open a data file to generate recommended charts."), QStringLiteral("打开数据文件后生成推荐图表。")));
+    RenderEmptyChart(ui->widget_2, Text(QStringLiteral("Open a data file to review metric distribution."), QStringLiteral("打开数据文件后查看指标分布。")));
 }
 
 void MainWindow::SetStyleSheet(QWidget* pWidget, QString strQSS) {
@@ -718,7 +769,7 @@ void MainWindow::SetStyleSheet(QWidget* pWidget, QString strQSS) {
     qss.close();
 }
 
-void MainWindow::AnalyzeFileWithService(const QString &filePath)
+void MainWindow::AnalyzeFileWithService(const QString &filePath, const QString &sheetName)
 {
     if (!IsAnalysisServiceHealthy()) {
         TryStartAnalysisService();
@@ -733,6 +784,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
         }
     }
 
+    currentFilePath = filePath;
     QFileInfo fileInfo(filePath);
     QFile *file = new QFile(filePath);
     if (!file->open(QIODevice::ReadOnly)) {
@@ -753,7 +805,11 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
     multiPart->append(filePart);
 
     QNetworkAccessManager manager;
-    QNetworkRequest request(QUrl("http://127.0.0.1:8000/api/analyze-upload"));
+    QString url = QStringLiteral("http://127.0.0.1:8000/api/analyze-upload");
+    if (!sheetName.trimmed().isEmpty()) {
+        url += QStringLiteral("?sheet=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(sheetName)));
+    }
+    QNetworkRequest request{QUrl(url)};
     QNetworkReply *reply = manager.post(request, multiPart);
     multiPart->setParent(reply);
 
@@ -789,6 +845,7 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     lastProfile = root;
     PopulateTableFromService(root);
     ApplyTableQualityDecorations(root);
+    UpdateSheetSelector(root);
     UpdateFieldSelectors(root);
     UpdateOverviewCards(root);
     UpdateRecommendationActions(root);
@@ -805,6 +862,11 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
     QJsonArray rows = preview.value("rows").toArray();
     QJsonArray columns = preview.value("columns").toArray();
     if (rows.isEmpty()) {
+        ui->tableWidget->clear();
+        ui->tableWidget->setRowCount(0);
+        ui->tableWidget->setColumnCount(0);
+        RenderEmptyChart(ui->widget, Text(QStringLiteral("The selected table has no rows to visualize."), QStringLiteral("当前表格没有可展示的数据行。")));
+        RenderEmptyChart(ui->widget_2, Text(QStringLiteral("The selected table has no rows to visualize."), QStringLiteral("当前表格没有可展示的数据行。")));
         return;
     }
 
@@ -852,6 +914,7 @@ void MainWindow::PopulateTableFromService(const QJsonObject &root)
     ui->tableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     PopulateStatsFromService(root);
     RenderDynamicLineChart();
+    RenderDynamicBarChart();
 }
 
 void MainWindow::ApplyTableQualityDecorations(const QJsonObject &root)
@@ -914,6 +977,29 @@ void MainWindow::UpdateFieldSelectors(const QJsonObject &root)
         }
     }
     ui->comboBox->blockSignals(false);
+}
+
+void MainWindow::UpdateSheetSelector(const QJsonObject &root)
+{
+    if (!sheetSelector || !sheetSelectorLabel) {
+        return;
+    }
+    QJsonObject source = root.value("source").toObject();
+    QJsonArray sheets = source.value("sheets").toArray();
+    QString activeSheet = source.value("sheet_name").toString();
+    const bool hasMultipleSheets = sheets.size() > 1;
+    updatingSheetSelector = true;
+    sheetSelector->clear();
+    for (const QJsonValue &value : sheets) {
+        sheetSelector->addItem(value.toString());
+    }
+    int activeIndex = sheetSelector->findText(activeSheet);
+    if (activeIndex >= 0) {
+        sheetSelector->setCurrentIndex(activeIndex);
+    }
+    sheetSelector->setVisible(hasMultipleSheets);
+    sheetSelectorLabel->setVisible(hasMultipleSheets);
+    updatingSheetSelector = false;
 }
 
 void MainWindow::PopulateStatsFromService(const QJsonObject &root)
@@ -1067,6 +1153,12 @@ void MainWindow::UpdateDefaultOverviewCards(const QString &serviceState)
                                         .arg(Text(QStringLiteral("Next best analysis"), QStringLiteral("下一步分析")))
                                         .arg(Text(QStringLiteral("Open a table to start"), QStringLiteral("打开表格后开始"))));
     }
+    if (sheetSelector) {
+        sheetSelector->setVisible(false);
+    }
+    if (sheetSelectorLabel) {
+        sheetSelectorLabel->setVisible(false);
+    }
     UpdateRecommendationActions(QJsonObject());
 }
 
@@ -1089,6 +1181,10 @@ void MainWindow::UpdateRecommendationActions(const QJsonObject &root)
             ? Text(QStringLiteral("Review risks"), QStringLiteral("复核风险"))
             : Text(QStringLiteral("Review quality"), QStringLiteral("复核质量"));
         suggestQualityButton->setText(label);
+    }
+    if (exportReportButton) {
+        exportReportButton->setEnabled(hasData);
+        exportReportButton->setText(Text(QStringLiteral("Export report"), QStringLiteral("导出报告")));
     }
 }
 
@@ -1113,7 +1209,7 @@ QString MainWindow::SemanticTypeText(const QString &type) const
     if (type == "category") return QStringLiteral("分类");
     if (type == "text") return QStringLiteral("文本");
     if (type == "empty") return QStringLiteral("空字段");
-    if (type == "high-cardinality") return QStringLiteral("高基数字段");
+    if (type == "high_cardinality") return QStringLiteral("高基数字段");
     return type;
 }
 
@@ -1255,6 +1351,84 @@ QString MainWindow::InsightText(const QString &value, const QJsonObject &root) c
     return value;
 }
 
+QString MainWindow::CardTitleText(const QJsonObject &card) const
+{
+    if (!useChinese) {
+        return card.value("title").toString();
+    }
+    const QString id = card.value("id").toString();
+    if (id == "dataset_fingerprint") return QStringLiteral("数据类型识别");
+    if (id == "quality_score") return QStringLiteral("数据质量评分");
+    if (id == "top_trend") return QStringLiteral("关键趋势");
+    if (id == "top_correlation") return QStringLiteral("字段关系");
+    if (id == "anomaly_review") return QStringLiteral("异常复核");
+    if (id == "distribution_ready") return QStringLiteral("分布分析可用");
+    if (id == "segment_opportunity") return QStringLiteral("分组对比机会");
+    return card.value("title").toString();
+}
+
+QString MainWindow::CardSummaryText(const QJsonObject &card) const
+{
+    if (!useChinese) {
+        return card.value("summary").toString();
+    }
+    const QString id = card.value("id").toString();
+    if (id == "dataset_fingerprint") return QStringLiteral("系统已根据字段名称、字段类型和质量信号判断数据用途。");
+    if (id == "quality_score") return QStringLiteral("质量评分综合考虑缺失、重复、异常值和可分析字段比例。");
+    if (id == "top_trend") return QStringLiteral("检测到一个变化最明显的数值指标，建议优先查看趋势图。");
+    if (id == "top_correlation") return QStringLiteral("检测到数值字段之间存在较明显的相关关系，需要结合业务语境复核。");
+    if (id == "anomaly_review") return QStringLiteral("部分单元格偏离字段分布较远，建议在生成结论前先复核。");
+    if (id == "distribution_ready") return QStringLiteral("已检测到可用于分布分析的数值指标。");
+    if (id == "segment_opportunity") return QStringLiteral("分类维度和关键指标可以组成分组对比视图。");
+    return card.value("summary").toString();
+}
+
+QString MainWindow::RepairTitleText(const QJsonObject &item) const
+{
+    if (!useChinese) {
+        return item.value("title").toString();
+    }
+    const QString id = item.value("id").toString();
+    if (id == "empty_structure") return QStringLiteral("确认空行空列清理");
+    if (id == "duplicate_columns") return QStringLiteral("复核重复字段");
+    if (id == "missing_values") return QStringLiteral("处理缺失值");
+    if (id == "duplicate_rows") return QStringLiteral("复核重复记录");
+    if (id == "anomaly_review") return QStringLiteral("复核异常候选");
+    if (id == "sample_size") return QStringLiteral("样本量偏小");
+    if (id == "quality_clear") return QStringLiteral("暂无阻塞性质量问题");
+    return item.value("title").toString();
+}
+
+QString MainWindow::RepairRecommendationText(const QJsonObject &item) const
+{
+    if (!useChinese) {
+        return item.value("recommendation").toString();
+    }
+    const QString id = item.value("id").toString();
+    if (id == "empty_structure") return QStringLiteral("分析服务已自动排除全空行和全空列，但仍建议确认这些区域不是隐藏说明或二级表头。");
+    if (id == "duplicate_columns") return QStringLiteral("建议合并或删除重复字段，避免相关性和字段数量被误读。");
+    if (id == "missing_values") return QStringLiteral("建议根据字段类型选择填补、排除或保留缺失值，并在报告里说明影响范围。");
+    if (id == "duplicate_rows") return QStringLiteral("建议确认重复行是合法重复事件还是导入错误。");
+    if (id == "anomaly_review") return QStringLiteral("建议先检查高偏离值，再使用均值、趋势或分布结论。");
+    if (id == "sample_size") return QStringLiteral("当前样本量较小，适合探索，不适合做最终统计结论。");
+    if (id == "quality_clear") return QStringLiteral("可以继续做趋势、分组和关系分析。");
+    return item.value("recommendation").toString();
+}
+
+QString MainWindow::ViewLabelText(const QJsonObject &view) const
+{
+    if (!useChinese) {
+        return view.value("label").toString();
+    }
+    const QString id = view.value("id").toString();
+    if (id == "trend") return QStringLiteral("趋势视图");
+    if (id == "segment") return QStringLiteral("分组对比");
+    if (id == "correlation") return QStringLiteral("相关性视图");
+    if (id == "distribution") return QStringLiteral("分布视图");
+    if (id == "quality") return QStringLiteral("质量复核");
+    return view.value("label").toString();
+}
+
 QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
 {
     QJsonObject dataset = root.value("dataset").toObject();
@@ -1391,6 +1565,13 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     QJsonArray anomalies = root.value("anomalies").toArray();
     QJsonArray recommendations = root.value("analysis_recommendations").toArray();
     QJsonArray charts = root.value("chart_recommendations").toArray();
+    QJsonArray insightCards = root.value("insight_cards").toArray();
+    QJsonArray repairPlan = root.value("quality_repair_plan").toArray();
+    QJsonArray recommendedViews = root.value("recommended_views").toArray();
+    QJsonObject fingerprint = root.value("dataset_fingerprint").toObject();
+    QJsonObject diagnostics = root.value("table_diagnostics").toObject();
+    QJsonObject localAi = root.value("local_ai").toObject();
+    QJsonObject source = root.value("source").toObject();
 
     auto pill = [](const QString &label, const QString &value) {
         return QStringLiteral("<span class='pill'><b>%1</b> %2</span>")
@@ -1414,7 +1595,11 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
         ".value{font-size:20px;font-weight:650;color:#007aff;}"
         ".pill{display:inline-block;border:1px solid #e5e5ea;border-radius:999px;padding:4px 8px;margin:3px;background:#f5f5f7;}"
         ".callout{border:1px solid #d2e7ff;background:#f5faff;border-radius:12px;padding:10px 12px;margin:10px 0;}"
+        ".warn{border-color:#ffd6a5;background:#fff8ec;}"
+        ".ok{border-color:#b7ebc6;background:#f3fff6;}"
         ".step{border:1px solid #ececec;background:#ffffff;margin:8px 0;padding:9px 11px;border-radius:12px;}"
+        ".cardTitle{font-weight:650;margin-bottom:4px;}"
+        ".small{font-size:12px;color:#6e6e73;}"
         "li{margin:4px 0;}"
         "code{background:#f5f5f7;padding:2px 4px;border-radius:5px;}"
         "</style>"
@@ -1429,6 +1614,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 + pill(label(QStringLiteral("Columns"), QStringLiteral("列数")), QString::number(dataset.value("columns").toInt()))
                 + pill(label(QStringLiteral("Quality"), QStringLiteral("质量")), QStringLiteral("%1/100").arg(quality.value("score").toInt()))
                 + pill(label(QStringLiteral("Confidence"), QStringLiteral("置信度")), QualityLevelText(quality.value("level").toString()))
+                + pill(label(QStringLiteral("Messy score"), QStringLiteral("复杂度")), QStringLiteral("%1/100").arg(diagnostics.value("messy_score").toInt()))
                 + QStringLiteral("</div>");
 
     if (!brief.isEmpty()) {
@@ -1458,6 +1644,74 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
             }
             html << QStringLiteral("</ul>");
         }
+    }
+
+    if (!fingerprint.isEmpty()) {
+        QString fingerprintTitle = useChinese
+            ? QStringLiteral("数据类型：%1").arg(fingerprint.value("label").toString() == "Sales or operations table" ? QStringLiteral("销售/运营表") : fingerprint.value("label").toString())
+            : QStringLiteral("Dataset type: %1").arg(fingerprint.value("label").toString());
+        QString sourceLine = useChinese
+            ? QStringLiteral("解析方式：%1；工作表：%2；编码：%3；分隔符：%4")
+                .arg(source.value("parser").toString("-"))
+                .arg(source.value("sheet_name").toString("-"))
+                .arg(source.value("encoding").toString("-"))
+                .arg(source.value("delimiter").toString("-"))
+            : QStringLiteral("Parser: %1; sheet: %2; encoding: %3; delimiter: %4")
+                .arg(source.value("parser").toString("-"))
+                .arg(source.value("sheet_name").toString("-"))
+                .arg(source.value("encoding").toString("-"))
+                .arg(source.value("delimiter").toString("-"));
+        html << QStringLiteral("<div class='callout ok'><b>%1</b><br><span class='muted'>%2</span></div>")
+                    .arg(fingerprintTitle.toHtmlEscaped())
+                    .arg(sourceLine.toHtmlEscaped());
+    }
+
+    if (!insightCards.isEmpty()) {
+        html << QStringLiteral("<h2>%1</h2><div class='grid'>").arg(label(QStringLiteral("Insight Cards"), QStringLiteral("洞察卡片")));
+        for (int i = 0; i < insightCards.size() && i < 6; ++i) {
+            QJsonObject card = insightCards.at(i).toObject();
+            html << QStringLiteral("<div class='card'><div class='cardTitle'>%1</div><p>%2</p><div class='small'>%3</div></div>")
+                        .arg(CardTitleText(card).toHtmlEscaped())
+                        .arg(CardSummaryText(card).toHtmlEscaped())
+                        .arg(card.value("evidence").toString().toHtmlEscaped());
+        }
+        html << QStringLiteral("</div>");
+    }
+
+    if (!repairPlan.isEmpty()) {
+        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Data Quality Repair Plan"), QStringLiteral("数据质量修复计划")));
+        for (int i = 0; i < repairPlan.size() && i < 5; ++i) {
+            QJsonObject item = repairPlan.at(i).toObject();
+            QString klass = item.value("severity").toString() == "info" ? QStringLiteral("callout ok") : QStringLiteral("callout warn");
+            html << QStringLiteral("<div class='%1'><b>%2</b><br>%3<br><span class='muted'>%4</span></div>")
+                        .arg(klass)
+                        .arg(RepairTitleText(item).toHtmlEscaped())
+                        .arg(RepairRecommendationText(item).toHtmlEscaped())
+                        .arg(item.value("impact").toString().toHtmlEscaped());
+        }
+    }
+
+    if (!recommendedViews.isEmpty()) {
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Recommended Views"), QStringLiteral("推荐视图")));
+        for (int i = 0; i < recommendedViews.size() && i < 5; ++i) {
+            QJsonObject view = recommendedViews.at(i).toObject();
+            html << QStringLiteral("<li><b>%1</b> <span class='muted'>%2: %3 → %4</span></li>")
+                        .arg(ViewLabelText(view).toHtmlEscaped())
+                        .arg(view.value("chart_type").toString().toHtmlEscaped())
+                        .arg(view.value("x").toString("-").toHtmlEscaped())
+                        .arg(view.value("y").toString("-").toHtmlEscaped());
+        }
+        html << QStringLiteral("</ul>");
+    }
+
+    if (!localAi.isEmpty()) {
+        QString status = localAi.value("status").toString();
+        QString summary = localAi.value("summary").toString();
+        html << QStringLiteral("<h2>%1</h2><div class='callout'><b>%2</b><br><span class='muted'>%3</span>%4</div>")
+                    .arg(label(QStringLiteral("Local AI Layer"), QStringLiteral("本地 AI 层")))
+                    .arg(label(QStringLiteral("Ollama status"), QStringLiteral("Ollama 状态")).toHtmlEscaped() + QStringLiteral(": ") + status.toHtmlEscaped())
+                    .arg(localAi.value("guardrail").toString().toHtmlEscaped())
+                    .arg(summary.isEmpty() ? QString() : QStringLiteral("<p>%1</p>").arg(summary.toHtmlEscaped()));
     }
 
     if (!plan.isEmpty()) {
@@ -1623,18 +1877,20 @@ void MainWindow::RenderDynamicLineChart()
 {
     QCustomPlot *plot = ui->widget;
     if (!plot || ui->tableWidget->rowCount() == 0) {
+        RenderEmptyChart(plot, Text(QStringLiteral("Open a data file to generate recommended charts."), QStringLiteral("打开数据文件后生成推荐图表。")));
         return;
     }
     plot->clearGraphs();
+    plot->clearPlottables();
     plot->clearItems();
     StylePlot(plot);
     plot->legend->setVisible(true);
-    QList<int> columns = NumericTableColumns(5);
+    QList<int> columns = NumericTableColumns(3);
     if (columns.isEmpty()) {
         if (trendChartSubtitleLabel) {
             trendChartSubtitleLabel->setText(Text(QStringLiteral("No numeric metric is available for trend visualization."), QStringLiteral("当前数据没有可用于趋势图的数值指标。")));
         }
-        plot->replot();
+        RenderEmptyChart(plot, Text(QStringLiteral("No numeric metric is available for trend visualization."), QStringLiteral("当前数据没有可用于趋势图的数值指标。")));
         return;
     }
     if (trendChartSubtitleLabel) {
@@ -1677,6 +1933,7 @@ void MainWindow::RenderDynamicBarChart()
 {
     QCustomPlot *plot = ui->widget_2;
     if (!plot || ui->tableWidget->rowCount() == 0) {
+        RenderEmptyChart(plot, Text(QStringLiteral("Open a data file to review metric distribution."), QStringLiteral("打开数据文件后查看指标分布。")));
         return;
     }
     plot->clearPlottables();
@@ -1695,11 +1952,15 @@ void MainWindow::RenderDynamicBarChart()
         if (distributionChartSubtitleLabel) {
             distributionChartSubtitleLabel->setText(Text(QStringLiteral("No numeric metric is available for distribution review."), QStringLiteral("当前数据没有可用于分布图的数值指标。")));
         }
-        plot->replot();
+        RenderEmptyChart(plot, Text(QStringLiteral("No numeric metric is available for distribution review."), QStringLiteral("当前数据没有可用于分布图的数值指标。")));
         return;
     }
 
     QVector<double> values = NumericColumnValues(columns.first());
+    if (values.isEmpty()) {
+        RenderEmptyChart(plot, Text(QStringLiteral("The selected metric has no numeric values to chart."), QStringLiteral("当前指标没有可绘制的数值。")));
+        return;
+    }
     QVector<double> ticks = NumericRowIndex(values.size());
     QCPBars *bars = new QCPBars(plot->xAxis, plot->yAxis);
     bars->setData(ticks, values);
@@ -1721,6 +1982,33 @@ void MainWindow::RenderDynamicBarChart()
     plot->replot();
 }
 
+void MainWindow::RenderEmptyChart(QCustomPlot *plot, const QString &message)
+{
+    if (!plot) {
+        return;
+    }
+    plot->clearGraphs();
+    plot->clearPlottables();
+    plot->clearItems();
+    StylePlot(plot);
+    plot->legend->setVisible(false);
+    plot->xAxis->setVisible(false);
+    plot->yAxis->setVisible(false);
+    plot->xAxis2->setVisible(false);
+    plot->yAxis2->setVisible(false);
+    QCPItemText *text = new QCPItemText(plot);
+    text->position->setType(QCPItemPosition::ptAxisRectRatio);
+    text->position->setCoords(0.5, 0.5);
+    text->setPositionAlignment(Qt::AlignCenter);
+    text->setTextAlignment(Qt::AlignCenter);
+    text->setText(message);
+    text->setColor(QColor(99, 99, 102));
+    text->setFont(QFont(QStringLiteral("Segoe UI"), 11));
+    plot->xAxis->setRange(0, 1);
+    plot->yAxis->setRange(0, 1);
+    plot->replot();
+}
+
 void MainWindow::FocusDataQuality()
 {
     ui->tableWidget->setFocus();
@@ -1739,6 +2027,10 @@ void MainWindow::StylePlot(QCustomPlot *plot)
     plot->setBackground(QColor(255, 255, 255));
     plot->axisRect()->setBackground(QColor(255, 255, 255));
     plot->axisRect()->setAutoMargins(QCP::msAll);
+    plot->xAxis->setVisible(true);
+    plot->yAxis->setVisible(true);
+    plot->xAxis2->setVisible(false);
+    plot->yAxis2->setVisible(false);
     plot->xAxis->setBasePen(QPen(QColor(142, 142, 147)));
     plot->yAxis->setBasePen(QPen(QColor(142, 142, 147)));
     plot->xAxis->setTickPen(QPen(QColor(199, 199, 204)));

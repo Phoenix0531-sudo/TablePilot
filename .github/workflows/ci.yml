@@ -67,6 +67,12 @@ jobs:
           curl -fsS -X POST http://127.0.0.1:8000/api/report/markdown \
             -H "Content-Type: application/json" \
             -d '{"filename":"tablepilot_demo_sales.xlsx"}' | grep -q "Analysis Plan"
+          curl -fsS -X POST http://127.0.0.1:8000/api/report/html \
+            -H "Content-Type: application/json" \
+            -d '{"filename":"tablepilot_demo_sales.xlsx"}' | grep -q "TablePilot Analysis Report"
+          curl -fsS -X POST http://127.0.0.1:8000/api/session/export \
+            -H "Content-Type: application/json" \
+            -d '{"filename":"multi_sheet_operations.xlsx","sheet":"Detail"}' | grep -q "customer_segment"
 
       - name: Stop service
         if: always()

@@ -7,6 +7,7 @@
 #include <QFrame>
 #include <QLabel>          // 引入QLabel类
 #include <QPushButton>
+#include <QComboBox>
 #include <QTextEdit>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -80,16 +81,21 @@ private:
     QLabel *distributionChartTitleLabel;
     QLabel *distributionChartSubtitleLabel;
     QLabel *metricSelectorLabel;
+    QLabel *sheetSelectorLabel;
     QPushButton *suggestTrendButton;
     QPushButton *suggestDistributionButton;
     QPushButton *suggestQualityButton;
+    QPushButton *exportReportButton;
+    QComboBox *sheetSelector;
     QJsonObject lastProfile;
+    QString currentFilePath;
+    bool updatingSheetSelector;
     bool useChinese;
     bool isExit;        // 是否退出标志
     int  SaveType;      // 保存类型
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件
     void SetStyleSheet(QWidget *pWidget, QString strQSS); // 设置样式表
-    void AnalyzeFileWithService(const QString &filePath);
+    void AnalyzeFileWithService(const QString &filePath, const QString &sheetName = QString());
     void CheckAnalysisService();
     bool IsAnalysisServiceHealthy(int timeoutMs = 2500);
     bool TryStartAnalysisService();
@@ -99,6 +105,7 @@ private:
     void UpdateOverviewCards(const QJsonObject &root);
     void UpdateDefaultOverviewCards(const QString &serviceState);
     void UpdateFieldSelectors(const QJsonObject &root);
+    void UpdateSheetSelector(const QJsonObject &root);
     void UpdateRecommendationActions(const QJsonObject &root);
     void ApplyTableQualityDecorations(const QJsonObject &root);
     QString FormatServiceAnalysis(const QJsonObject &root) const;
@@ -114,12 +121,18 @@ private:
     QString PlanTitle(const QJsonObject &step) const;
     QString PlanReason(const QJsonObject &step) const;
     QString InsightText(const QString &value, const QJsonObject &root) const;
+    QString CardTitleText(const QJsonObject &card) const;
+    QString CardSummaryText(const QJsonObject &card) const;
+    QString RepairTitleText(const QJsonObject &item) const;
+    QString RepairRecommendationText(const QJsonObject &item) const;
+    QString ViewLabelText(const QJsonObject &view) const;
     QList<int> NumericTableColumns(int limit = -1) const;
     QVector<double> NumericColumnValues(int column) const;
     QVector<double> NumericRowIndex(int size) const;
     QString ColumnLabel(int column) const;
     void RenderDynamicLineChart();
     void RenderDynamicBarChart();
+    void RenderEmptyChart(QCustomPlot *plot, const QString &message);
     void FocusDataQuality();
     void StylePlot(QCustomPlot *plot);
 };

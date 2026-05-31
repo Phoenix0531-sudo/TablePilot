@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from app.analysis import load_table_with_metadata, list_datasets, profile_dataset, profile_table, validate_local_ai_summary
+from app.analysis import build_cleaned_table, load_table_with_metadata, list_datasets, profile_dataset, profile_table, validate_local_ai_summary
 from app.main import app
 
 
@@ -180,6 +180,17 @@ def test_local_ai_openai_compatible_unavailable_falls_back(monkeypatch):
     assert profile["executive_brief"]["headline"]
 
 
+def test_local_ai_can_be_requested_per_profile(monkeypatch):
+    monkeypatch.delenv("TABLEPILOT_ENABLE_LOCAL_AI", raising=False)
+    monkeypatch.setenv("TABLEPILOT_LOCAL_AI_PROVIDER", "openai-compatible")
+    monkeypatch.setenv("LOCAL_LLM_BASE_URL", "http://127.0.0.1:1/v1")
+    monkeypatch.setenv("LOCAL_LLM_MODEL", "qwen3-4b")
+    profile = profile_dataset("tablepilot_demo_sales.xlsx", DEMO, local_ai_enabled=True)
+
+    assert profile["local_ai"]["model"] == "qwen3-4b"
+    assert profile["local_ai"]["status"] == "unavailable"
+
+
 def test_local_ai_guardrail_rejects_unknown_metric_reference():
     profile = profile_dataset("time_series_demo.txt", DEMO)
     result = validate_local_ai_summary("metric_d is volatile but metric_a is stable.", profile)
@@ -261,6 +272,46 @@ def test_upload_analysis_endpoint():
     assert body["dataset"]["filename"] == "sales.csv"
     assert body["dataset"]["rows"] == 8
     assert body["preview"]["rows"][0][0].startswith("2026-01-01")
+
+
+def test_cleaned_table_marks_anomalies_and_removes_duplicates():
+    df = pd.DataFrame(
+        {
+            "region": ["East", "East", "West", "West", None],
+            "revenue": [100, 100, None, 9999, 120],
+            "empty": [None, None, None, None, None],
+        }
+    )
+    cleaned, summary = build_cleaned_table(df, "messy.csv")
+
+    assert "empty" not in cleaned.columns
+    assert summary["removed_duplicate_rows"] >= 1
+    assert summary["filled_missing_cells"] >= 1
+    assert summary["cleaned_rows"] <= summary["original_rows"]
+
+
+def test_clean_upload_endpoint_returns_csv():
+    with open(FIXTURES / "missing_values_sample.csv", "rb") as sample:
+        response = client.post(
+            "/api/clean-upload?format=csv",
+            files={"file": ("missing.csv", sample, "text/csv")},
+        )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert b"sales" in response.content
+
+
+def test_clean_upload_endpoint_returns_xlsx():
+    with open(DEMO / "quality_issues_demo.csv", "rb") as sample:
+        response = client.post(
+            "/api/clean-upload?format=xlsx",
+            files={"file": ("quality.csv", sample, "text/csv")},
+        )
+
+    assert response.status_code == 200
+    assert "spreadsheetml.sheet" in response.headers["content-type"]
+    assert response.content.startswith(b"PK")
 
 
 def test_agent_query_endpoint():

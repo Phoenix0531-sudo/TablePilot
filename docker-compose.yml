@@ -7,6 +7,8 @@ services:
       - "8000:8000"
     environment:
       DATA_DIR: /data
+      LOCAL_LLM_BASE_URL: http://host.docker.internal:39281/v1
+      LOCAL_LLM_MODEL: qwen3-4b
     volumes:
       - ./demo:/data:ro
     healthcheck:

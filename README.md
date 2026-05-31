@@ -31,14 +31,14 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 
 - **Messy Table Autopilot** for Excel, CSV, and TXT files, including delimiter, encoding, header-row, empty-structure, summary-row, and multi-sheet handling.
 - **Schema inference** for numeric, date, category, text, empty, and high-cardinality fields.
-- **Data Quality Repair Plan** using missing values, duplicates, duplicate fields, anomalies, sample size, and analyzability.
+- **Data Quality Repair Plan + Clean Export** using missing values, duplicates, duplicate fields, anomalies, sample size, and analyzability, with conservative cleaned CSV/XLSX export.
 - **Analysis Planner** that recommends next steps based on schema roles, trends, correlations, anomalies, and quality risks.
 - **Insight Cards** that package findings into user-facing cards with evidence and suggested actions.
-- **Dynamic Chart Studio** with recommended trend and distribution views, metric switching, generated chart subtitles, and professional empty states.
+- **Dynamic Chart Studio** with auto chart selection, grouped bars, scatter plots, correlation heatmaps, box plots, metric/dimension selectors, generated subtitles, and professional empty states.
 - **Session and Report System** with profile IDs, generation time, Markdown reports, HTML reports, and desktop report export.
 - **Desktop-native Qt UI** with dynamic preview tables, sheet switching, charts, profile cards, and a bilingual insight panel.
 - **Local-first architecture**: the Python analysis service runs locally through Docker.
-- **Optional local LLM support**: Ollama and OpenAI-compatible llama.cpp endpoints can be enabled without making the LLM authoritative.
+- **Optional local LLM support**: Ollama and OpenAI-compatible llama.cpp endpoints can be enabled from the desktop UI without making the LLM authoritative.
 - **Deterministic agent-style API** for question answering over loaded datasets.
 - **CI coverage** for parser behavior, API endpoints, Docker build, and package metadata.
 - **Windows release script** for building a distributable desktop package.
@@ -56,7 +56,7 @@ FastAPI Analysis Service
       |
       +--> Messy table parser and sheet selector
       +--> Schema inference and semantic roles
-      +--> Quality scoring and repair plan
+      +--> Quality scoring, repair plan, and cleaned export
       +--> Trends, correlations, anomalies
       +--> Insight cards and analysis planner
       +--> Markdown / HTML reports and agent-style answers
@@ -168,6 +168,16 @@ docker compose up --build
 
 If the local model is disabled, unavailable, or fails the evidence guardrail, TablePilot continues to run with deterministic analysis and reports the local AI status in the response. Model text is suppressed when it references fields that are not present in the structured profile.
 
+## Clean Export API
+
+```powershell
+curl.exe -F "file=@demo/quality_issues_demo.csv;type=text/csv" `
+  "http://127.0.0.1:8000/api/clean-upload?format=csv" `
+  -o quality_issues_demo-cleaned.csv
+```
+
+Use `format=xlsx` to export a workbook with a `cleaned` sheet and a `repair_summary` sheet.
+
 ## Report and Session APIs
 
 ```powershell
@@ -225,8 +235,7 @@ The current desktop UI already supports Chinese/English switching. These config 
 ## Roadmap
 
 - Add drag-and-drop welcome screen and recent files.
-- Add more chart types: scatter, box plot, heatmap, and segment comparison.
-- Add one-click cleaned-data export after repair-plan review.
+- Add chart image export from each Chart Studio view.
 - Add packaged local-model smoke-test mode for OpenAI-compatible and Ollama endpoints.
 - Add screenshot-backed project page after final UI polish.
 - Add GitHub Release automation for Windows packages.

@@ -82,14 +82,24 @@ private:
     QLabel *distributionChartSubtitleLabel;
     QLabel *metricSelectorLabel;
     QLabel *sheetSelectorLabel;
+    QLabel *toolbarServiceLabel;
+    QLabel *toolbarModelLabel;
+    QPushButton *toolbarLanguageButton;
+    QPushButton *localAiToggleButton;
+    QPushButton *regenerateAiButton;
+    QPushButton *cleanExportButton;
     QPushButton *suggestTrendButton;
     QPushButton *suggestDistributionButton;
     QPushButton *suggestQualityButton;
     QPushButton *exportReportButton;
+    QComboBox *chartTypeSelector;
+    QComboBox *chartMetricSelector;
+    QComboBox *chartDimensionSelector;
     QComboBox *sheetSelector;
     QJsonObject lastProfile;
     QString currentFilePath;
     bool updatingSheetSelector;
+    bool localAiRequested;
     bool useChinese;
     bool isExit;        // 是否退出标志
     int  SaveType;      // 保存类型
@@ -105,6 +115,7 @@ private:
     void UpdateOverviewCards(const QJsonObject &root);
     void UpdateDefaultOverviewCards(const QString &serviceState);
     void UpdateFieldSelectors(const QJsonObject &root);
+    void UpdateToolbarState(const QJsonObject &root = QJsonObject());
     void UpdateSheetSelector(const QJsonObject &root);
     void UpdateRecommendationActions(const QJsonObject &root);
     void ApplyTableQualityDecorations(const QJsonObject &root);
@@ -127,12 +138,21 @@ private:
     QString RepairRecommendationText(const QJsonObject &item) const;
     QString ViewLabelText(const QJsonObject &view) const;
     QList<int> NumericTableColumns(int limit = -1) const;
+    QList<int> CategoryTableColumns(int limit = -1) const;
     QVector<double> NumericColumnValues(int column) const;
+    QVector<double> NumericColumnValuesForRows(int column, QVector<int> *rows = nullptr) const;
     QVector<double> NumericRowIndex(int size) const;
     QString ColumnLabel(int column) const;
+    int ColumnIndexByName(const QString &name) const;
+    void RenderChartStudio();
     void RenderDynamicLineChart();
     void RenderDynamicBarChart();
+    void RenderGroupedBarChart();
+    void RenderScatterChart();
+    void RenderCorrelationHeatmap();
+    void RenderBoxPlot();
     void RenderEmptyChart(QCustomPlot *plot, const QString &message);
+    void ExportCleanedDataset();
     void FocusDataQuality();
     void StylePlot(QCustomPlot *plot);
 };

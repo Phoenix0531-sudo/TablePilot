@@ -270,13 +270,18 @@ def parse_dates_quietly(series: pd.Series) -> pd.Series:
         return pd.to_datetime(series, errors="coerce")
 
 
-def profile_dataset(filename: str, data_dir: Path | None = None, sheet_name: str | None = None) -> dict[str, Any]:
+def profile_dataset(
+    filename: str,
+    data_dir: Path | None = None,
+    sheet_name: str | None = None,
+    local_ai_enabled: bool | None = None,
+) -> dict[str, Any]:
     path = resolve_dataset(filename, data_dir)
     loaded = load_table_with_metadata(path, sheet_name=sheet_name)
-    return profile_table(path.name, path.suffix.lower(), loaded["frame"], loaded["source"])
+    return profile_table(path.name, path.suffix.lower(), loaded["frame"], loaded["source"], local_ai_enabled=local_ai_enabled)
 
 
-def profile_uploaded_table(filename: str, df: pd.DataFrame) -> dict[str, Any]:
+def profile_uploaded_table(filename: str, df: pd.DataFrame, local_ai_enabled: bool | None = None) -> dict[str, Any]:
     suffix = Path(filename).suffix.lower()
     if suffix not in SUPPORTED_EXTENSIONS:
         raise ValueError(f"Unsupported dataset type: {suffix}")
@@ -292,10 +297,16 @@ def profile_uploaded_table(filename: str, df: pd.DataFrame) -> dict[str, Any]:
         "sheet_name": None,
         "parser": "upload",
     }
-    return profile_table(Path(filename).name, suffix, frame, source)
+    return profile_table(Path(filename).name, suffix, frame, source, local_ai_enabled=local_ai_enabled)
 
 
-def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[str, Any] | None = None) -> dict[str, Any]:
+def profile_table(
+    filename: str,
+    extension: str,
+    df: pd.DataFrame,
+    source: dict[str, Any] | None = None,
+    local_ai_enabled: bool | None = None,
+) -> dict[str, Any]:
     df = df.reset_index(drop=True)
     source_info = source or {}
     schema = infer_schema(df)
@@ -387,7 +398,7 @@ def profile_table(filename: str, extension: str, df: pd.DataFrame, source: dict[
         "tool_trace": tool_trace,
         "insights": build_insights(df, schema, missing_cells, anomalies, quality, trends, analysis_recommendations),
     }
-    profile["local_ai"] = build_local_ai_enhancement(profile)
+    profile["local_ai"] = build_local_ai_enhancement(profile, enabled_override=local_ai_enabled)
     return profile
 
 
@@ -396,6 +407,74 @@ def coerce_numeric_frame(df: pd.DataFrame, numeric_columns: list[str]) -> pd.Dat
     for column in numeric_columns:
         numeric_df[column] = pd.to_numeric(df[column], errors="coerce")
     return numeric_df
+
+
+def build_cleaned_table(df: pd.DataFrame, filename: str = "dataset") -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Apply conservative repairs that are safe to export without changing business meaning."""
+    frame = df.copy().replace(r"^\s*$", pd.NA, regex=True)
+    original_shape = frame.shape
+
+    frame = frame.dropna(how="all")
+    frame = frame.dropna(axis=1, how="all")
+    after_empty_shape = frame.shape
+
+    duplicate_rows = int(frame.duplicated().sum())
+    frame = frame.drop_duplicates().reset_index(drop=True)
+
+    schema = infer_schema(frame)
+    numeric_columns = [item["name"] for item in schema if item["semantic_type"] == "numeric"]
+    numeric_df = coerce_numeric_frame(frame, numeric_columns)
+    anomalies = detect_anomalies(numeric_df)
+
+    filled_cells = 0
+    for field in schema:
+        column = field["name"]
+        if column not in frame.columns:
+            continue
+        missing_before = int(frame[column].isna().sum())
+        if missing_before == 0:
+            continue
+        semantic_type = field["semantic_type"]
+        if semantic_type == "numeric":
+            numeric = pd.to_numeric(frame[column], errors="coerce")
+            fill_value = numeric.median()
+            if pd.notna(fill_value):
+                frame[column] = numeric.fillna(fill_value)
+        elif semantic_type in {"category", "text"}:
+            mode = frame[column].dropna().mode()
+            if not mode.empty:
+                frame[column] = frame[column].fillna(mode.iloc[0])
+        elif semantic_type == "date":
+            dates = parse_dates_quietly(frame[column])
+            frame[column] = dates.ffill().bfill()
+        filled_cells += missing_before - int(frame[column].isna().sum())
+
+    anomaly_flag_column = "tablepilot_anomaly_flag"
+    if anomalies:
+        flagged_rows = {item["row"] for item in anomalies if 0 <= item["row"] < len(frame)}
+        frame[anomaly_flag_column] = [row in flagged_rows for row in range(len(frame))]
+
+    summary = {
+        "filename": filename,
+        "original_rows": int(original_shape[0]),
+        "original_columns": int(original_shape[1]),
+        "cleaned_rows": int(frame.shape[0]),
+        "cleaned_columns": int(frame.shape[1]),
+        "removed_empty_rows": int(original_shape[0] - after_empty_shape[0]),
+        "removed_empty_columns": int(original_shape[1] - after_empty_shape[1]),
+        "removed_duplicate_rows": duplicate_rows,
+        "filled_missing_cells": filled_cells,
+        "marked_anomaly_rows": int(frame[anomaly_flag_column].sum()) if anomaly_flag_column in frame.columns else 0,
+        "anomaly_marker_column": anomaly_flag_column if anomaly_flag_column in frame.columns else None,
+        "repairs": [
+            "Dropped fully empty rows and columns.",
+            "Removed duplicate rows.",
+            "Filled missing numeric values with the column median when available.",
+            "Filled missing text/category values with the most common value when available.",
+            "Marked anomaly rows instead of deleting them.",
+        ],
+    }
+    return frame, summary
 
 
 def infer_schema(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -1045,11 +1124,13 @@ def build_insight_cards(
     return cards[:6]
 
 
-def build_local_ai_enhancement(profile: dict[str, Any]) -> dict[str, Any]:
-    enabled = any(
-        os.getenv(name, "").lower() in {"1", "true", "yes"}
-        for name in ["TABLEPILOT_ENABLE_LOCAL_AI", "TABLEPILOT_ENABLE_OLLAMA"]
-    )
+def build_local_ai_enhancement(profile: dict[str, Any], enabled_override: bool | None = None) -> dict[str, Any]:
+    enabled = enabled_override
+    if enabled is None:
+        enabled = any(
+            os.getenv(name, "").lower() in {"1", "true", "yes"}
+            for name in ["TABLEPILOT_ENABLE_LOCAL_AI", "TABLEPILOT_ENABLE_OLLAMA"]
+        )
     provider = os.getenv("TABLEPILOT_LOCAL_AI_PROVIDER", "").lower().strip()
     base_url = os.getenv("LOCAL_LLM_BASE_URL", "").rstrip("/")
     if not provider:

@@ -6,6 +6,7 @@
 #include <QDockWidget>
 #include <QFrame>
 #include <QLabel>          // 引入QLabel类
+#include <QPushButton>
 #include <QTextEdit>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -46,6 +47,7 @@ private:
     void createStyle();
     void createOverviewPanel();
     void createInsightPanel();
+    void createChartHeaders();
     void ApplyLanguage();
 
 // 槽函数，处理各个功能标签的点击事件
@@ -73,6 +75,14 @@ private:
     QLabel *eyebrowLabel;
     QLabel *titleLabel;
     QLabel *subtitleLabel;
+    QLabel *trendChartTitleLabel;
+    QLabel *trendChartSubtitleLabel;
+    QLabel *distributionChartTitleLabel;
+    QLabel *distributionChartSubtitleLabel;
+    QLabel *metricSelectorLabel;
+    QPushButton *suggestTrendButton;
+    QPushButton *suggestDistributionButton;
+    QPushButton *suggestQualityButton;
     QJsonObject lastProfile;
     bool useChinese;
     bool isExit;        // 是否退出标志
@@ -89,6 +99,7 @@ private:
     void UpdateOverviewCards(const QJsonObject &root);
     void UpdateDefaultOverviewCards(const QString &serviceState);
     void UpdateFieldSelectors(const QJsonObject &root);
+    void UpdateRecommendationActions(const QJsonObject &root);
     void ApplyTableQualityDecorations(const QJsonObject &root);
     QString FormatServiceAnalysis(const QJsonObject &root) const;
     QString FormatInsightHtml(const QJsonObject &root) const;
@@ -109,6 +120,7 @@ private:
     QString ColumnLabel(int column) const;
     void RenderDynamicLineChart();
     void RenderDynamicBarChart();
+    void FocusDataQuality();
     void StylePlot(QCustomPlot *plot);
 };
 

@@ -11,15 +11,15 @@ QToolBar {
     background: rgba(255, 255, 255, 235);
     border: none;
     border-bottom: 1px solid #e5e5ea;
-    spacing: 4px;
-    padding: 4px 12px;
+    spacing: 2px;
+    padding: 5px 12px;
 }
 
 QToolButton {
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 4px 10px;
+    border-radius: 9px;
+    padding: 4px 9px;
     font-size: 13px;
     font-weight: 500;
     color: #1d1d1f;
@@ -27,14 +27,31 @@ QToolButton {
 }
 
 QToolButton:hover {
-    background: #ffffff;
-    border-color: #d1d1d6;
+    background: #f5f5f7;
+    border-color: transparent;
 }
 
 QToolButton:pressed {
     background: #e8f2ff;
-    border-color: #9dccff;
+    border-color: transparent;
     color: #0066cc;
+}
+
+QFrame#chartHeader {
+    background: #ffffff;
+    border: 1px solid #e5e5ea;
+    border-radius: 16px;
+}
+
+QLabel#chartTitle {
+    color: #1d1d1f;
+    font-size: 15px;
+    font-weight: 650;
+}
+
+QLabel#chartSubtitle, QLabel#fieldLabel {
+    color: #6e6e73;
+    font-size: 12px;
 }
 
 QFrame#heroPanel {
@@ -136,6 +153,31 @@ QPushButton {
     font-weight: 600;
 }
 
+QPushButton#suggestionButton {
+    background: #ffffff;
+    color: #1d1d1f;
+    border: 1px solid #d1d1d6;
+    border-radius: 12px;
+    padding: 7px 10px;
+}
+
+QPushButton#suggestionButton:hover {
+    background: #f5f5f7;
+    border-color: #b8b8bd;
+}
+
+QPushButton#suggestionButton:disabled {
+    color: #a1a1a6;
+    background: #f5f5f7;
+    border-color: #e5e5ea;
+}
+
+QFrame#suggestionPanel {
+    background: #fbfbfd;
+    border: 1px solid #e5e5ea;
+    border-radius: 16px;
+}
+
 QPushButton:hover {
     background: #0066cc;
     border-color: #0066cc;
@@ -143,6 +185,12 @@ QPushButton:hover {
 
 QPushButton:pressed {
     background: #0052a3;
+}
+
+QPushButton#suggestionButton:hover {
+    background: #f5f5f7;
+    border-color: #b8b8bd;
+    color: #1d1d1f;
 }
 
 QComboBox {

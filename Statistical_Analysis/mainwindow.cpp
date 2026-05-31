@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 #include <QFrame>
 #include <QTimer>
+#include <QSizePolicy>
 #include <limits>
 #include <numeric>
 
@@ -45,6 +46,14 @@ QString ProjectPath(const QString &relativePath)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), // 调用基类的构造函数
     ui(new Ui::MainWindow), // 初始化ui对象指针，指向自动生成的ui界面
+    trendChartTitleLabel(nullptr),
+    trendChartSubtitleLabel(nullptr),
+    distributionChartTitleLabel(nullptr),
+    distributionChartSubtitleLabel(nullptr),
+    metricSelectorLabel(nullptr),
+    suggestTrendButton(nullptr),
+    suggestDistributionButton(nullptr),
+    suggestQualityButton(nullptr),
     useChinese(false),
     isExit(false), // 初始化是否退出标志为false
     SaveType(0)   // 初始化保存类型为0
@@ -65,6 +74,7 @@ void MainWindow::InitWidget(){
     createToolBar();    // 调用创建工具栏的函数
     createStatusBar(); // 调用创建状态栏的函数
     createStyle();      // 调用创建样式的函数
+    createChartHeaders();
     createOverviewPanel();
     createInsightPanel();
     ApplyLanguage();
@@ -80,28 +90,26 @@ void MainWindow::createToolBar(){// 创建工具栏
     ui->mainToolBar->setMovable(false); // 设置工具栏不可移动
     ui->mainToolBar->setIconSize(QSize(1, 1)); // 文本化命令栏，避免旧式小图标干扰
     ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextOnly);
-    ui->mainToolBar->setFixedHeight(38);
+    ui->mainToolBar->setFixedHeight(40);
 
-    ui->mainToolBar->addAction(m_pAction1); // 添加打开Excel的动作
-    ui->mainToolBar->addAction(m_pAction2); // 添加打开txt的动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction3); // 添加数据统计的动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction4); // 添加折线图的动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction5); // 添加柱状图的动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction6); // 添加另存为图片的动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction8); // 添加智能分析的动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction9); // 添加语言切换动作
-    ui->mainToolBar->addSeparator(); // 添加分隔符
-    ui->mainToolBar->addAction(m_pAction7); // 添加退出系统的动作
+    ui->mainToolBar->addAction(m_pAction1);
+    ui->mainToolBar->addAction(m_pAction2);
+    ui->mainToolBar->addAction(m_pAction8);
+    ui->mainToolBar->addAction(m_pAction3);
+    ui->mainToolBar->addAction(m_pAction4);
+    ui->mainToolBar->addAction(m_pAction5);
+    ui->mainToolBar->addAction(m_pAction6);
+
+    QWidget *spacer = new QWidget(ui->mainToolBar);
+    spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ui->mainToolBar->addWidget(spacer);
+
+    ui->mainToolBar->addAction(m_pAction9);
+    ui->mainToolBar->addAction(m_pAction7);
 
     for (QToolButton *button : ui->mainToolBar->findChildren<QToolButton*>()) {
-        button->setFixedWidth(92);
-        button->setMaximumHeight(28);
+        button->setMinimumWidth(76);
+        button->setMaximumHeight(30);
     }
 }
 
@@ -225,13 +233,91 @@ void MainWindow::createInsightPanel()
     insightDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     insightDock->setMinimumWidth(410);
 
+    QWidget *panel = new QWidget(insightDock);
+    QVBoxLayout *panelLayout = new QVBoxLayout(panel);
+    panelLayout->setContentsMargins(0, 0, 0, 0);
+    panelLayout->setSpacing(10);
+
     insightText = new QTextEdit(insightDock);
     insightText->setReadOnly(true);
     insightText->setPlaceholderText(QStringLiteral("选择数据文件后，这里会显示智能分析摘要、数据质量和复核线索。"));
     insightText->setObjectName(QStringLiteral("insightText"));
+    panelLayout->addWidget(insightText, 1);
 
-    insightDock->setWidget(insightText);
+    QFrame *actionsPanel = new QFrame(panel);
+    actionsPanel->setObjectName(QStringLiteral("suggestionPanel"));
+    QHBoxLayout *actionsLayout = new QHBoxLayout(actionsPanel);
+    actionsLayout->setContentsMargins(10, 8, 10, 8);
+    actionsLayout->setSpacing(8);
+
+    suggestTrendButton = new QPushButton(actionsPanel);
+    suggestTrendButton->setObjectName(QStringLiteral("suggestionButton"));
+    suggestDistributionButton = new QPushButton(actionsPanel);
+    suggestDistributionButton->setObjectName(QStringLiteral("suggestionButton"));
+    suggestQualityButton = new QPushButton(actionsPanel);
+    suggestQualityButton->setObjectName(QStringLiteral("suggestionButton"));
+    actionsLayout->addWidget(suggestTrendButton);
+    actionsLayout->addWidget(suggestDistributionButton);
+    actionsLayout->addWidget(suggestQualityButton);
+    panelLayout->addWidget(actionsPanel);
+
+    connect(suggestTrendButton, &QPushButton::clicked, this, [this]() {
+        Slot4();
+        RenderDynamicLineChart();
+        statusBar()->showMessage(Text(QStringLiteral("Trend view opened"), QStringLiteral("已切换到趋势视图")), 3000);
+    });
+    connect(suggestDistributionButton, &QPushButton::clicked, this, [this]() {
+        Slot5();
+        RenderDynamicBarChart();
+        statusBar()->showMessage(Text(QStringLiteral("Distribution view opened"), QStringLiteral("已切换到分布视图")), 3000);
+    });
+    connect(suggestQualityButton, &QPushButton::clicked, this, [this]() {
+        FocusDataQuality();
+    });
+
+    insightDock->setWidget(panel);
     addDockWidget(Qt::RightDockWidgetArea, insightDock);
+}
+
+void MainWindow::createChartHeaders()
+{
+    QVBoxLayout *trendLayout = findChild<QVBoxLayout*>(QStringLiteral("verticalLayout_2"));
+    if (trendLayout && !trendChartTitleLabel) {
+        QFrame *header = new QFrame(ui->centralWidget);
+        header->setObjectName(QStringLiteral("chartHeader"));
+        QHBoxLayout *layout = new QHBoxLayout(header);
+        layout->setContentsMargins(12, 8, 12, 8);
+        layout->setSpacing(10);
+        QVBoxLayout *copy = new QVBoxLayout;
+        copy->setContentsMargins(0, 0, 0, 0);
+        copy->setSpacing(2);
+        trendChartTitleLabel = new QLabel(header);
+        trendChartTitleLabel->setObjectName(QStringLiteral("chartTitle"));
+        trendChartSubtitleLabel = new QLabel(header);
+        trendChartSubtitleLabel->setObjectName(QStringLiteral("chartSubtitle"));
+        copy->addWidget(trendChartTitleLabel);
+        copy->addWidget(trendChartSubtitleLabel);
+        layout->addLayout(copy, 1);
+        layout->addWidget(ui->pushButton);
+        trendLayout->insertWidget(0, header);
+    }
+
+    QHBoxLayout *distributionControls = findChild<QHBoxLayout*>(QStringLiteral("horizontalLayout"));
+    if (distributionControls && !distributionChartTitleLabel) {
+        QVBoxLayout *copy = new QVBoxLayout;
+        copy->setContentsMargins(0, 0, 8, 0);
+        copy->setSpacing(2);
+        distributionChartTitleLabel = new QLabel(ui->centralWidget);
+        distributionChartTitleLabel->setObjectName(QStringLiteral("chartTitle"));
+        distributionChartSubtitleLabel = new QLabel(ui->centralWidget);
+        distributionChartSubtitleLabel->setObjectName(QStringLiteral("chartSubtitle"));
+        copy->addWidget(distributionChartTitleLabel);
+        copy->addWidget(distributionChartSubtitleLabel);
+        distributionControls->insertLayout(0, copy, 1);
+        metricSelectorLabel = new QLabel(ui->centralWidget);
+        metricSelectorLabel->setObjectName(QStringLiteral("fieldLabel"));
+        distributionControls->insertWidget(2, metricSelectorLabel);
+    }
 }
 
 QString MainWindow::Text(const QString &en, const QString &zh) const
@@ -266,6 +352,14 @@ void MainWindow::ApplyLanguage()
         ui->pushButton->setText(QStringLiteral("刷新趋势"));
         ui->pushButton_2->setText(QStringLiteral("刷新分布"));
         ui->comboBox->setToolTip(QStringLiteral("选择分布图使用的数值字段"));
+        if (trendChartTitleLabel) trendChartTitleLabel->setText(QStringLiteral("趋势视图"));
+        if (trendChartSubtitleLabel) trendChartSubtitleLabel->setText(QStringLiteral("按记录顺序展示最重要的数值指标变化。"));
+        if (distributionChartTitleLabel) distributionChartTitleLabel->setText(QStringLiteral("分布视图"));
+        if (distributionChartSubtitleLabel) distributionChartSubtitleLabel->setText(QStringLiteral("查看单个指标在各条记录中的分布。"));
+        if (metricSelectorLabel) metricSelectorLabel->setText(QStringLiteral("指标"));
+        if (suggestTrendButton) suggestTrendButton->setText(QStringLiteral("查看趋势"));
+        if (suggestDistributionButton) suggestDistributionButton->setText(QStringLiteral("查看分布"));
+        if (suggestQualityButton) suggestQualityButton->setText(QStringLiteral("复核质量"));
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("本地 AI 数据工作台"));
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("面向复杂表格、销售数据和 TXT/CSV 文件的本地可解释分析工作台。"));
@@ -295,6 +389,14 @@ void MainWindow::ApplyLanguage()
         ui->pushButton->setText(QStringLiteral("Refresh trend"));
         ui->pushButton_2->setText(QStringLiteral("Refresh distribution"));
         ui->comboBox->setToolTip(QStringLiteral("Choose the numeric field used by the distribution chart"));
+        if (trendChartTitleLabel) trendChartTitleLabel->setText(QStringLiteral("Trend View"));
+        if (trendChartSubtitleLabel) trendChartSubtitleLabel->setText(QStringLiteral("Track the most useful numeric measures by record order."));
+        if (distributionChartTitleLabel) distributionChartTitleLabel->setText(QStringLiteral("Distribution View"));
+        if (distributionChartSubtitleLabel) distributionChartSubtitleLabel->setText(QStringLiteral("Inspect one selected metric across records."));
+        if (metricSelectorLabel) metricSelectorLabel->setText(QStringLiteral("Metric"));
+        if (suggestTrendButton) suggestTrendButton->setText(QStringLiteral("Open trend"));
+        if (suggestDistributionButton) suggestDistributionButton->setText(QStringLiteral("Open distribution"));
+        if (suggestQualityButton) suggestQualityButton->setText(QStringLiteral("Review quality"));
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("PRIVATE AI DATA WORKBENCH"));
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."));
@@ -304,13 +406,14 @@ void MainWindow::ApplyLanguage()
     if (lastProfile.isEmpty()) {
         ui->comboBox->blockSignals(true);
         ui->comboBox->clear();
-        ui->comboBox->addItem(Text(QStringLiteral("Auto measure"), QStringLiteral("自动选择数值字段")), -1);
+        ui->comboBox->addItem(Text(QStringLiteral("Recommended metric"), QStringLiteral("推荐指标")), -1);
         ui->comboBox->blockSignals(false);
         UpdateDefaultOverviewCards(QStringLiteral("idle"));
     } else {
         UpdateFieldSelectors(lastProfile);
         PopulateStatsFromService(lastProfile);
         UpdateOverviewCards(lastProfile);
+        UpdateRecommendationActions(lastProfile);
         RenderDynamicLineChart();
         RenderDynamicBarChart();
     }
@@ -559,7 +662,7 @@ void MainWindow::createStyle() {
     ui->pushButton->setText(QStringLiteral("Refresh trend"));
     ui->pushButton_2->setText(QStringLiteral("Refresh distribution"));
     ui->comboBox->clear();
-    ui->comboBox->addItem(Text(QStringLiteral("Auto measure"), QStringLiteral("自动选择数值字段")), -1);
+    ui->comboBox->addItem(Text(QStringLiteral("Recommended metric"), QStringLiteral("推荐指标")), -1);
     ui->comboBox->setToolTip(Text(QStringLiteral("Choose the numeric field used by the distribution chart"), QStringLiteral("选择分布图使用的数值字段")));
     connect(ui->comboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
         if (ui->stackedWidget->currentIndex() == 1) {
@@ -688,6 +791,7 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     ApplyTableQualityDecorations(root);
     UpdateFieldSelectors(root);
     UpdateOverviewCards(root);
+    UpdateRecommendationActions(root);
 
     insightText->setHtml(FormatInsightHtml(root));
     insightDock->show();
@@ -802,7 +906,7 @@ void MainWindow::UpdateFieldSelectors(const QJsonObject &root)
     QJsonArray schema = root.value("schema").toArray();
     ui->comboBox->blockSignals(true);
     ui->comboBox->clear();
-    ui->comboBox->addItem(Text(QStringLiteral("Auto measure"), QStringLiteral("自动选择数值字段")), -1);
+    ui->comboBox->addItem(Text(QStringLiteral("Recommended metric"), QStringLiteral("推荐指标")), -1);
     for (int column = 0; column < schema.size(); ++column) {
         QJsonObject field = schema.at(column).toObject();
         if (field.value("semantic_type").toString() == "numeric") {
@@ -962,6 +1066,29 @@ void MainWindow::UpdateDefaultOverviewCards(const QString &serviceState)
         recommendationCard->setText(QStringLiteral("<b>%1</b><br><span>%2</span>")
                                         .arg(Text(QStringLiteral("Next best analysis"), QStringLiteral("下一步分析")))
                                         .arg(Text(QStringLiteral("Open a table to start"), QStringLiteral("打开表格后开始"))));
+    }
+    UpdateRecommendationActions(QJsonObject());
+}
+
+void MainWindow::UpdateRecommendationActions(const QJsonObject &root)
+{
+    const bool hasData = !root.isEmpty();
+    if (suggestTrendButton) {
+        suggestTrendButton->setEnabled(hasData && root.value("dataset").toObject().value("numeric_columns").toInt() > 0);
+        suggestTrendButton->setText(Text(QStringLiteral("Open trend"), QStringLiteral("查看趋势")));
+    }
+    if (suggestDistributionButton) {
+        suggestDistributionButton->setEnabled(hasData && root.value("dataset").toObject().value("numeric_columns").toInt() > 0);
+        suggestDistributionButton->setText(Text(QStringLiteral("Open distribution"), QStringLiteral("查看分布")));
+    }
+    if (suggestQualityButton) {
+        suggestQualityButton->setEnabled(hasData);
+        int missing = root.value("dataset").toObject().value("missing_cells").toInt();
+        int anomalies = root.value("quality").toObject().value("anomaly_count").toInt();
+        QString label = missing > 0 || anomalies > 0
+            ? Text(QStringLiteral("Review risks"), QStringLiteral("复核风险"))
+            : Text(QStringLiteral("Review quality"), QStringLiteral("复核质量"));
+        suggestQualityButton->setText(label);
     }
 }
 
@@ -1257,7 +1384,6 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
 {
     QJsonObject dataset = root.value("dataset").toObject();
     QJsonObject quality = root.value("quality").toObject();
-    QJsonObject source = root.value("source").toObject();
     QJsonObject brief = root.value("executive_brief").toObject();
     QJsonObject plan = root.value("analysis_plan").toObject();
     QJsonArray schema = root.value("schema").toArray();
@@ -1265,7 +1391,6 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     QJsonArray anomalies = root.value("anomalies").toArray();
     QJsonArray recommendations = root.value("analysis_recommendations").toArray();
     QJsonArray charts = root.value("chart_recommendations").toArray();
-    QJsonArray toolTrace = root.value("tool_trace").toArray();
 
     auto pill = [](const QString &label, const QString &value) {
         return QStringLiteral("<span class='pill'><b>%1</b> %2</span>")
@@ -1295,15 +1420,15 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
         "</style>"
     );
 
-    html << QStringLiteral("<h1>%1</h1>").arg(label(QStringLiteral("Analysis Brief"), QStringLiteral("分析简报")));
+    html << QStringLiteral("<h1>%1</h1>").arg(label(QStringLiteral("TablePilot Report"), QStringLiteral("TablePilot 分析报告")));
     html << QStringLiteral("<p class='muted'>%1 <b>%2</b></p>")
-                .arg(label(QStringLiteral("Explainable local profiling for"), QStringLiteral("本地可解释分析：")))
+                .arg(label(QStringLiteral("Prepared for"), QStringLiteral("分析对象：")))
                 .arg(dataset.value("filename").toString().toHtmlEscaped());
     html << QStringLiteral("<div>")
                 + pill(label(QStringLiteral("Rows"), QStringLiteral("行数")), QString::number(dataset.value("rows").toInt()))
                 + pill(label(QStringLiteral("Columns"), QStringLiteral("列数")), QString::number(dataset.value("columns").toInt()))
                 + pill(label(QStringLiteral("Quality"), QStringLiteral("质量")), QStringLiteral("%1/100").arg(quality.value("score").toInt()))
-                + pill(label(QStringLiteral("Parser"), QStringLiteral("解析器")), source.value("parser").toString("-"))
+                + pill(label(QStringLiteral("Confidence"), QStringLiteral("置信度")), QualityLevelText(quality.value("level").toString()))
                 + QStringLiteral("</div>");
 
     if (!brief.isEmpty()) {
@@ -1317,13 +1442,13 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 .arg(quality.value("score").toInt());
         }
         html << QStringLiteral("<div class='callout'><b>%1</b><br>%2<br><span class='muted'>%3: %4</span></div>")
-                    .arg(label(QStringLiteral("Executive Brief"), QStringLiteral("执行摘要")))
+                    .arg(label(QStringLiteral("Executive Summary"), QStringLiteral("执行摘要")))
                     .arg(headline.toHtmlEscaped())
                     .arg(label(QStringLiteral("Confidence"), QStringLiteral("置信度")))
                     .arg(QualityLevelText(brief.value("confidence").toString()).toHtmlEscaped());
         QJsonArray watchouts = brief.value("watchouts").toArray();
         if (!watchouts.isEmpty()) {
-            html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Watchouts"), QStringLiteral("注意事项")));
+            html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Quality Notes"), QStringLiteral("质量说明")));
             for (const QJsonValue &value : watchouts) {
                 QString watchout = value.toString();
                 if (useChinese && watchout == "No major structural data quality warning was detected.") {
@@ -1336,7 +1461,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!plan.isEmpty()) {
-        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Analysis Planner"), QStringLiteral("分析规划器")));
+        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Recommended Workflow"), QStringLiteral("推荐分析流程")));
         QString story = plan.value("dataset_story").toString();
         if (useChinese) {
             story = QStringLiteral("这份数据包含可分析的字段结构，适合先做质量复核，再做趋势、分组和关系分析。");
@@ -1370,7 +1495,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     html << QStringLiteral("</div>");
 
     if (!recommendations.isEmpty()) {
-        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Recommended Next Moves"), QStringLiteral("下一步建议")));
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Action Plan"), QStringLiteral("可执行建议")));
         for (int i = 0; i < recommendations.size() && i < 4; ++i) {
             QJsonObject item = recommendations.at(i).toObject();
             html << QStringLiteral("<li><b>%1</b><br><span class='muted'>%2</span></li>")
@@ -1382,7 +1507,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
 
     if (!charts.isEmpty()) {
         QJsonObject chart = charts.first().toObject();
-        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Chart Recommendation"), QStringLiteral("图表建议")));
+        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Suggested Chart"), QStringLiteral("推荐图表")));
         html << QStringLiteral("<div class='callout'><b>%1</b>: x=%2, y=%3<br><span class='muted'>%4</span></div>")
                     .arg(label(chart.value("chart_type").toString(), chart.value("chart_type").toString() == "line" ? QStringLiteral("折线图") : chart.value("chart_type").toString()).toHtmlEscaped())
                     .arg(chart.value("x").toString("-").toHtmlEscaped())
@@ -1391,7 +1516,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!schema.isEmpty()) {
-        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Schema Snapshot"), QStringLiteral("字段结构")));
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Data Structure"), QStringLiteral("数据结构")));
         for (int i = 0; i < schema.size() && i < 8; ++i) {
             QJsonObject item = schema.at(i).toObject();
             html << QStringLiteral("<li><b>%1</b> %2 <span class='muted'>%3</span></li>")
@@ -1403,7 +1528,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!insights.isEmpty()) {
-        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Evidence Summary"), QStringLiteral("证据摘要")));
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Key Evidence"), QStringLiteral("关键证据")));
         for (const QJsonValue &value : insights) {
             html << QStringLiteral("<li>%1</li>").arg(InsightText(value.toString(), root).toHtmlEscaped());
         }
@@ -1423,14 +1548,6 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                     .arg(item.value("z_score").toDouble());
         }
         html << QStringLiteral("</ul>");
-    }
-
-    if (!toolTrace.isEmpty()) {
-        html << QStringLiteral("<h2>%1</h2><p>").arg(label(QStringLiteral("Tool Trace"), QStringLiteral("工具轨迹")));
-        for (const QJsonValue &value : toolTrace) {
-            html << pill(label(QStringLiteral("step"), QStringLiteral("步骤")), ToolTraceText(value.toString()));
-        }
-        html << QStringLiteral("</p>");
     }
 
     html << QStringLiteral("<p class='muted'>%1</p>").arg(label(QStringLiteral("This is an analytical summary, not a business recommendation."), QStringLiteral("这是分析摘要，不构成业务建议。")));
@@ -1514,8 +1631,18 @@ void MainWindow::RenderDynamicLineChart()
     plot->legend->setVisible(true);
     QList<int> columns = NumericTableColumns(5);
     if (columns.isEmpty()) {
+        if (trendChartSubtitleLabel) {
+            trendChartSubtitleLabel->setText(Text(QStringLiteral("No numeric metric is available for trend visualization."), QStringLiteral("当前数据没有可用于趋势图的数值指标。")));
+        }
         plot->replot();
         return;
+    }
+    if (trendChartSubtitleLabel) {
+        QStringList names;
+        for (int column : columns) {
+            names << ColumnLabel(column);
+        }
+        trendChartSubtitleLabel->setText(Text(QStringLiteral("Showing recommended metrics: %1"), QStringLiteral("正在展示推荐指标：%1")).arg(names.join(QStringLiteral(", "))));
     }
 
     double minY = std::numeric_limits<double>::max();
@@ -1536,8 +1663,8 @@ void MainWindow::RenderDynamicLineChart()
         plot->graph(plot->graphCount() - 1)->setName(ColumnLabel(columns[i]));
         plot->graph(plot->graphCount() - 1)->setPen(QPen(colors[i % colors.size()], 2));
     }
-    plot->xAxis->setLabel(Text(QStringLiteral("Row"), QStringLiteral("行")));
-    plot->yAxis->setLabel(Text(QStringLiteral("Value"), QStringLiteral("数值")));
+    plot->xAxis->setLabel(Text(QStringLiteral("Record"), QStringLiteral("记录序号")));
+    plot->yAxis->setLabel(Text(QStringLiteral("Metric value"), QStringLiteral("指标值")));
     plot->xAxis->setRange(1, std::max(2, ui->tableWidget->rowCount()));
     if (minY <= maxY) {
         double padding = std::max(1.0, (maxY - minY) * 0.1);
@@ -1565,6 +1692,9 @@ void MainWindow::RenderDynamicBarChart()
         columns = NumericTableColumns(1);
     }
     if (columns.isEmpty()) {
+        if (distributionChartSubtitleLabel) {
+            distributionChartSubtitleLabel->setText(Text(QStringLiteral("No numeric metric is available for distribution review."), QStringLiteral("当前数据没有可用于分布图的数值指标。")));
+        }
         plot->replot();
         return;
     }
@@ -1574,11 +1704,14 @@ void MainWindow::RenderDynamicBarChart()
     QCPBars *bars = new QCPBars(plot->xAxis, plot->yAxis);
     bars->setData(ticks, values);
     bars->setName(ColumnLabel(columns.first()));
+    if (distributionChartSubtitleLabel) {
+        distributionChartSubtitleLabel->setText(Text(QStringLiteral("Selected metric: %1"), QStringLiteral("当前指标：%1")).arg(ColumnLabel(columns.first())));
+    }
     bars->setPen(QPen(QColor(22, 119, 255)));
     bars->setBrush(QColor(22, 119, 255, 90));
 
     auto minmax = std::minmax_element(values.begin(), values.end());
-    plot->xAxis->setLabel(Text(QStringLiteral("Row"), QStringLiteral("行")));
+    plot->xAxis->setLabel(Text(QStringLiteral("Record"), QStringLiteral("记录序号")));
     plot->yAxis->setLabel(ColumnLabel(columns.first()));
     plot->xAxis->setRange(0, std::max(2, static_cast<int>(values.size()) + 1));
     if (minmax.first != values.end()) {
@@ -1586,6 +1719,16 @@ void MainWindow::RenderDynamicBarChart()
         plot->yAxis->setRange(*minmax.first - padding, *minmax.second + padding);
     }
     plot->replot();
+}
+
+void MainWindow::FocusDataQuality()
+{
+    ui->tableWidget->setFocus();
+    ui->groupBox->setFocus();
+    statusBar()->showMessage(Text(
+        QStringLiteral("Data preview focused. Highlighted cells indicate missing values or anomaly candidates."),
+        QStringLiteral("已定位到数据预览。高亮单元格代表缺失值或异常候选。")
+    ), 5000);
 }
 
 void MainWindow::StylePlot(QCustomPlot *plot)

@@ -1,4 +1,4 @@
-# InsightQt AI Workbench Release Package
+# LatticeIQ Release Package
 
 ## 中文
 
@@ -12,7 +12,7 @@
 启动方式：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\start-insightqt.ps1
+powershell -ExecutionPolicy Bypass -File .\start-latticeiq.ps1
 ```
 
 脚本会先启动本地 FastAPI 分析服务，然后打开 Qt 桌面端。
@@ -29,7 +29,7 @@ Requirements:
 Start:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\start-insightqt.ps1
+powershell -ExecutionPolicy Bypass -File .\start-latticeiq.ps1
 ```
 
 The script starts the local FastAPI analysis service and then opens the Qt desktop workbench.

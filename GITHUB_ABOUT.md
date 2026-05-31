@@ -1,18 +1,18 @@
 # GitHub About
 
-Use this repository description:
+Repository description:
 
 ```text
-InsightQt AI Workbench: a Qt/C++ desktop AI data workbench with Dockerized FastAPI profiling, schema inference, data quality scoring, analysis planning, executive briefs, dynamic charts, release packaging, and explainable tool traces.
+LatticeIQ：本地优先的 AI 表格分析工作台，将 Excel/CSV/TXT 转化为可解释的数据画像、质量评分和分析规划。 | Local-first AI table analysis workbench for explainable profiling, quality scoring, and analysis planning over Excel/CSV/TXT files.
 ```
 
-Suggested website:
+Website:
 
 ```text
-https://github.com/Phoenix0531-sudo/QT_Statistical_Analysis
+https://github.com/Phoenix0531-sudo/LatticeIQ
 ```
 
-Suggested topics:
+Topics:
 
 ```text
 qt
@@ -24,12 +24,12 @@ data-analysis
 data-profiling
 schema-inference
 data-quality
-executive-brief
 analysis-planner
-agent
+executive-brief
 desktop-app
 visualization
 qt-desktop
 release-packaging
 portfolio-project
+local-first
 ```

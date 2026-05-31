@@ -1,1 +1,1 @@
-"""InsightQt analysis service package."""
+"""LatticeIQ analysis service package."""

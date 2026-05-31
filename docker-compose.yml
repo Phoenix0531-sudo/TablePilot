@@ -1,5 +1,5 @@
 services:
-  insightqt-analysis:
+  latticeiq-analysis:
     build:
       context: .
       dockerfile: analysis_service/Dockerfile

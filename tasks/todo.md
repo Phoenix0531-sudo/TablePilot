@@ -91,7 +91,7 @@
 
 ## Review
 
-- UI now opens as `InsightQt AI Workbench` with a product-style overview panel, neutral data-workbench palette, structured Insight Panel, dynamic empty state, and modernized toolbar.
+- UI now opens as `LatticeIQ` with a product-style overview panel, neutral data-workbench palette, structured analysis panel, dynamic empty state, and modernized toolbar.
 - Backend analysis now exposes an `executive_brief` object and includes it in Markdown reports.
 - GitHub About description, homepage, and topics were updated through the GitHub API.
 - GitHub default branch is now `modern-ai-analysis-workbench`; remote `main` and `master` were deleted. Remaining branches are `legacy-qt-statistical-analysis` and `modern-ai-analysis-workbench`.
@@ -108,7 +108,7 @@
 ## Plan
 
 - [x] Add deterministic Analysis Planner output for dataset story, field roles, planner confidence, and recommended workflow steps.
-- [x] Show the planner in the desktop Insight Panel alongside the Executive Brief.
+- [x] Show the planner in the desktop analysis panel alongside the Executive Brief.
 - [x] Add service auto-detection and Docker Compose auto-start attempt from the Qt desktop app.
 - [x] Improve data preview with schema tooltips, missing-value highlighting, anomaly highlighting, sorting, and field selector support.
 - [x] Add Windows release packaging scripts for Qt deploy plus local service startup.
@@ -125,5 +125,34 @@
   - Qt 6.11.1 MinGW release build: passed
   - `docker compose build`: passed
   - Docker runtime smoke: `/health`, `/api/analyze-upload`, and `/api/report/markdown` returned successfully with Analysis Plan
-  - Packaging script created `dist/InsightQt-AI-Workbench.zip`
+  - Packaging script created `dist/LatticeIQ.zip`
   - Packaged UI smoke: executable launched successfully
+
+# Modernization Pass 6
+
+## Plan
+
+- [x] Rename the product from the legacy-oriented name to `LatticeIQ`.
+- [x] Redesign the desktop theme toward an Apple-like light, minimal, text-first interface.
+- [x] Remove toolbar icon dependency and use a clean text command bar.
+- [x] Add Chinese/English switching in the Qt desktop UI and analysis panel.
+- [x] Generate a professional demo Excel workbook under `samples/`.
+- [x] Split README into concise root README plus Chinese and English documentation.
+- [x] Add architecture documentation and clarify module boundaries.
+- [x] Rename release package output to `dist/LatticeIQ.zip`.
+- [x] Update GitHub About copy to bilingual Chinese/English wording.
+
+## Review
+
+- Product name is now `LatticeIQ` across the desktop app, analysis service, package metadata, docs, release package, and GitHub About copy.
+- Desktop UI now uses a light Apple-inspired visual system with text-first toolbar commands and no legacy icon buttons.
+- The app supports Chinese/English switching for primary UI labels and the analysis panel.
+- Demo workbook added at `samples/latticeiq_demo_sales.xlsx`.
+- Documentation is split into root README, Chinese docs, English docs, and architecture docs.
+- Validation:
+  - `python -m pytest -q analysis_service\tests`: 15 passed
+  - Qt 6.11.1 MinGW release build: passed
+  - Docker/API smoke with `samples/latticeiq_demo_sales.xlsx`: passed
+  - Packaging script created `dist/LatticeIQ.zip`
+  - Packaged UI smoke: `LatticeIQ.exe` launched successfully
+- Pending GitHub repository rename, push, and CI result.

@@ -12,7 +12,7 @@ QT       += network
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 # 指定项目名称和模板为应用程序
-TARGET = Statistical_Analysis
+TARGET = LatticeIQ
 TEMPLATE = app
 
 # The following define makes your compiler emit warnings if you use

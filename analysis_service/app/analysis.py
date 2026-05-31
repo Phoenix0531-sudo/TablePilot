@@ -790,7 +790,7 @@ def build_markdown_report(profile: dict[str, Any]) -> str:
     dataset = profile["dataset"]
     quality = profile["quality"]
     lines = [
-        f"# InsightQt Analysis Report: {dataset['filename']}",
+        f"# LatticeIQ Analysis Report: {dataset['filename']}",
         "",
         "## Dataset",
         f"- Rows: {dataset['rows']}",

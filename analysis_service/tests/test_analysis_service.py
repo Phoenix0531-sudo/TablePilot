@@ -93,7 +93,7 @@ def test_markdown_report_endpoint():
     response = client.post("/api/report/markdown", json={"filename": "销售数据.txt"})
 
     assert response.status_code == 200
-    assert "# InsightQt Analysis Report" in response.text
+    assert "# LatticeIQ Analysis Report" in response.text
     assert "## Executive Brief" in response.text
     assert "## Analysis Plan" in response.text
 
@@ -102,7 +102,7 @@ def test_dataset_alias_for_report_endpoint():
     response = client.post("/api/report/markdown", json={"dataset": "销售数据.txt"})
 
     assert response.status_code == 200
-    assert "# InsightQt Analysis Report" in response.text
+    assert "# LatticeIQ Analysis Report" in response.text
 
 
 def test_health_endpoint():

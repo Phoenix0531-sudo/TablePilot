@@ -44,11 +44,12 @@ QString ProjectPath(const QString &relativePath)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), // 调用基类的构造函数
     ui(new Ui::MainWindow), // 初始化ui对象指针，指向自动生成的ui界面
+    useChinese(false),
     isExit(false), // 初始化是否退出标志为false
     SaveType(0)   // 初始化保存类型为0
 {
     ui->setupUi(this); // 设置ui界面，将自动生成的ui界面应用到当前窗口上
-    setWindowTitle(QStringLiteral("InsightQt AI Workbench"));
+    setWindowTitle(QStringLiteral("LatticeIQ"));
 
     InitWidget(); // 调用初始化窗口部件和对象的函数
     InitObject(); // 调用初始化对象的函数
@@ -65,6 +66,7 @@ void MainWindow::InitWidget(){
     createStyle();      // 调用创建样式的函数
     createOverviewPanel();
     createInsightPanel();
+    ApplyLanguage();
 }
 
 void MainWindow::InitObject(){
@@ -75,8 +77,8 @@ void MainWindow::InitObject(){
 void MainWindow::createToolBar(){// 创建工具栏
 
     ui->mainToolBar->setMovable(false); // 设置工具栏不可移动
-    ui->mainToolBar->setIconSize(QSize(22,22)); // 设置工具栏图标大小
-    ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon); // 使用更紧凑的工作台样式
+    ui->mainToolBar->setIconSize(QSize(1, 1)); // 文本化命令栏，避免旧式小图标干扰
+    ui->mainToolBar->setToolButtonStyle(Qt::ToolButtonTextOnly);
 
     ui->mainToolBar->addAction(m_pAction1); // 添加打开Excel的动作
     ui->mainToolBar->addAction(m_pAction2); // 添加打开txt的动作
@@ -91,28 +93,32 @@ void MainWindow::createToolBar(){// 创建工具栏
     ui->mainToolBar->addSeparator(); // 添加分隔符
     ui->mainToolBar->addAction(m_pAction8); // 添加智能分析的动作
     ui->mainToolBar->addSeparator(); // 添加分隔符
+    ui->mainToolBar->addAction(m_pAction9); // 添加语言切换动作
+    ui->mainToolBar->addSeparator(); // 添加分隔符
     ui->mainToolBar->addAction(m_pAction7); // 添加退出系统的动作
 }
 
 void MainWindow::createActions(){// 创建各个功能标签的动作
     //设置功能标签的图标，文字，以及该动作属于哪个父窗口
 
-    m_pAction1 = new QAction(style()->standardIcon(QStyle::SP_DialogOpenButton), QString("打开Excel(&O)"), this);
+    m_pAction1 = new QAction(QString("Open Excel"), this);
     m_pAction1->setToolTip("打开 Excel 工作簿并调用本地分析服务");
-    m_pAction2 = new QAction(style()->standardIcon(QStyle::SP_DirOpenIcon), QString("打开TXT(&O)"), this);
+    m_pAction2 = new QAction(QString("Open Text"), this);
     m_pAction2->setToolTip("打开 TXT/CSV 表格并自动识别分隔符");
-    m_pAction3 = new QAction(style()->standardIcon(QStyle::SP_FileDialogDetailedView), QString("统计画像(&S)"), this);
+    m_pAction3 = new QAction(QString("Profile"), this);
     m_pAction3->setToolTip("刷新数值字段统计画像");
-    m_pAction4 = new QAction(style()->standardIcon(QStyle::SP_ArrowForward), QString("趋势视图(&L)"), this);
+    m_pAction4 = new QAction(QString("Trend"), this);
     m_pAction4->setToolTip("查看 Top 数值字段趋势");
-    m_pAction5 = new QAction(style()->standardIcon(QStyle::SP_ArrowUp), QString("分布视图(&B)"), this);
+    m_pAction5 = new QAction(QString("Distribution"), this);
     m_pAction5->setToolTip("查看首个数值字段分布");
-    m_pAction6 = new QAction(style()->standardIcon(QStyle::SP_DialogSaveButton), QString("导出图表(&S)"), this);
+    m_pAction6 = new QAction(QString("Export"), this);
     m_pAction6->setToolTip("导出当前图表为图片或 PDF");
-    m_pAction7 = new QAction(style()->standardIcon(QStyle::SP_DialogCloseButton), QString("退出系统(&T)"), this);
+    m_pAction7 = new QAction(QString("Quit"), this);
     m_pAction7->setToolTip("退出系统");
-    m_pAction8 = new QAction(style()->standardIcon(QStyle::SP_ComputerIcon), QString("AI Workbench(&A)"), this);
+    m_pAction8 = new QAction(QString("Analyze"), this);
     m_pAction8->setToolTip("打开任意 Excel、CSV 或 TXT 表格进行智能画像");
+    m_pAction9 = new QAction(QString("中文"), this);
+    m_pAction9->setToolTip("Switch language / 切换语言");
 
     // 连接各个动作的触发信号到槽函数
     connect(m_pAction1, SIGNAL(triggered()),this, SLOT(Slot1()));
@@ -122,6 +128,13 @@ void MainWindow::createActions(){// 创建各个功能标签的动作
     connect(m_pAction5, SIGNAL(triggered()),this, SLOT(Slot5()));
     connect(m_pAction6, SIGNAL(triggered()),this, SLOT(Slot6()));
     connect(m_pAction7, SIGNAL(triggered()),this, SLOT(Slot7()));
+    connect(m_pAction9, &QAction::triggered, this, [this]() {
+        useChinese = !useChinese;
+        ApplyLanguage();
+        if (!lastProfile.isEmpty() && insightText) {
+            insightText->setHtml(FormatInsightHtml(lastProfile));
+        }
+    });
     connect(m_pAction8, &QAction::triggered, this, [this]() {
         QString filePath = QFileDialog::getOpenFileName(
             this,
@@ -162,15 +175,15 @@ void MainWindow::createOverviewPanel()
     heroLayout->setSpacing(14);
 
     QVBoxLayout *titleBlock = new QVBoxLayout;
-    QLabel *eyebrow = new QLabel(QStringLiteral("LOCAL AI DATA WORKBENCH"), hero);
-    eyebrow->setObjectName(QStringLiteral("eyebrowLabel"));
-    QLabel *title = new QLabel(QStringLiteral("InsightQt AI Workbench"), hero);
-    title->setObjectName(QStringLiteral("heroTitle"));
-    QLabel *subtitle = new QLabel(QStringLiteral("Dynamic table profiling, schema inference, quality scoring, and explainable analysis traces."), hero);
-    subtitle->setObjectName(QStringLiteral("heroSubtitle"));
-    titleBlock->addWidget(eyebrow);
-    titleBlock->addWidget(title);
-    titleBlock->addWidget(subtitle);
+    eyebrowLabel = new QLabel(QStringLiteral("PRIVATE AI DATA WORKBENCH"), hero);
+    eyebrowLabel->setObjectName(QStringLiteral("eyebrowLabel"));
+    titleLabel = new QLabel(QStringLiteral("LatticeIQ"), hero);
+    titleLabel->setObjectName(QStringLiteral("heroTitle"));
+    subtitleLabel = new QLabel(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."), hero);
+    subtitleLabel->setObjectName(QStringLiteral("heroSubtitle"));
+    titleBlock->addWidget(eyebrowLabel);
+    titleBlock->addWidget(titleLabel);
+    titleBlock->addWidget(subtitleLabel);
     heroLayout->addLayout(titleBlock, 3);
 
     auto makeCard = [hero](const QString &objectName, const QString &text) {
@@ -201,7 +214,7 @@ void MainWindow::createOverviewPanel()
 
 void MainWindow::createInsightPanel()
 {
-    insightDock = new QDockWidget(QStringLiteral("Insight Panel"), this);
+    insightDock = new QDockWidget(QStringLiteral("Analysis Panel"), this);
     insightDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
     insightDock->setMinimumWidth(410);
 
@@ -212,6 +225,50 @@ void MainWindow::createInsightPanel()
 
     insightDock->setWidget(insightText);
     addDockWidget(Qt::RightDockWidgetArea, insightDock);
+}
+
+void MainWindow::ApplyLanguage()
+{
+    setWindowTitle(QStringLiteral("LatticeIQ"));
+    if (useChinese) {
+        m_pAction1->setText(QStringLiteral("打开 Excel"));
+        m_pAction2->setText(QStringLiteral("打开文本"));
+        m_pAction3->setText(QStringLiteral("数据画像"));
+        m_pAction4->setText(QStringLiteral("趋势"));
+        m_pAction5->setText(QStringLiteral("分布"));
+        m_pAction6->setText(QStringLiteral("导出"));
+        m_pAction7->setText(QStringLiteral("退出"));
+        m_pAction8->setText(QStringLiteral("分析"));
+        m_pAction9->setText(QStringLiteral("EN"));
+        ui->groupBox->setTitle(QStringLiteral("数据预览"));
+        ui->groupBox_2->setTitle(QStringLiteral("数值画像"));
+        ui->pushButton->setText(QStringLiteral("刷新趋势"));
+        ui->pushButton_2->setText(QStringLiteral("刷新分布"));
+        if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("本地 AI 数据工作台"));
+        if (titleLabel) titleLabel->setText(QStringLiteral("LatticeIQ"));
+        if (subtitleLabel) subtitleLabel->setText(QStringLiteral("面向复杂表格、销售数据和 TXT/CSV 文件的本地可解释分析工作台。"));
+        if (insightDock) insightDock->setWindowTitle(QStringLiteral("洞察面板"));
+        if (insightText) insightText->setPlaceholderText(QStringLiteral("选择数据文件后，这里会显示分析摘要、数据质量、字段结构和下一步建议。"));
+    } else {
+        m_pAction1->setText(QStringLiteral("Open Excel"));
+        m_pAction2->setText(QStringLiteral("Open Text"));
+        m_pAction3->setText(QStringLiteral("Profile"));
+        m_pAction4->setText(QStringLiteral("Trend"));
+        m_pAction5->setText(QStringLiteral("Distribution"));
+        m_pAction6->setText(QStringLiteral("Export"));
+        m_pAction7->setText(QStringLiteral("Quit"));
+        m_pAction8->setText(QStringLiteral("Analyze"));
+        m_pAction9->setText(QStringLiteral("中文"));
+        ui->groupBox->setTitle(QStringLiteral("Data Preview"));
+        ui->groupBox_2->setTitle(QStringLiteral("Numeric Profile"));
+        ui->pushButton->setText(QStringLiteral("Refresh trend"));
+        ui->pushButton_2->setText(QStringLiteral("Refresh distribution"));
+        if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("PRIVATE AI DATA WORKBENCH"));
+        if (titleLabel) titleLabel->setText(QStringLiteral("LatticeIQ"));
+        if (subtitleLabel) subtitleLabel->setText(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."));
+        if (insightDock) insightDock->setWindowTitle(QStringLiteral("Analysis Panel"));
+        if (insightText) insightText->setPlaceholderText(QStringLiteral("Open a data file to see the analysis brief, data quality, schema, and next moves."));
+    }
 }
 
 void MainWindow::CheckAnalysisService()
@@ -230,12 +287,20 @@ void MainWindow::CheckAnalysisService()
             serviceBadge->setText(QStringLiteral("<b>Service</b><br><span class='ok'>connected</span>"));
         }
         if (insightText) {
-            insightText->setHtml(QStringLiteral(
-                "<h2>InsightQt AI Workbench</h2>"
-                "<p class='muted'>Analysis service is connected.</p>"
-                "<div class='callout'>Drop into the workbench by opening an Excel, CSV, or TXT table. "
-                "InsightQt will infer schema, score data quality, plan the next analysis, and render dynamic charts.</div>"
-            ));
+            if (useChinese) {
+                insightText->setHtml(QStringLiteral(
+                    "<h2>LatticeIQ</h2>"
+                    "<p class='muted'>本地分析服务已连接。</p>"
+                    "<div class='callout'>打开 Excel、CSV 或 TXT 表格后，系统会自动识别字段、评分数据质量、规划下一步分析并生成动态图表。</div>"
+                ));
+            } else {
+                insightText->setHtml(QStringLiteral(
+                    "<h2>LatticeIQ</h2>"
+                    "<p class='muted'>Analysis service is connected.</p>"
+                    "<div class='callout'>Open an Excel, CSV, or TXT table. "
+                    "LatticeIQ will infer schema, score data quality, plan the next analysis, and render dynamic charts.</div>"
+                ));
+            }
         }
         return;
     }
@@ -245,13 +310,10 @@ void MainWindow::CheckAnalysisService()
         serviceBadge->setText(QStringLiteral("<b>Service</b><br><span>offline</span>"));
     }
     if (insightText) {
-        insightText->setHtml(QStringLiteral(
-            "<h2>InsightQt AI Workbench</h2>"
-            "<p class='muted'>Analysis service is offline.</p>"
-            "<div class='callout warn'>The app tried to start Docker Compose automatically. "
-            "If Docker Desktop is not running, start it and reopen a file.</div>"
-            "<p>Manual fallback: run <code>docker compose up --build</code> from the project root.</p>"
-        ));
+        insightText->setHtml(useChinese
+            ? QStringLiteral("<h2>LatticeIQ</h2><p class='muted'>本地分析服务未连接。</p><div class='callout warn'>程序已尝试自动启动 Docker Compose。如果 Docker Desktop 未运行，请先启动 Docker Desktop。</div><p>手动方式：在项目根目录运行 <code>docker compose up --build</code>。</p>")
+            : QStringLiteral("<h2>LatticeIQ</h2><p class='muted'>Analysis service is offline.</p><div class='callout warn'>The app tried to start Docker Compose automatically. If Docker Desktop is not running, start it and reopen a file.</div><p>Manual fallback: run <code>docker compose up --build</code> from the project root.</p>")
+        );
     }
 }
 
@@ -291,7 +353,7 @@ bool MainWindow::TryStartAnalysisService()
     if (!started && insightText) {
         insightText->setHtml(QStringLiteral(
             "<h2>Service Start Failed</h2>"
-            "<div class='callout warn'>InsightQt could not start Docker Compose automatically. "
+            "<div class='callout warn'>LatticeIQ could not start Docker Compose automatically. "
             "Start Docker Desktop, then run <code>docker compose up --build</code>.</div>"
         ));
     }
@@ -512,7 +574,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
         if (!IsAnalysisServiceHealthy(7000)) {
             QMessageBox::warning(
                 this,
-                QStringLiteral("InsightQt 分析服务"),
+                QStringLiteral("LatticeIQ"),
                 QStringLiteral("本地分析服务暂未就绪。请确认 Docker Desktop 已启动，或在项目根目录运行 docker compose up --build。")
             );
             return;
@@ -522,7 +584,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
     QFileInfo fileInfo(filePath);
     QFile *file = new QFile(filePath);
     if (!file->open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, QStringLiteral("InsightQt 分析服务"), QStringLiteral("无法读取所选文件。"));
+        QMessageBox::warning(this, QStringLiteral("LatticeIQ"), QStringLiteral("无法读取所选文件。"));
         delete file;
         return;
     }
@@ -551,7 +613,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
         QString message = QStringLiteral("无法连接本地分析服务。请先运行：\n\ndocker compose up --build\n\n错误：%1")
                               .arg(reply->errorString());
         reply->deleteLater();
-        QMessageBox::warning(this, QStringLiteral("InsightQt 分析服务"), message);
+        QMessageBox::warning(this, QStringLiteral("LatticeIQ"), message);
         return;
     }
 
@@ -565,7 +627,7 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     QJsonParseError parseError;
     QJsonDocument document = QJsonDocument::fromJson(payload, &parseError);
     if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
-        QMessageBox::warning(this, QStringLiteral("InsightQt 分析服务"), QStringLiteral("分析服务返回了无法解析的数据。"));
+        QMessageBox::warning(this, QStringLiteral("LatticeIQ"), QStringLiteral("分析服务返回了无法解析的数据。"));
         return;
     }
 
@@ -579,7 +641,7 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     insightText->setHtml(FormatInsightHtml(root));
     insightDock->show();
     info_Label->setText(QStringLiteral("智能分析完成"));
-    statusBar()->showMessage(QStringLiteral("InsightQt analysis completed"), 5000);
+    statusBar()->showMessage(QStringLiteral("LatticeIQ analysis completed"), 5000);
 }
 
 void MainWindow::PopulateTableFromService(const QJsonObject &root)
@@ -815,7 +877,7 @@ QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
     QJsonObject source = root.value("source").toObject();
 
     QStringList lines;
-    lines << QStringLiteral("InsightQt AI Analysis");
+    lines << QStringLiteral("LatticeIQ Analysis");
     lines << QStringLiteral("======================");
     lines << QStringLiteral("Dataset: %1").arg(dataset.value("filename").toString());
     lines << QStringLiteral("Shape: %1 rows x %2 columns")
@@ -944,43 +1006,49 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
             .arg(label.toHtmlEscaped())
             .arg(value.toHtmlEscaped());
     };
+    auto label = [this](const QString &en, const QString &zh) {
+        return useChinese ? zh : en;
+    };
 
     QStringList html;
     html << QStringLiteral(
         "<style>"
-        "body{font-family:'Segoe UI','Microsoft YaHei',Arial;color:#20231f;background:#fbfaf7;}"
-        "h1{font-size:22px;margin:0 0 4px 0;color:#141713;}"
+        "body{font-family:'SF Pro Text','Segoe UI','Microsoft YaHei',Arial;color:#1d1d1f;background:#fbfbfd;}"
+        "h1{font-size:22px;margin:0 0 4px 0;color:#1d1d1f;font-weight:650;}"
         "h2{font-size:15px;margin:18px 0 8px 0;color:#141713;}"
         "p{line-height:1.45;margin:4px 0 8px 0;}"
-        ".muted{color:#6d746b;}"
+        ".muted{color:#6e6e73;}"
         ".grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}"
-        ".card{border:1px solid #d8ddd2;background:#ffffff;border-radius:8px;padding:10px;}"
-        ".value{font-size:20px;font-weight:700;color:#0f766e;}"
-        ".pill{display:inline-block;border:1px solid #d8ddd2;border-radius:999px;padding:4px 8px;margin:3px;background:#f3f6ef;}"
-        ".callout{border-left:4px solid #0f766e;background:#f2f7f4;padding:9px 10px;margin:10px 0;}"
-        ".step{border-left:3px solid #d89b24;background:#fff8e8;margin:8px 0;padding:8px 10px;}"
+        ".card{border:1px solid #e5e5ea;background:#ffffff;border-radius:12px;padding:10px;}"
+        ".value{font-size:20px;font-weight:650;color:#007aff;}"
+        ".pill{display:inline-block;border:1px solid #e5e5ea;border-radius:999px;padding:4px 8px;margin:3px;background:#f5f5f7;}"
+        ".callout{border:1px solid #d2e7ff;background:#f5faff;border-radius:12px;padding:10px 12px;margin:10px 0;}"
+        ".step{border:1px solid #ececec;background:#ffffff;margin:8px 0;padding:9px 11px;border-radius:12px;}"
         "li{margin:4px 0;}"
-        "code{background:#eef2e8;padding:2px 4px;border-radius:4px;}"
+        "code{background:#f5f5f7;padding:2px 4px;border-radius:5px;}"
         "</style>"
     );
 
-    html << QStringLiteral("<h1>AI Analysis Brief</h1>");
-    html << QStringLiteral("<p class='muted'>Explainable local profiling for <b>%1</b></p>")
+    html << QStringLiteral("<h1>%1</h1>").arg(label(QStringLiteral("Analysis Brief"), QStringLiteral("分析简报")));
+    html << QStringLiteral("<p class='muted'>%1 <b>%2</b></p>")
+                .arg(label(QStringLiteral("Explainable local profiling for"), QStringLiteral("本地可解释分析：")))
                 .arg(dataset.value("filename").toString().toHtmlEscaped());
     html << QStringLiteral("<div>")
-                + pill(QStringLiteral("Rows"), QString::number(dataset.value("rows").toInt()))
-                + pill(QStringLiteral("Columns"), QString::number(dataset.value("columns").toInt()))
-                + pill(QStringLiteral("Quality"), QStringLiteral("%1/100").arg(quality.value("score").toInt()))
-                + pill(QStringLiteral("Parser"), source.value("parser").toString("-"))
+                + pill(label(QStringLiteral("Rows"), QStringLiteral("行数")), QString::number(dataset.value("rows").toInt()))
+                + pill(label(QStringLiteral("Columns"), QStringLiteral("列数")), QString::number(dataset.value("columns").toInt()))
+                + pill(label(QStringLiteral("Quality"), QStringLiteral("质量")), QStringLiteral("%1/100").arg(quality.value("score").toInt()))
+                + pill(label(QStringLiteral("Parser"), QStringLiteral("解析器")), source.value("parser").toString("-"))
                 + QStringLiteral("</div>");
 
     if (!brief.isEmpty()) {
-        html << QStringLiteral("<div class='callout'><b>Executive Brief</b><br>%1<br><span class='muted'>Confidence: %2</span></div>")
+        html << QStringLiteral("<div class='callout'><b>%1</b><br>%2<br><span class='muted'>%3: %4</span></div>")
+                    .arg(label(QStringLiteral("Executive Brief"), QStringLiteral("执行摘要")))
                     .arg(brief.value("headline").toString().toHtmlEscaped())
+                    .arg(label(QStringLiteral("Confidence"), QStringLiteral("置信度")))
                     .arg(brief.value("confidence").toString().toHtmlEscaped());
         QJsonArray watchouts = brief.value("watchouts").toArray();
         if (!watchouts.isEmpty()) {
-            html << QStringLiteral("<h2>Watchouts</h2><ul>");
+            html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Watchouts"), QStringLiteral("注意事项")));
             for (const QJsonValue &value : watchouts) {
                 html << QStringLiteral("<li>%1</li>").arg(value.toString().toHtmlEscaped());
             }
@@ -989,9 +1057,10 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!plan.isEmpty()) {
-        html << QStringLiteral("<h2>Analysis Planner</h2>");
-        html << QStringLiteral("<div class='callout'><b>%1</b><br><span class='muted'>Planner confidence: %2</span></div>")
+        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Analysis Planner"), QStringLiteral("分析规划器")));
+        html << QStringLiteral("<div class='callout'><b>%1</b><br><span class='muted'>%2: %3</span></div>")
                     .arg(plan.value("dataset_story").toString().toHtmlEscaped())
+                    .arg(label(QStringLiteral("Planner confidence"), QStringLiteral("规划置信度")))
                     .arg(plan.value("confidence").toString().toHtmlEscaped());
         QJsonArray steps = plan.value("steps").toArray();
         for (int i = 0; i < steps.size() && i < 4; ++i) {
@@ -1003,18 +1072,22 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     html << QStringLiteral("<div class='grid'>");
-    html << QStringLiteral("<div class='card'><div class='muted'>Numeric fields</div><div class='value'>%1</div></div>")
+    html << QStringLiteral("<div class='card'><div class='muted'>%1</div><div class='value'>%2</div></div>")
+                .arg(label(QStringLiteral("Numeric fields"), QStringLiteral("数值字段")))
                 .arg(dataset.value("numeric_columns").toInt());
-    html << QStringLiteral("<div class='card'><div class='muted'>Date fields</div><div class='value'>%1</div></div>")
+    html << QStringLiteral("<div class='card'><div class='muted'>%1</div><div class='value'>%2</div></div>")
+                .arg(label(QStringLiteral("Date fields"), QStringLiteral("日期字段")))
                 .arg(dataset.value("date_columns").toInt());
-    html << QStringLiteral("<div class='card'><div class='muted'>Missing cells</div><div class='value'>%1</div></div>")
+    html << QStringLiteral("<div class='card'><div class='muted'>%1</div><div class='value'>%2</div></div>")
+                .arg(label(QStringLiteral("Missing cells"), QStringLiteral("缺失单元格")))
                 .arg(dataset.value("missing_cells").toInt());
-    html << QStringLiteral("<div class='card'><div class='muted'>Anomalies</div><div class='value'>%1</div></div>")
+    html << QStringLiteral("<div class='card'><div class='muted'>%1</div><div class='value'>%2</div></div>")
+                .arg(label(QStringLiteral("Anomalies"), QStringLiteral("异常候选")))
                 .arg(quality.value("anomaly_count").toInt());
     html << QStringLiteral("</div>");
 
     if (!recommendations.isEmpty()) {
-        html << QStringLiteral("<h2>Recommended Next Moves</h2><ul>");
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Recommended Next Moves"), QStringLiteral("下一步建议")));
         for (int i = 0; i < recommendations.size() && i < 4; ++i) {
             QJsonObject item = recommendations.at(i).toObject();
             html << QStringLiteral("<li><b>%1</b><br><span class='muted'>%2</span></li>")
@@ -1026,7 +1099,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
 
     if (!charts.isEmpty()) {
         QJsonObject chart = charts.first().toObject();
-        html << QStringLiteral("<h2>Chart Recommendation</h2>");
+        html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Chart Recommendation"), QStringLiteral("图表建议")));
         html << QStringLiteral("<div class='callout'><b>%1</b>: x=%2, y=%3<br><span class='muted'>%4</span></div>")
                     .arg(chart.value("chart_type").toString().toHtmlEscaped())
                     .arg(chart.value("x").toString("-").toHtmlEscaped())
@@ -1035,7 +1108,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!schema.isEmpty()) {
-        html << QStringLiteral("<h2>Schema Snapshot</h2><ul>");
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Schema Snapshot"), QStringLiteral("字段结构")));
         for (int i = 0; i < schema.size() && i < 8; ++i) {
             QJsonObject item = schema.at(i).toObject();
             html << QStringLiteral("<li><b>%1</b> %2 <span class='muted'>%3</span></li>")
@@ -1047,7 +1120,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!insights.isEmpty()) {
-        html << QStringLiteral("<h2>Evidence Summary</h2><ul>");
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Evidence Summary"), QStringLiteral("证据摘要")));
         for (const QJsonValue &value : insights) {
             html << QStringLiteral("<li>%1</li>").arg(value.toString().toHtmlEscaped());
         }
@@ -1055,7 +1128,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!anomalies.isEmpty()) {
-        html << QStringLiteral("<h2>Review Queue</h2><ul>");
+        html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Review Queue"), QStringLiteral("复核队列")));
         for (int i = 0; i < anomalies.size() && i < 5; ++i) {
             QJsonObject item = anomalies.at(i).toObject();
             html << QStringLiteral("<li>Row %1, <b>%2</b>, value %3, z-score %4</li>")
@@ -1068,14 +1141,14 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     }
 
     if (!toolTrace.isEmpty()) {
-        html << QStringLiteral("<h2>Tool Trace</h2><p>");
+        html << QStringLiteral("<h2>%1</h2><p>").arg(label(QStringLiteral("Tool Trace"), QStringLiteral("工具轨迹")));
         for (const QJsonValue &value : toolTrace) {
             html << pill(QStringLiteral("step"), value.toString());
         }
         html << QStringLiteral("</p>");
     }
 
-    html << QStringLiteral("<p class='muted'>This is an analytical summary, not a business recommendation.</p>");
+    html << QStringLiteral("<p class='muted'>%1</p>").arg(label(QStringLiteral("This is an analytical summary, not a business recommendation."), QStringLiteral("这是分析摘要，不构成业务建议。")));
     return html.join(QString());
 }
 
@@ -1235,22 +1308,22 @@ void MainWindow::StylePlot(QCustomPlot *plot)
     if (!plot) {
         return;
     }
-    plot->setBackground(QColor(255, 255, 252));
-    plot->axisRect()->setBackground(QColor(250, 250, 246));
+    plot->setBackground(QColor(255, 255, 255));
+    plot->axisRect()->setBackground(QColor(255, 255, 255));
     plot->axisRect()->setAutoMargins(QCP::msAll);
-    plot->xAxis->setBasePen(QPen(QColor(93, 101, 91)));
-    plot->yAxis->setBasePen(QPen(QColor(93, 101, 91)));
-    plot->xAxis->setTickPen(QPen(QColor(166, 173, 160)));
-    plot->yAxis->setTickPen(QPen(QColor(166, 173, 160)));
-    plot->xAxis->setSubTickPen(QPen(QColor(207, 211, 201)));
-    plot->yAxis->setSubTickPen(QPen(QColor(207, 211, 201)));
-    plot->xAxis->grid()->setPen(QPen(QColor(226, 229, 220), 1, Qt::DotLine));
-    plot->yAxis->grid()->setPen(QPen(QColor(226, 229, 220), 1, Qt::DotLine));
-    plot->xAxis->setTickLabelColor(QColor(61, 66, 60));
-    plot->yAxis->setTickLabelColor(QColor(61, 66, 60));
-    plot->xAxis->setLabelColor(QColor(39, 44, 38));
-    plot->yAxis->setLabelColor(QColor(39, 44, 38));
-    plot->legend->setBrush(QBrush(QColor(255, 255, 252, 230)));
-    plot->legend->setBorderPen(QPen(QColor(218, 222, 213)));
+    plot->xAxis->setBasePen(QPen(QColor(142, 142, 147)));
+    plot->yAxis->setBasePen(QPen(QColor(142, 142, 147)));
+    plot->xAxis->setTickPen(QPen(QColor(199, 199, 204)));
+    plot->yAxis->setTickPen(QPen(QColor(199, 199, 204)));
+    plot->xAxis->setSubTickPen(QPen(QColor(229, 229, 234)));
+    plot->yAxis->setSubTickPen(QPen(QColor(229, 229, 234)));
+    plot->xAxis->grid()->setPen(QPen(QColor(229, 229, 234), 1, Qt::DotLine));
+    plot->yAxis->grid()->setPen(QPen(QColor(229, 229, 234), 1, Qt::DotLine));
+    plot->xAxis->setTickLabelColor(QColor(99, 99, 102));
+    plot->yAxis->setTickLabelColor(QColor(99, 99, 102));
+    plot->xAxis->setLabelColor(QColor(58, 58, 60));
+    plot->yAxis->setLabelColor(QColor(58, 58, 60));
+    plot->legend->setBrush(QBrush(QColor(255, 255, 255, 235)));
+    plot->legend->setBorderPen(QPen(QColor(229, 229, 234)));
     plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom | QCP::iSelectPlottables);
 }

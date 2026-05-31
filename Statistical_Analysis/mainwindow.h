@@ -37,6 +37,7 @@ private:
     QAction* m_pAction6; // 功能标签6的动作
     QAction* m_pAction7; // 功能标签7的动作
     QAction* m_pAction8; // 智能分析动作
+    QAction* m_pAction9; // 语言切换动作
 
     // 创建工具栏、标签、状态栏、样式等
     void createToolBar();
@@ -45,6 +46,7 @@ private:
     void createStyle();
     void createOverviewPanel();
     void createInsightPanel();
+    void ApplyLanguage();
 
 // 槽函数，处理各个功能标签的点击事件
 private slots:
@@ -68,7 +70,11 @@ private:
     QLabel *qualityCard;
     QLabel *schemaCard;
     QLabel *recommendationCard;
+    QLabel *eyebrowLabel;
+    QLabel *titleLabel;
+    QLabel *subtitleLabel;
     QJsonObject lastProfile;
+    bool useChinese;
     bool isExit;        // 是否退出标志
     int  SaveType;      // 保存类型
     bool SavePic(QString fileName, QCustomPlot *p_save); // 保存绘图到文件

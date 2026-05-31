@@ -9,7 +9,7 @@ LatticeIQ：本地优先的 AI 表格分析工作台，将 Excel/CSV/TXT 转化�
 Website:
 
 ```text
-https://github.com/Phoenix0531-sudo/LatticeIQ
+https://phoenix0531-sudo.github.io/LatticeIQ/
 ```
 
 Topics:

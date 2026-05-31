@@ -19,7 +19,7 @@ def default_data_dir() -> Path:
     configured = os.getenv("DATA_DIR")
     if configured:
         return Path(configured).resolve()
-    return Path(__file__).resolve().parents[2] / "Statistical_Analysis"
+    return Path(__file__).resolve().parents[2] / "demo"
 
 
 def list_datasets(data_dir: Path | None = None) -> list[dict[str, Any]]:

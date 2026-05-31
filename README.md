@@ -1,30 +1,20 @@
 # LatticeIQ
 
-![CI](https://github.com/Phoenix0531-sudo/LatticeIQ/actions/workflows/ci.yml/badge.svg?branch=modern-ai-analysis-workbench)
+![CI](https://github.com/Phoenix0531-sudo/LatticeIQ/actions/workflows/ci.yml/badge.svg?branch=main)
 
-**中文**：LatticeIQ 是一个本地优先的 AI 表格分析工作台，用 Qt/C++ 提供桌面体验，用 Dockerized FastAPI 提供动态解析、字段识别、质量评分、分析规划和可解释结果。
+LatticeIQ：本地优先的 AI 表格分析工作台，将 Excel/CSV/TXT 转化为可解释的数据画像、质量评分和分析规划。
 
-**English**: LatticeIQ is a local-first AI table analysis workbench. A Qt/C++ desktop client delivers the product experience, while a Dockerized FastAPI service handles dynamic parsing, schema inference, quality scoring, analysis planning, and explainable results.
+Local-first AI table analysis workbench for explainable profiling, quality scoring, and analysis planning over Excel/CSV/TXT files.
 
-原始课程/旧版代码保留在 `legacy-qt-statistical-analysis`。现代化版本位于 `modern-ai-analysis-workbench`。
+## Language
 
-The original legacy version is preserved in `legacy-qt-statistical-analysis`. Modern development lives on `modern-ai-analysis-workbench`.
+- [中文 README](README.zh-CN.md)
+- [English README](README.en.md)
 
-## Documentation
+## Demo
 
-- [中文文档](docs/README.zh-CN.md)
-- [English Documentation](docs/README.en.md)
-- [Architecture](docs/ARCHITECTURE.md)
-
-## Highlights
-
-- Excel / CSV / TXT table ingestion.
-- Encoding, delimiter, and header inference for messy text tables.
-- Semantic schema inference: numeric, date, category, text, empty, high-cardinality.
-- Data quality score with missing-value, duplicate, anomaly, sample-size, and analyzability checks.
-- Analysis Planner for trend, segment, relationship, anomaly, and quality workflows.
-- Qt desktop UI with bilingual Chinese/English switching.
-- Local Docker service, GitHub Actions CI, and Windows release packaging script.
+- Demo workbook: `demo/latticeiq_demo_sales.xlsx`
+- Project page: https://phoenix0531-sudo.github.io/LatticeIQ/
 
 ## Quick Start
 
@@ -32,7 +22,7 @@ The original legacy version is preserved in `legacy-qt-statistical-analysis`. Mo
 docker compose up --build
 ```
 
-Open the Qt project:
+Open the desktop project with Qt Creator:
 
 ```text
 Statistical_Analysis/Statistical_Analysis.pro
@@ -42,12 +32,6 @@ Recommended kit:
 
 ```text
 Qt 6.11.1 MinGW 64-bit
-```
-
-Demo workbook:
-
-```text
-samples/latticeiq_demo_sales.xlsx
 ```
 
 ## Release Package

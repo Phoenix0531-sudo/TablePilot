@@ -1,0 +1,199 @@
+:root {
+  color: #1d1d1f;
+  background: #f5f5f7;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(0, 122, 255, 0.12), transparent 28rem),
+    linear-gradient(180deg, #ffffff 0%, #f5f5f7 55%, #ffffff 100%);
+}
+
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 72px;
+}
+
+nav strong {
+  font-size: 20px;
+}
+
+nav a {
+  color: #0066cc;
+  text-decoration: none;
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.hero {
+  min-height: 760px;
+  padding: 10px 0 56px;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+  gap: 64px;
+  align-items: center;
+}
+
+.eyebrow {
+  color: #0066cc;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+h1 {
+  font-size: clamp(52px, 7vw, 88px);
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  margin: 18px 0 28px;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 24px;
+}
+
+.lead {
+  color: #515154;
+  font-size: 21px;
+  line-height: 1.42;
+  max-width: 680px;
+}
+
+.zh {
+  font-size: 18px;
+}
+
+.product-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(210, 210, 215, 0.88);
+  border-radius: 34px;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.12);
+  padding: 22px;
+  backdrop-filter: blur(24px);
+}
+
+.toolbar,
+.panel,
+.brief,
+.flow span,
+.features article {
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 22px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  color: #0066cc;
+  font-size: 13px;
+}
+
+.toolbar span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #f5f5f7;
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 18px;
+  margin: 16px 0;
+}
+
+.panel small {
+  color: #6e6e73;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.panel strong {
+  font-size: 22px;
+}
+
+.chart {
+  height: 220px;
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(0, 122, 255, 0.13), rgba(52, 199, 89, 0.09)),
+    repeating-linear-gradient(90deg, transparent 0 48px, rgba(60, 60, 67, 0.08) 49px 50px),
+    repeating-linear-gradient(0deg, transparent 0 48px, rgba(60, 60, 67, 0.08) 49px 50px);
+  border: 1px solid #e5e5ea;
+}
+
+.brief {
+  padding: 18px;
+  margin-top: 16px;
+}
+
+.brief p,
+.features p {
+  color: #6e6e73;
+  line-height: 1.55;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin: 24px 0;
+}
+
+.features article {
+  padding: 24px;
+}
+
+.stack {
+  background: #1d1d1f;
+  color: #ffffff;
+  border-radius: 34px;
+  padding: 34px;
+  margin: 18px 0 80px;
+}
+
+.stack h2 {
+  color: #ffffff;
+}
+
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.flow span {
+  color: #1d1d1f;
+  padding: 14px 16px;
+}
+
+@media (max-width: 900px) {
+  .hero-grid,
+  .features {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: auto;
+  }
+}

@@ -1,7 +1,0 @@
-order_id,order_date,region,customer_segment,revenue,discount,notes
-ORD-001,2026-02-01,East,Enterprise,15000,0.05,Priority renewal
-ORD-002,2026-02-02,West,SMB,4200,0.10,New logo
-ORD-003,2026-02-03,North,Consumer,980,0.00,Small order
-ORD-004,2026-02-04,East,SMB,5100,0.07,Upsell candidate
-ORD-005,2026-02-05,South,Enterprise,18700,0.03,Contract expansion
-ORD-006,2026-02-06,West,Consumer,760,0.00,Low value repeat purchase

@@ -3,7 +3,7 @@ name: CI
 on:
   push:
     branches:
-      - modern-ai-analysis-workbench
+      - main
   pull_request:
 
 jobs:
@@ -62,11 +62,11 @@ jobs:
       - name: Exercise upload and report endpoints
         run: |
           curl -fsS -X POST http://127.0.0.1:8000/api/analyze-upload \
-            -F "file=@samples/mixed_schema_sample.csv" | tee /tmp/profile.json
+            -F "file=@analysis_service/tests/fixtures/mixed_schema_sample.csv" | tee /tmp/profile.json
           grep -q "analysis_plan" /tmp/profile.json
           curl -fsS -X POST http://127.0.0.1:8000/api/report/markdown \
             -H "Content-Type: application/json" \
-            -d '{"filename":"销售数据.txt"}' | grep -q "Analysis Plan"
+            -d '{"filename":"latticeiq_demo_sales.xlsx"}' | grep -q "Analysis Plan"
 
       - name: Stop service
         if: always()

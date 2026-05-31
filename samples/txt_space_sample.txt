@@ -1,5 +1,0 @@
-month product sales cost
-Jan Laptop 12000 9000
-Feb Laptop 13200 9700
-Mar Phone 8800 6200
-Apr Tablet 5400 3800

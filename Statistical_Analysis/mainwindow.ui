@@ -22,7 +22,7 @@
         <item>
          <widget class="QGroupBox" name="groupBox">
           <property name="title">
-           <string>销售数据</string>
+           <string>Data Preview</string>
           </property>
           <layout class="QGridLayout" name="gridLayout">
            <item row="0" column="0">

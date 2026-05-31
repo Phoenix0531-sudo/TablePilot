@@ -47,6 +47,8 @@ Copy-Item -LiteralPath $exe.FullName -Destination (Join-Path $ReleaseDir "Lattic
 
 Copy-Item -LiteralPath (Join-Path $Root "docker-compose.yml") -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $Root "README.md") -Destination $PackageDir
+Copy-Item -LiteralPath (Join-Path $Root "README.zh-CN.md") -Destination $PackageDir
+Copy-Item -LiteralPath (Join-Path $Root "README.en.md") -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "start-latticeiq.ps1") -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "README_RELEASE.md") -Destination $PackageDir
 
@@ -55,7 +57,7 @@ New-Item -ItemType Directory -Path $ServiceDir | Out-Null
 Copy-Item -LiteralPath (Join-Path $Root "analysis_service\Dockerfile") -Destination $ServiceDir
 Copy-Item -LiteralPath (Join-Path $Root "analysis_service\requirements.txt") -Destination $ServiceDir
 Copy-Item -LiteralPath (Join-Path $Root "analysis_service\app") -Destination $ServiceDir -Recurse
-Copy-Item -LiteralPath (Join-Path $Root "samples") -Destination $PackageDir -Recurse
+Copy-Item -LiteralPath (Join-Path $Root "demo") -Destination $PackageDir -Recurse
 
 Compress-Archive -LiteralPath $PackageDir -DestinationPath (Join-Path $Root "dist\LatticeIQ.zip") -Force
 Write-Host "Release package created: $Root\dist\LatticeIQ.zip"

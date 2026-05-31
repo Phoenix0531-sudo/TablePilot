@@ -1,1 +1,1 @@
-"""LatticeIQ analysis service package."""
+"""TablePilot analysis service package."""

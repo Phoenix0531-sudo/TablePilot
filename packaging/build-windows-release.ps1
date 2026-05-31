@@ -9,7 +9,7 @@ $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path "$PSScriptRoot\..").Path
 $Project = Join-Path $Root "Statistical_Analysis\Statistical_Analysis.pro"
 $BuildDir = Join-Path $Root ".release-build"
-$PackageDir = Join-Path $Root "dist\LatticeIQ"
+$PackageDir = Join-Path $Root "dist\TablePilot"
 
 if (-not (Test-Path (Join-Path $QtBin "qmake.exe"))) {
     throw "qmake.exe was not found under $QtBin"
@@ -34,22 +34,21 @@ finally {
     Pop-Location
 }
 
-$exe = Get-ChildItem -Path $BuildDir -Recurse -Filter "LatticeIQ.exe" | Select-Object -First 1
+$exe = Get-ChildItem -Path $BuildDir -Recurse -Filter "TablePilot.exe" | Select-Object -First 1
 if (-not $exe) {
-    throw "Build completed but LatticeIQ.exe was not found."
+    throw "Build completed but TablePilot.exe was not found."
 }
 
 $ReleaseDir = Join-Path $PackageDir "release"
 New-Item -ItemType Directory -Path $ReleaseDir | Out-Null
-Copy-Item -LiteralPath $exe.FullName -Destination (Join-Path $ReleaseDir "LatticeIQ.exe")
+Copy-Item -LiteralPath $exe.FullName -Destination (Join-Path $ReleaseDir "TablePilot.exe")
 
-& (Join-Path $QtBin "windeployqt.exe") (Join-Path $ReleaseDir "LatticeIQ.exe")
+& (Join-Path $QtBin "windeployqt.exe") (Join-Path $ReleaseDir "TablePilot.exe")
 
 Copy-Item -LiteralPath (Join-Path $Root "docker-compose.yml") -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $Root "README.md") -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $Root "README.zh-CN.md") -Destination $PackageDir
-Copy-Item -LiteralPath (Join-Path $Root "README.en.md") -Destination $PackageDir
-Copy-Item -LiteralPath (Join-Path $PSScriptRoot "start-latticeiq.ps1") -Destination $PackageDir
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot "start-tablepilot.ps1") -Destination $PackageDir
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "README_RELEASE.md") -Destination $PackageDir
 
 $ServiceDir = Join-Path $PackageDir "analysis_service"
@@ -58,6 +57,7 @@ Copy-Item -LiteralPath (Join-Path $Root "analysis_service\Dockerfile") -Destinat
 Copy-Item -LiteralPath (Join-Path $Root "analysis_service\requirements.txt") -Destination $ServiceDir
 Copy-Item -LiteralPath (Join-Path $Root "analysis_service\app") -Destination $ServiceDir -Recurse
 Copy-Item -LiteralPath (Join-Path $Root "demo") -Destination $PackageDir -Recurse
+Copy-Item -LiteralPath (Join-Path $Root "config") -Destination $PackageDir -Recurse
 
-Compress-Archive -LiteralPath $PackageDir -DestinationPath (Join-Path $Root "dist\LatticeIQ.zip") -Force
-Write-Host "Release package created: $Root\dist\LatticeIQ.zip"
+Compress-Archive -LiteralPath $PackageDir -DestinationPath (Join-Path $Root "dist\TablePilot.zip") -Force
+Write-Host "Release package created: $Root\dist\TablePilot.zip"

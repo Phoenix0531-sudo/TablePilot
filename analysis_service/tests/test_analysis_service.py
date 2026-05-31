@@ -16,11 +16,11 @@ def test_lists_demo_datasets():
     datasets = list_datasets(DEMO)
     names = {item["filename"] for item in datasets}
 
-    assert "latticeiq_demo_sales.xlsx" in names
+    assert "tablepilot_demo_sales.xlsx" in names
 
 
 def test_profiles_demo_excel_dataset():
-    profile = profile_dataset("latticeiq_demo_sales.xlsx", DEMO)
+    profile = profile_dataset("tablepilot_demo_sales.xlsx", DEMO)
 
     assert profile["dataset"]["rows"] == 12
     assert profile["dataset"]["columns"] == 9
@@ -76,19 +76,19 @@ def test_missing_values_affect_quality_score():
 
 
 def test_markdown_report_endpoint():
-    response = client.post("/api/report/markdown", json={"filename": "latticeiq_demo_sales.xlsx"})
+    response = client.post("/api/report/markdown", json={"filename": "tablepilot_demo_sales.xlsx"})
 
     assert response.status_code == 200
-    assert "# LatticeIQ Analysis Report" in response.text
+    assert "# TablePilot Analysis Report" in response.text
     assert "## Executive Brief" in response.text
     assert "## Analysis Plan" in response.text
 
 
 def test_dataset_alias_for_report_endpoint():
-    response = client.post("/api/report/markdown", json={"dataset": "latticeiq_demo_sales.xlsx"})
+    response = client.post("/api/report/markdown", json={"dataset": "tablepilot_demo_sales.xlsx"})
 
     assert response.status_code == 200
-    assert "# LatticeIQ Analysis Report" in response.text
+    assert "# TablePilot Analysis Report" in response.text
 
 
 def test_health_endpoint():
@@ -99,11 +99,11 @@ def test_health_endpoint():
 
 
 def test_analyze_endpoint():
-    response = client.post("/api/analyze", json={"filename": "latticeiq_demo_sales.xlsx"})
+    response = client.post("/api/analyze", json={"filename": "tablepilot_demo_sales.xlsx"})
 
     assert response.status_code == 200
     body = response.json()
-    assert body["dataset"]["filename"] == "latticeiq_demo_sales.xlsx"
+    assert body["dataset"]["filename"] == "tablepilot_demo_sales.xlsx"
     assert body["dataset"]["rows"] == 12
     assert body["quality"]["level"] in {"high", "medium", "low"}
     assert body["analysis_recommendations"]
@@ -127,7 +127,7 @@ def test_upload_analysis_endpoint():
 def test_agent_query_endpoint():
     response = client.post(
         "/api/agent/query",
-        json={"filename": "latticeiq_demo_sales.xlsx", "question": "这份数据有没有异常？"},
+        json={"filename": "tablepilot_demo_sales.xlsx", "question": "这份数据有没有异常？"},
     )
 
     assert response.status_code == 200
@@ -140,7 +140,7 @@ def test_agent_query_endpoint():
 def test_dataset_alias_for_agent_query_endpoint():
     response = client.post(
         "/api/agent/query",
-        json={"dataset": "latticeiq_demo_sales.xlsx", "question": "哪些字段适合做趋势分析？"},
+        json={"dataset": "tablepilot_demo_sales.xlsx", "question": "哪些字段适合做趋势分析？"},
     )
 
     assert response.status_code == 200

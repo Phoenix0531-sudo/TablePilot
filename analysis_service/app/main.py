@@ -11,8 +11,8 @@ from .agent import answer_question
 from .analysis import build_markdown_report, list_datasets, load_table_with_metadata, profile_dataset, profile_table
 
 app = FastAPI(
-    title="LatticeIQ Analysis Service",
-    description="Local data profiling and analysis planning service for the LatticeIQ desktop workbench.",
+    title="TablePilot Analysis Service",
+    description="Local data profiling and analysis planning service for the TablePilot desktop workbench.",
     version="0.4.0",
 )
 

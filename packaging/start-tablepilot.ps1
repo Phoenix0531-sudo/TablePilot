@@ -15,13 +15,13 @@ if (-not $SkipService) {
     }
 }
 
-$exe = Join-Path $ProjectRoot "release\LatticeIQ.exe"
+$exe = Join-Path $ProjectRoot "release\TablePilot.exe"
 if (-not (Test-Path $exe)) {
     $exe = Join-Path $ProjectRoot "release\Statistical_Analysis.exe"
 }
 
 if (-not (Test-Path $exe)) {
-    throw "Could not find the LatticeIQ executable under $ProjectRoot\release."
+    throw "Could not find the TablePilot executable under $ProjectRoot\release."
 }
 
 Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe)

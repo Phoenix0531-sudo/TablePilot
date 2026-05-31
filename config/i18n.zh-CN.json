@@ -1,0 +1,18 @@
+{
+  "product_name": "TablePilot",
+  "eyebrow": "本地优先数据工作台",
+  "subtitle": "把 Excel、CSV 和 TXT 表格转化为可解释的数据画像、质量评分和分析规划。",
+  "open_excel": "打开 Excel",
+  "open_text": "打开文本",
+  "profile": "数据画像",
+  "trend": "趋势",
+  "distribution": "分布",
+  "export": "导出",
+  "analyze": "分析",
+  "data_preview": "数据预览",
+  "numeric_profile": "数值画像",
+  "analysis_panel": "洞察面板",
+  "service_connected": "本地分析服务已连接。",
+  "service_offline": "本地分析服务未连接。",
+  "demo_dataset": "demo/tablepilot_demo_sales.xlsx"
+}

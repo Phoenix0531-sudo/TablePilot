@@ -1,0 +1,18 @@
+{
+  "product_name": "TablePilot",
+  "eyebrow": "LOCAL-FIRST DATA WORKBENCH",
+  "subtitle": "A desktop workbench that turns spreadsheets and table-like files into explainable analysis.",
+  "open_excel": "Open Excel",
+  "open_text": "Open Text",
+  "profile": "Profile",
+  "trend": "Trend",
+  "distribution": "Distribution",
+  "export": "Export",
+  "analyze": "Analyze",
+  "data_preview": "Data Preview",
+  "numeric_profile": "Numeric Profile",
+  "analysis_panel": "Analysis Panel",
+  "service_connected": "Analysis service is connected.",
+  "service_offline": "Analysis service is offline.",
+  "demo_dataset": "demo/tablepilot_demo_sales.xlsx"
+}

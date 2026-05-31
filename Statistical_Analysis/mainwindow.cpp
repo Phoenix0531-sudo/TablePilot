@@ -49,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
     SaveType(0)   // 初始化保存类型为0
 {
     ui->setupUi(this); // 设置ui界面，将自动生成的ui界面应用到当前窗口上
-    setWindowTitle(QStringLiteral("LatticeIQ"));
+    setWindowTitle(QStringLiteral("TablePilot"));
 
     InitWidget(); // 调用初始化窗口部件和对象的函数
     InitObject(); // 调用初始化对象的函数
@@ -177,7 +177,7 @@ void MainWindow::createOverviewPanel()
     QVBoxLayout *titleBlock = new QVBoxLayout;
     eyebrowLabel = new QLabel(QStringLiteral("PRIVATE AI DATA WORKBENCH"), hero);
     eyebrowLabel->setObjectName(QStringLiteral("eyebrowLabel"));
-    titleLabel = new QLabel(QStringLiteral("LatticeIQ"), hero);
+    titleLabel = new QLabel(QStringLiteral("TablePilot"), hero);
     titleLabel->setObjectName(QStringLiteral("heroTitle"));
     subtitleLabel = new QLabel(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."), hero);
     subtitleLabel->setObjectName(QStringLiteral("heroSubtitle"));
@@ -229,7 +229,7 @@ void MainWindow::createInsightPanel()
 
 void MainWindow::ApplyLanguage()
 {
-    setWindowTitle(QStringLiteral("LatticeIQ"));
+    setWindowTitle(QStringLiteral("TablePilot"));
     if (useChinese) {
         m_pAction1->setText(QStringLiteral("打开 Excel"));
         m_pAction2->setText(QStringLiteral("打开文本"));
@@ -245,7 +245,7 @@ void MainWindow::ApplyLanguage()
         ui->pushButton->setText(QStringLiteral("刷新趋势"));
         ui->pushButton_2->setText(QStringLiteral("刷新分布"));
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("本地 AI 数据工作台"));
-        if (titleLabel) titleLabel->setText(QStringLiteral("LatticeIQ"));
+        if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("面向复杂表格、销售数据和 TXT/CSV 文件的本地可解释分析工作台。"));
         if (insightDock) insightDock->setWindowTitle(QStringLiteral("洞察面板"));
         if (insightText) insightText->setPlaceholderText(QStringLiteral("选择数据文件后，这里会显示分析摘要、数据质量、字段结构和下一步建议。"));
@@ -264,7 +264,7 @@ void MainWindow::ApplyLanguage()
         ui->pushButton->setText(QStringLiteral("Refresh trend"));
         ui->pushButton_2->setText(QStringLiteral("Refresh distribution"));
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("PRIVATE AI DATA WORKBENCH"));
-        if (titleLabel) titleLabel->setText(QStringLiteral("LatticeIQ"));
+        if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."));
         if (insightDock) insightDock->setWindowTitle(QStringLiteral("Analysis Panel"));
         if (insightText) insightText->setPlaceholderText(QStringLiteral("Open a data file to see the analysis brief, data quality, schema, and next moves."));
@@ -289,16 +289,16 @@ void MainWindow::CheckAnalysisService()
         if (insightText) {
             if (useChinese) {
                 insightText->setHtml(QStringLiteral(
-                    "<h2>LatticeIQ</h2>"
+                    "<h2>TablePilot</h2>"
                     "<p class='muted'>本地分析服务已连接。</p>"
                     "<div class='callout'>打开 Excel、CSV 或 TXT 表格后，系统会自动识别字段、评分数据质量、规划下一步分析并生成动态图表。</div>"
                 ));
             } else {
                 insightText->setHtml(QStringLiteral(
-                    "<h2>LatticeIQ</h2>"
+                    "<h2>TablePilot</h2>"
                     "<p class='muted'>Analysis service is connected.</p>"
                     "<div class='callout'>Open an Excel, CSV, or TXT table. "
-                    "LatticeIQ will infer schema, score data quality, plan the next analysis, and render dynamic charts.</div>"
+                    "TablePilot will infer schema, score data quality, plan the next analysis, and render dynamic charts.</div>"
                 ));
             }
         }
@@ -311,8 +311,8 @@ void MainWindow::CheckAnalysisService()
     }
     if (insightText) {
         insightText->setHtml(useChinese
-            ? QStringLiteral("<h2>LatticeIQ</h2><p class='muted'>本地分析服务未连接。</p><div class='callout warn'>程序已尝试自动启动 Docker Compose。如果 Docker Desktop 未运行，请先启动 Docker Desktop。</div><p>手动方式：在项目根目录运行 <code>docker compose up --build</code>。</p>")
-            : QStringLiteral("<h2>LatticeIQ</h2><p class='muted'>Analysis service is offline.</p><div class='callout warn'>The app tried to start Docker Compose automatically. If Docker Desktop is not running, start it and reopen a file.</div><p>Manual fallback: run <code>docker compose up --build</code> from the project root.</p>")
+            ? QStringLiteral("<h2>TablePilot</h2><p class='muted'>本地分析服务未连接。</p><div class='callout warn'>程序已尝试自动启动 Docker Compose。如果 Docker Desktop 未运行，请先启动 Docker Desktop。</div><p>手动方式：在项目根目录运行 <code>docker compose up --build</code>。</p>")
+            : QStringLiteral("<h2>TablePilot</h2><p class='muted'>Analysis service is offline.</p><div class='callout warn'>The app tried to start Docker Compose automatically. If Docker Desktop is not running, start it and reopen a file.</div><p>Manual fallback: run <code>docker compose up --build</code> from the project root.</p>")
         );
     }
 }
@@ -353,7 +353,7 @@ bool MainWindow::TryStartAnalysisService()
     if (!started && insightText) {
         insightText->setHtml(QStringLiteral(
             "<h2>Service Start Failed</h2>"
-            "<div class='callout warn'>LatticeIQ could not start Docker Compose automatically. "
+            "<div class='callout warn'>TablePilot could not start Docker Compose automatically. "
             "Start Docker Desktop, then run <code>docker compose up --build</code>.</div>"
         ));
     }
@@ -574,7 +574,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
         if (!IsAnalysisServiceHealthy(7000)) {
             QMessageBox::warning(
                 this,
-                QStringLiteral("LatticeIQ"),
+                QStringLiteral("TablePilot"),
                 QStringLiteral("本地分析服务暂未就绪。请确认 Docker Desktop 已启动，或在项目根目录运行 docker compose up --build。")
             );
             return;
@@ -584,7 +584,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
     QFileInfo fileInfo(filePath);
     QFile *file = new QFile(filePath);
     if (!file->open(QIODevice::ReadOnly)) {
-        QMessageBox::warning(this, QStringLiteral("LatticeIQ"), QStringLiteral("无法读取所选文件。"));
+        QMessageBox::warning(this, QStringLiteral("TablePilot"), QStringLiteral("无法读取所选文件。"));
         delete file;
         return;
     }
@@ -613,7 +613,7 @@ void MainWindow::AnalyzeFileWithService(const QString &filePath)
         QString message = QStringLiteral("无法连接本地分析服务。请先运行：\n\ndocker compose up --build\n\n错误：%1")
                               .arg(reply->errorString());
         reply->deleteLater();
-        QMessageBox::warning(this, QStringLiteral("LatticeIQ"), message);
+        QMessageBox::warning(this, QStringLiteral("TablePilot"), message);
         return;
     }
 
@@ -627,7 +627,7 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     QJsonParseError parseError;
     QJsonDocument document = QJsonDocument::fromJson(payload, &parseError);
     if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
-        QMessageBox::warning(this, QStringLiteral("LatticeIQ"), QStringLiteral("分析服务返回了无法解析的数据。"));
+        QMessageBox::warning(this, QStringLiteral("TablePilot"), QStringLiteral("分析服务返回了无法解析的数据。"));
         return;
     }
 
@@ -641,7 +641,7 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     insightText->setHtml(FormatInsightHtml(root));
     insightDock->show();
     info_Label->setText(QStringLiteral("智能分析完成"));
-    statusBar()->showMessage(QStringLiteral("LatticeIQ analysis completed"), 5000);
+    statusBar()->showMessage(QStringLiteral("TablePilot analysis completed"), 5000);
 }
 
 void MainWindow::PopulateTableFromService(const QJsonObject &root)
@@ -877,7 +877,7 @@ QString MainWindow::FormatServiceAnalysis(const QJsonObject &root) const
     QJsonObject source = root.value("source").toObject();
 
     QStringList lines;
-    lines << QStringLiteral("LatticeIQ Analysis");
+    lines << QStringLiteral("TablePilot Analysis");
     lines << QStringLiteral("======================");
     lines << QStringLiteral("Dataset: %1").arg(dataset.value("filename").toString());
     lines << QStringLiteral("Shape: %1 rows x %2 columns")

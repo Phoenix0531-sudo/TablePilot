@@ -1,5 +1,5 @@
 services:
-  latticeiq-analysis:
+  tablepilot-analysis:
     build:
       context: .
       dockerfile: analysis_service/Dockerfile

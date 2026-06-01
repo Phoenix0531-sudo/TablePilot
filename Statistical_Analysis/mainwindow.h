@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QTextEdit>
+#include <QTableWidget>
 #include <QJsonArray>
 #include <QJsonObject>
 
@@ -67,7 +68,10 @@ private slots:
 private:
     QLabel *info_Label; // 信息标签
     QDockWidget *insightDock;
+    QDockWidget *reviewDock;
     QTextEdit *insightText;
+    QTextEdit *cleanCompareText;
+    QTableWidget *anomalyTable;
     QLabel *serviceBadge;
     QLabel *datasetCard;
     QLabel *qualityCard;
@@ -87,7 +91,9 @@ private:
     QPushButton *toolbarLanguageButton;
     QPushButton *localAiToggleButton;
     QPushButton *regenerateAiButton;
+    QPushButton *recentFilesButton;
     QPushButton *cleanExportButton;
+    QPushButton *cleanCompareButton;
     QPushButton *suggestTrendButton;
     QPushButton *suggestDistributionButton;
     QPushButton *suggestQualityButton;
@@ -98,6 +104,7 @@ private:
     QComboBox *sheetSelector;
     QJsonObject lastProfile;
     QString currentFilePath;
+    QStringList recentFiles;
     bool updatingSheetSelector;
     bool localAiRequested;
     bool useChinese;
@@ -116,6 +123,7 @@ private:
     void UpdateDefaultOverviewCards(const QString &serviceState);
     void UpdateFieldSelectors(const QJsonObject &root);
     void UpdateToolbarState(const QJsonObject &root = QJsonObject());
+    void UpdateReviewDrawer(const QJsonObject &root);
     void UpdateSheetSelector(const QJsonObject &root);
     void UpdateRecommendationActions(const QJsonObject &root);
     void ApplyTableQualityDecorations(const QJsonObject &root);
@@ -137,6 +145,11 @@ private:
     QString RepairTitleText(const QJsonObject &item) const;
     QString RepairRecommendationText(const QJsonObject &item) const;
     QString ViewLabelText(const QJsonObject &view) const;
+    QString FormatCleanCompareHtml(const QJsonObject &root) const;
+    void LoadRecentFiles();
+    void SaveRecentFile(const QString &filePath);
+    void RefreshRecentFilesMenu();
+    void OpenRecentFile(const QString &filePath);
     QList<int> NumericTableColumns(int limit = -1) const;
     QList<int> CategoryTableColumns(int limit = -1) const;
     QVector<double> NumericColumnValues(int column) const;
@@ -153,6 +166,8 @@ private:
     void RenderBoxPlot();
     void RenderEmptyChart(QCustomPlot *plot, const QString &message);
     void ExportCleanedDataset();
+    void ShowCleanCompare();
+    void FocusAnomaly(int anomalyIndex);
     void FocusDataQuality();
     void StylePlot(QCustomPlot *plot);
 };

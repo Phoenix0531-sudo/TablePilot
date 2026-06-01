@@ -38,6 +38,8 @@ def test_profiles_demo_excel_dataset():
     assert profile["dataset_fingerprint"]["type"] == "sales_operations"
     assert profile["dataset_fingerprint"]["roles"]["measures"]
     assert profile["insight_cards"]
+    assert profile["decision_brief"]["findings"]
+    assert profile["decision_brief"]["primary_question"]
     assert profile["recommended_views"]
     assert any(view["id"] == "trend" for view in profile["recommended_views"])
     assert profile["quality_repair_plan"]
@@ -312,6 +314,20 @@ def test_clean_upload_endpoint_returns_xlsx():
     assert response.status_code == 200
     assert "spreadsheetml.sheet" in response.headers["content-type"]
     assert response.content.startswith(b"PK")
+
+
+def test_clean_preview_upload_endpoint_returns_before_after():
+    with open(DEMO / "quality_issues_demo.csv", "rb") as sample:
+        response = client.post(
+            "/api/clean-preview-upload",
+            files={"file": ("quality.csv", sample, "text/csv")},
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["summary"]["cleaned_rows"] <= body["summary"]["original_rows"]
+    assert body["before"]["rows"]
+    assert body["after"]["rows"]
 
 
 def test_agent_query_endpoint():

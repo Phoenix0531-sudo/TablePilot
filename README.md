@@ -33,10 +33,12 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 - **Schema inference** for numeric, date, category, text, empty, and high-cardinality fields.
 - **Data Quality Repair Plan + Clean Export** using missing values, duplicates, duplicate fields, anomalies, sample size, and analyzability, with conservative cleaned CSV/XLSX export.
 - **Analysis Planner** that recommends next steps based on schema roles, trends, correlations, anomalies, and quality risks.
+- **Decision Brief** that turns profiling output into a primary question, prioritized findings, evidence, limitations, and next actions.
 - **Insight Cards** that package findings into user-facing cards with evidence and suggested actions.
 - **Dynamic Chart Studio** with auto chart selection, grouped bars, scatter plots, correlation heatmaps, box plots, metric/dimension selectors, generated subtitles, and professional empty states.
+- **Review Drawer** for anomaly candidates, cell-level navigation, and before/after clean-up comparison.
 - **Session and Report System** with profile IDs, generation time, Markdown reports, HTML reports, and desktop report export.
-- **Desktop-native Qt UI** with dynamic preview tables, sheet switching, charts, profile cards, and a bilingual insight panel.
+- **Desktop-native Qt UI** with dynamic preview tables, recent files, sheet switching, charts, profile cards, and a bilingual insight panel.
 - **Local-first architecture**: the Python analysis service runs locally through Docker.
 - **Optional local LLM support**: Ollama and OpenAI-compatible llama.cpp endpoints can be enabled from the desktop UI without making the LLM authoritative.
 - **Deterministic agent-style API** for question answering over loaded datasets.
@@ -58,6 +60,7 @@ FastAPI Analysis Service
       +--> Schema inference and semantic roles
       +--> Quality scoring, repair plan, and cleaned export
       +--> Trends, correlations, anomalies
+      +--> Decision brief and review drawer data
       +--> Insight cards and analysis planner
       +--> Markdown / HTML reports and agent-style answers
       +--> Optional local LLM wording layer
@@ -178,6 +181,13 @@ curl.exe -F "file=@demo/quality_issues_demo.csv;type=text/csv" `
 
 Use `format=xlsx` to export a workbook with a `cleaned` sheet and a `repair_summary` sheet.
 
+Preview the clean-up before exporting:
+
+```powershell
+curl.exe -F "file=@demo/quality_issues_demo.csv;type=text/csv" `
+  "http://127.0.0.1:8000/api/clean-preview-upload"
+```
+
 ## Report and Session APIs
 
 ```powershell
@@ -234,7 +244,7 @@ The current desktop UI already supports Chinese/English switching. These config 
 
 ## Roadmap
 
-- Add drag-and-drop welcome screen and recent files.
+- Add drag-and-drop welcome screen.
 - Add chart image export from each Chart Studio view.
 - Add packaged local-model smoke-test mode for OpenAI-compatible and Ollama endpoints.
 - Add screenshot-backed project page after final UI polish.

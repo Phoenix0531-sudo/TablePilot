@@ -33,10 +33,12 @@ TablePilot 是一个本地优先的桌面数据分析工作台，可以把混乱
 - **字段结构识别**：numeric、date、category、text、empty、high-cardinality。
 - **数据质量修复计划 + 清洗导出**：综合缺失值、重复行、重复字段、异常值、样本量和可分析性，给出影响范围、修复建议，并支持保守清洗后的 CSV/XLSX 导出。
 - **Analysis Planner**：根据字段角色、趋势、相关性、异常和质量风险自动推荐下一步分析。
+- **Decision Brief**：把字段画像结果转化为主问题、优先级发现、证据、限制条件和下一步动作。
 - **Insight Cards**：把关键发现整理成面向用户的洞察卡片，包含结论、证据和建议动作。
 - **Dynamic Chart Studio**：自动推荐图表，支持分组柱状图、散点图、相关性热力图、箱线图、指标/维度双选择器、图表副标题和专业空状态。
+- **复核抽屉**：集中展示异常候选、支持单元格定位，并提供清洗前后对比。
 - **Session / Report System**：记录 profile ID、生成时间、Markdown 报告、HTML 报告，并支持桌面端导出。
-- **Qt 桌面端体验**：动态预览表格、工作表切换、图表、画像卡片和双语洞察面板。
+- **Qt 桌面端体验**：动态预览表格、最近文件、工作表切换、图表、画像卡片和双语洞察面板。
 - **本地优先架构**：Python 分析服务通过 Docker 在本地运行。
 - **可选本地模型支持**：支持 Ollama 和 OpenAI-compatible llama.cpp 接口，可从桌面端请求本地模型增强；本地模型只负责表达增强，不负责创造事实。
 - **确定性 Agent 风格接口**：可以围绕加载的数据集做问题回答。
@@ -58,6 +60,7 @@ FastAPI 分析服务
       +--> 字段识别和语义角色
       +--> 数据质量评分、修复计划和清洗导出
       +--> 趋势、相关性、异常
+      +--> 决策简报和复核抽屉数据
       +--> 洞察卡片和分析规划器
       +--> Markdown / HTML 报告和 Agent 风格回答
       +--> 可选本地模型表达层
@@ -178,6 +181,13 @@ curl.exe -F "file=@demo/quality_issues_demo.csv;type=text/csv" `
 
 使用 `format=xlsx` 可以导出一个包含 `cleaned` 和 `repair_summary` 两个工作表的 Excel 文件。
 
+导出前预览清洗前后变化：
+
+```powershell
+curl.exe -F "file=@demo/quality_issues_demo.csv;type=text/csv" `
+  "http://127.0.0.1:8000/api/clean-preview-upload"
+```
+
 ## 报告和会话接口
 
 ```powershell
@@ -234,7 +244,7 @@ config/i18n.zh-CN.json
 
 ## 后续路线
 
-- 增加拖拽上传启动页和最近文件。
+- 增加拖拽上传启动页。
 - 增加每个 Chart Studio 视图的图表图片导出。
 - 增加 OpenAI-compatible 和 Ollama 本地模型冒烟测试模式。
 - 最终 UI 稳定后，把真实截图加入项目主页。

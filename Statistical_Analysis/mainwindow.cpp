@@ -12,11 +12,13 @@
 #include <QJsonObject>
 #include <QLabel>          // 包含标签类的头文件，用于创建标签部件
 #include <QMap>
+#include <QMenu>
 #include <QMessageBox>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QProcess>
+#include <QSettings>
 #include <QStyle>
 #include <QSet>
 #include <QToolButton>
@@ -52,6 +54,9 @@ QString ProjectPath(const QString &relativePath)
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent), // 调用基类的构造函数
     ui(new Ui::MainWindow), // 初始化ui对象指针，指向自动生成的ui界面
+    reviewDock(nullptr),
+    cleanCompareText(nullptr),
+    anomalyTable(nullptr),
     trendChartTitleLabel(nullptr),
     trendChartSubtitleLabel(nullptr),
     distributionChartTitleLabel(nullptr),
@@ -63,7 +68,9 @@ MainWindow::MainWindow(QWidget *parent) :
     toolbarLanguageButton(nullptr),
     localAiToggleButton(nullptr),
     regenerateAiButton(nullptr),
+    recentFilesButton(nullptr),
     cleanExportButton(nullptr),
+    cleanCompareButton(nullptr),
     suggestTrendButton(nullptr),
     suggestDistributionButton(nullptr),
     suggestQualityButton(nullptr),
@@ -97,6 +104,7 @@ void MainWindow::InitWidget(){
     createChartHeaders();
     createOverviewPanel();
     createInsightPanel();
+    LoadRecentFiles();
     ApplyLanguage();
 }
 
@@ -142,6 +150,13 @@ void MainWindow::createToolBar(){// 创建工具栏
     layout->addWidget(makeButton(QStringLiteral("chart_studio"), m_pAction4));
     layout->addWidget(makeButton(QStringLiteral("profile"), m_pAction3));
 
+    recentFilesButton = new QPushButton(bar);
+    recentFilesButton->setObjectName(QStringLiteral("commandButtonSecondary"));
+    recentFilesButton->setProperty("actionKey", QStringLiteral("recent_files"));
+    recentFilesButton->setCursor(Qt::PointingHandCursor);
+    recentFilesButton->setMenu(new QMenu(recentFilesButton));
+    layout->addWidget(recentFilesButton);
+
     cleanExportButton = new QPushButton(bar);
     cleanExportButton->setObjectName(QStringLiteral("commandButtonSecondary"));
     cleanExportButton->setProperty("actionKey", QStringLiteral("clean_export"));
@@ -150,6 +165,16 @@ void MainWindow::createToolBar(){// 创建工具栏
     layout->addWidget(cleanExportButton);
     connect(cleanExportButton, &QPushButton::clicked, this, [this]() {
         ExportCleanedDataset();
+    });
+
+    cleanCompareButton = new QPushButton(bar);
+    cleanCompareButton->setObjectName(QStringLiteral("commandButtonSecondary"));
+    cleanCompareButton->setProperty("actionKey", QStringLiteral("clean_compare"));
+    cleanCompareButton->setCursor(Qt::PointingHandCursor);
+    cleanCompareButton->setEnabled(false);
+    layout->addWidget(cleanCompareButton);
+    connect(cleanCompareButton, &QPushButton::clicked, this, [this]() {
+        ShowCleanCompare();
     });
 
     layout->addStretch(1);
@@ -360,6 +385,10 @@ void MainWindow::createInsightPanel()
         statusBar()->showMessage(Text(QStringLiteral("Distribution view opened"), QStringLiteral("已切换到分布视图")), 3000);
     });
     connect(suggestQualityButton, &QPushButton::clicked, this, [this]() {
+        if (reviewDock) {
+            reviewDock->show();
+            reviewDock->raise();
+        }
         FocusDataQuality();
     });
     connect(exportReportButton, &QPushButton::clicked, this, [this]() {
@@ -386,6 +415,44 @@ void MainWindow::createInsightPanel()
 
     insightDock->setWidget(panel);
     addDockWidget(Qt::RightDockWidgetArea, insightDock);
+
+    reviewDock = new QDockWidget(QStringLiteral("Review drawer"), this);
+    reviewDock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+    reviewDock->setMinimumWidth(430);
+    QWidget *reviewPanel = new QWidget(reviewDock);
+    QVBoxLayout *reviewLayout = new QVBoxLayout(reviewPanel);
+    reviewLayout->setContentsMargins(10, 10, 10, 10);
+    reviewLayout->setSpacing(10);
+
+    QLabel *anomalyTitle = new QLabel(QStringLiteral("Anomaly review"), reviewPanel);
+    anomalyTitle->setObjectName(QStringLiteral("drawerTitle"));
+    reviewLayout->addWidget(anomalyTitle);
+    anomalyTable = new QTableWidget(reviewPanel);
+    anomalyTable->setObjectName(QStringLiteral("drawerTable"));
+    anomalyTable->setColumnCount(5);
+    anomalyTable->setHorizontalHeaderLabels(QStringList() << QStringLiteral("Row") << QStringLiteral("Field") << QStringLiteral("Value") << QStringLiteral("z") << QStringLiteral("Action"));
+    anomalyTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    anomalyTable->verticalHeader()->setVisible(false);
+    anomalyTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    anomalyTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    reviewLayout->addWidget(anomalyTable, 2);
+
+    QLabel *compareTitle = new QLabel(QStringLiteral("Clean preview"), reviewPanel);
+    compareTitle->setObjectName(QStringLiteral("drawerTitle"));
+    reviewLayout->addWidget(compareTitle);
+    cleanCompareText = new QTextEdit(reviewPanel);
+    cleanCompareText->setObjectName(QStringLiteral("insightText"));
+    cleanCompareText->setReadOnly(true);
+    cleanCompareText->setPlaceholderText(QStringLiteral("Use Compare after opening a file to review before/after clean-up."));
+    reviewLayout->addWidget(cleanCompareText, 3);
+
+    connect(anomalyTable, &QTableWidget::cellDoubleClicked, this, [this](int row, int) {
+        FocusAnomaly(row);
+    });
+    reviewDock->setWidget(reviewPanel);
+    addDockWidget(Qt::RightDockWidgetArea, reviewDock);
+    tabifyDockWidget(insightDock, reviewDock);
+    reviewDock->hide();
 }
 
 void MainWindow::createChartHeaders()
@@ -515,6 +582,7 @@ void MainWindow::ApplyLanguage()
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("面向复杂表格、销售数据和 TXT/CSV 文件的本地可解释分析工作台。"));
         if (insightDock) insightDock->setWindowTitle(QStringLiteral("洞察面板"));
+        if (reviewDock) reviewDock->setWindowTitle(QStringLiteral("复核抽屉"));
         if (insightText) insightText->setPlaceholderText(QStringLiteral("选择数据文件后，这里会显示分析摘要、数据质量、字段结构和下一步建议。"));
     } else {
         m_pAction1->setText(QStringLiteral("Open Excel"));
@@ -554,6 +622,7 @@ void MainWindow::ApplyLanguage()
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."));
         if (insightDock) insightDock->setWindowTitle(QStringLiteral("Analysis Panel"));
+        if (reviewDock) reviewDock->setWindowTitle(QStringLiteral("Review Drawer"));
         if (insightText) insightText->setPlaceholderText(QStringLiteral("Open a data file to see the analysis brief, data quality, schema, and next moves."));
     }
     QMap<QString, QString> commandText;
@@ -562,7 +631,9 @@ void MainWindow::ApplyLanguage()
     commandText.insert(QStringLiteral("analyze"), m_pAction8->text());
     commandText.insert(QStringLiteral("chart_studio"), Text(QStringLiteral("Charts"), QStringLiteral("图表")));
     commandText.insert(QStringLiteral("profile"), m_pAction3->text());
+    commandText.insert(QStringLiteral("recent_files"), Text(QStringLiteral("Recent"), QStringLiteral("最近文件")));
     commandText.insert(QStringLiteral("clean_export"), Text(QStringLiteral("Clean export"), QStringLiteral("清洗导出")));
+    commandText.insert(QStringLiteral("clean_compare"), Text(QStringLiteral("Compare"), QStringLiteral("清洗对比")));
     commandText.insert(QStringLiteral("ai_toggle"), localAiRequested ? Text(QStringLiteral("Local AI on"), QStringLiteral("本地模型开")) : Text(QStringLiteral("Rules only"), QStringLiteral("规则分析")));
     commandText.insert(QStringLiteral("regenerate_ai"), Text(QStringLiteral("Regenerate"), QStringLiteral("重生成")));
     commandText.insert(QStringLiteral("language"), useChinese ? QStringLiteral("EN") : QStringLiteral("中文"));
@@ -593,6 +664,7 @@ void MainWindow::ApplyLanguage()
         chartDimensionSelector->setToolTip(Text(QStringLiteral("Choose a group, date, or second measure"), QStringLiteral("选择分组、日期或第二个指标")));
     }
     UpdateToolbarState(lastProfile);
+    RefreshRecentFilesMenu();
     if (lastProfile.isEmpty()) {
         ui->comboBox->blockSignals(true);
         ui->comboBox->clear();
@@ -996,11 +1068,13 @@ void MainWindow::ShowServiceAnalysis(const QByteArray &payload)
     UpdateOverviewCards(root);
     UpdateRecommendationActions(root);
     UpdateToolbarState(root);
+    UpdateReviewDrawer(root);
 
     insightText->setHtml(FormatInsightHtml(root));
     insightDock->show();
     info_Label->setText(Text(QStringLiteral("Analysis completed"), QStringLiteral("智能分析完成")));
     statusBar()->showMessage(Text(QStringLiteral("TablePilot analysis completed"), QStringLiteral("TablePilot 分析完成")), 5000);
+    SaveRecentFile(currentFilePath);
 }
 
 void MainWindow::PopulateTableFromService(const QJsonObject &root)
@@ -1168,12 +1242,116 @@ void MainWindow::UpdateToolbarState(const QJsonObject &root)
     if (cleanExportButton) {
         cleanExportButton->setEnabled(!currentFilePath.isEmpty());
     }
+    if (cleanCompareButton) {
+        cleanCompareButton->setEnabled(!currentFilePath.isEmpty());
+    }
     if (regenerateAiButton) {
         regenerateAiButton->setEnabled(!currentFilePath.isEmpty());
     }
     if (localAiToggleButton) {
         localAiToggleButton->setText(localAiRequested ? Text(QStringLiteral("Local AI on"), QStringLiteral("本地模型开")) : Text(QStringLiteral("Rules only"), QStringLiteral("规则分析")));
     }
+}
+
+void MainWindow::UpdateReviewDrawer(const QJsonObject &root)
+{
+    if (!anomalyTable) {
+        return;
+    }
+    QJsonArray anomalies = root.value("anomalies").toArray();
+    anomalyTable->clearSpans();
+    anomalyTable->setRowCount(anomalies.size());
+    for (int i = 0; i < anomalies.size(); ++i) {
+        QJsonObject item = anomalies.at(i).toObject();
+        QStringList values;
+        values << QString::number(item.value("row").toInt() + 1)
+               << item.value("column").toString()
+               << QString::number(item.value("value").toDouble(), 'g', 10)
+               << QString::number(item.value("z_score").toDouble(), 'f', 2)
+               << Text(QStringLiteral("Double-click to locate"), QStringLiteral("双击定位"));
+        for (int column = 0; column < values.size(); ++column) {
+            QTableWidgetItem *cell = new QTableWidgetItem(values.at(column));
+            if (column == 3) {
+                cell->setTextAlignment(Qt::AlignCenter);
+            }
+            anomalyTable->setItem(i, column, cell);
+        }
+    }
+    if (anomalies.isEmpty()) {
+        anomalyTable->setRowCount(1);
+        anomalyTable->setSpan(0, 0, 1, anomalyTable->columnCount());
+        anomalyTable->setItem(0, 0, new QTableWidgetItem(Text(QStringLiteral("No anomaly candidate was detected."), QStringLiteral("当前没有检测到异常候选。"))));
+    }
+}
+
+void MainWindow::LoadRecentFiles()
+{
+    QSettings settings(QStringLiteral("TablePilot"), QStringLiteral("TablePilot"));
+    recentFiles = settings.value(QStringLiteral("recentFiles")).toStringList();
+    QStringList existing;
+    for (const QString &path : recentFiles) {
+        if (QFileInfo::exists(path) && !existing.contains(path)) {
+            existing << path;
+        }
+    }
+    recentFiles = existing.mid(0, 8);
+    RefreshRecentFilesMenu();
+}
+
+void MainWindow::SaveRecentFile(const QString &filePath)
+{
+    if (filePath.trimmed().isEmpty() || !QFileInfo::exists(filePath)) {
+        return;
+    }
+    recentFiles.removeAll(filePath);
+    recentFiles.prepend(filePath);
+    while (recentFiles.size() > 8) {
+        recentFiles.removeLast();
+    }
+    QSettings settings(QStringLiteral("TablePilot"), QStringLiteral("TablePilot"));
+    settings.setValue(QStringLiteral("recentFiles"), recentFiles);
+    RefreshRecentFilesMenu();
+}
+
+void MainWindow::RefreshRecentFilesMenu()
+{
+    if (!recentFilesButton) {
+        return;
+    }
+    QMenu *menu = recentFilesButton->menu();
+    if (!menu) {
+        menu = new QMenu(recentFilesButton);
+        recentFilesButton->setMenu(menu);
+    }
+    menu->clear();
+    if (recentFiles.isEmpty()) {
+        QAction *emptyAction = menu->addAction(Text(QStringLiteral("No recent files"), QStringLiteral("暂无最近文件")));
+        emptyAction->setEnabled(false);
+        return;
+    }
+    for (const QString &path : recentFiles) {
+        QFileInfo info(path);
+        QAction *action = menu->addAction(info.fileName());
+        action->setToolTip(path);
+        connect(action, &QAction::triggered, this, [this, path]() {
+            OpenRecentFile(path);
+        });
+    }
+}
+
+void MainWindow::OpenRecentFile(const QString &filePath)
+{
+    if (!QFileInfo::exists(filePath)) {
+        recentFiles.removeAll(filePath);
+        QSettings settings(QStringLiteral("TablePilot"), QStringLiteral("TablePilot"));
+        settings.setValue(QStringLiteral("recentFiles"), recentFiles);
+        RefreshRecentFilesMenu();
+        QMessageBox::information(this, QStringLiteral("TablePilot"), Text(QStringLiteral("This recent file no longer exists."), QStringLiteral("这个最近文件已经不存在。")));
+        return;
+    }
+    isExit = true;
+    info_Label->setText(filePath);
+    AnalyzeFileWithService(filePath);
 }
 
 void MainWindow::UpdateSheetSelector(const QJsonObject &root)
@@ -1763,6 +1941,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     QJsonArray recommendations = root.value("analysis_recommendations").toArray();
     QJsonArray charts = root.value("chart_recommendations").toArray();
     QJsonArray insightCards = root.value("insight_cards").toArray();
+    QJsonObject decision = root.value("decision_brief").toObject();
     QJsonArray repairPlan = root.value("quality_repair_plan").toArray();
     QJsonArray recommendedViews = root.value("recommended_views").toArray();
     QJsonObject fingerprint = root.value("dataset_fingerprint").toObject();
@@ -1842,14 +2021,16 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                     .arg(chip(label(QStringLiteral("Type"), QStringLiteral("类型")), dataType));
 
         QString headline = useChinese
-            ? QStringLiteral("这份表可以用于初步分析。系统识别出 %1 个数值字段、%2 个日期字段和 %3 个分组字段；当前最应该先看的，是数据质量和推荐图表。")
+            ? QStringLiteral("这份表可以用于初步分析。系统识别出 %1 个数值字段、%2 个日期字段和 %3 个分组字段。系统建议先回答：%4")
                 .arg(dataset.value("numeric_columns").toInt())
                 .arg(dataset.value("date_columns").toInt())
                 .arg(dataset.value("category_columns").toInt())
-            : QStringLiteral("This table is ready for exploratory analysis. TablePilot found %1 numeric fields, %2 date fields, and %3 grouping fields; start with quality review and the recommended chart.")
+                .arg(decision.value("primary_question").toString(QStringLiteral("哪些变化值得关注，哪些数据需要先复核？")))
+            : QStringLiteral("This table is ready for exploratory analysis. TablePilot found %1 numeric fields, %2 date fields, and %3 grouping fields. The first question is: %4")
                 .arg(dataset.value("numeric_columns").toInt())
                 .arg(dataset.value("date_columns").toInt())
-                .arg(dataset.value("category_columns").toInt());
+                .arg(dataset.value("category_columns").toInt())
+                .arg(decision.value("primary_question").toString(QStringLiteral("What changed, what stands out, and what should be checked before reporting?")));
         html << QStringLiteral("<div class='hero %1'><b>%2</b><p>%3</p></div>")
                     .arg(scoreTone)
                     .arg(label(QStringLiteral("What TablePilot found"), QStringLiteral("TablePilot 发现了什么")).toHtmlEscaped())
@@ -1866,8 +2047,21 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                     .arg(label(QStringLiteral("Model status"), QStringLiteral("模型状态")), localAi.value("status").toString("disabled"), localAi.value("model").toString("qwen3-4b"));
         html << QStringLiteral("</div>");
 
+        QJsonArray decisionFindings = decision.value("findings").toArray();
+        if (!decisionFindings.isEmpty()) {
+            html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Decision brief"), QStringLiteral("决策简报")));
+            for (int i = 0; i < decisionFindings.size() && i < 5; ++i) {
+                QJsonObject finding = decisionFindings.at(i).toObject();
+                html << QStringLiteral("<div class='item'><b>%1</b><p>%2</p><span class='muted'>%3</span><p>%4</p></div>")
+                            .arg(finding.value("title").toString().toHtmlEscaped())
+                            .arg(finding.value("explanation").toString().toHtmlEscaped())
+                            .arg(finding.value("evidence").toString().toHtmlEscaped())
+                            .arg(finding.value("action").toString().toHtmlEscaped());
+            }
+        }
+
         if (!insightCards.isEmpty()) {
-            html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Key findings"), QStringLiteral("关键发现")));
+            html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Supporting evidence"), QStringLiteral("支撑证据")));
             for (int i = 0; i < insightCards.size() && i < 5; ++i) {
                 QJsonObject card = insightCards.at(i).toObject();
                 html << QStringLiteral("<div class='item'><b>%1</b><p>%2</p><span class='muted'>%3</span></div>")
@@ -2777,6 +2971,148 @@ void MainWindow::ExportCleanedDataset()
     output.write(payload);
     output.close();
     statusBar()->showMessage(Text(QStringLiteral("Cleaned dataset exported"), QStringLiteral("清洗后的数据已导出")), 5000);
+}
+
+void MainWindow::ShowCleanCompare()
+{
+    if (currentFilePath.isEmpty()) {
+        QMessageBox::information(this, QStringLiteral("TablePilot"), Text(QStringLiteral("Open a table before comparing clean-up."), QStringLiteral("请先打开表格，再查看清洗对比。")));
+        return;
+    }
+
+    QFileInfo fileInfo(currentFilePath);
+    QFile *file = new QFile(currentFilePath);
+    if (!file->open(QIODevice::ReadOnly)) {
+        QMessageBox::warning(this, QStringLiteral("TablePilot"), Text(QStringLiteral("Could not read the selected file."), QStringLiteral("无法读取所选文件。")));
+        delete file;
+        return;
+    }
+
+    QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+    QHttpPart filePart;
+    filePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("application/octet-stream"));
+    filePart.setHeader(
+        QNetworkRequest::ContentDispositionHeader,
+        QVariant(QString("form-data; name=\"file\"; filename=\"%1\"").arg(fileInfo.fileName()))
+    );
+    filePart.setBodyDevice(file);
+    file->setParent(multiPart);
+    multiPart->append(filePart);
+
+    QString url = QStringLiteral("http://127.0.0.1:8000/api/clean-preview-upload");
+    if (sheetSelector && sheetSelector->isVisible() && sheetSelector->currentIndex() >= 0) {
+        url += QStringLiteral("?sheet=%1").arg(QString::fromUtf8(QUrl::toPercentEncoding(sheetSelector->currentText())));
+    }
+    QNetworkAccessManager manager;
+    QNetworkReply *reply = manager.post(QNetworkRequest(QUrl(url)), multiPart);
+    multiPart->setParent(reply);
+
+    QEventLoop loop;
+    connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    loop.exec();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        QString message = Text(QStringLiteral("Clean compare failed: %1"), QStringLiteral("清洗对比失败：%1")).arg(reply->errorString());
+        reply->deleteLater();
+        QMessageBox::warning(this, QStringLiteral("TablePilot"), message);
+        return;
+    }
+
+    QByteArray payload = reply->readAll();
+    reply->deleteLater();
+    QJsonParseError parseError;
+    QJsonDocument document = QJsonDocument::fromJson(payload, &parseError);
+    if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
+        QMessageBox::warning(this, QStringLiteral("TablePilot"), Text(QStringLiteral("The clean preview response could not be parsed."), QStringLiteral("清洗预览结果无法解析。")));
+        return;
+    }
+    if (cleanCompareText) {
+        cleanCompareText->setHtml(FormatCleanCompareHtml(document.object()));
+    }
+    if (reviewDock) {
+        reviewDock->show();
+        reviewDock->raise();
+    }
+    statusBar()->showMessage(Text(QStringLiteral("Clean comparison ready"), QStringLiteral("清洗前后对比已生成")), 4000);
+}
+
+QString MainWindow::FormatCleanCompareHtml(const QJsonObject &root) const
+{
+    QJsonObject summary = root.value("summary").toObject();
+    QJsonObject before = root.value("before").toObject();
+    QJsonObject after = root.value("after").toObject();
+    auto value = [](const QJsonObject &object, const QString &key) {
+        return QString::number(object.value(key).toInt());
+    };
+    auto previewLine = [](const QJsonObject &preview) {
+        QStringList columns;
+        for (const QJsonValue &column : preview.value("columns").toArray()) {
+            columns << column.toString();
+        }
+        return columns.mid(0, 8).join(QStringLiteral(", "));
+    };
+
+    QStringList html;
+    html << QStringLiteral(
+        "<style>"
+        "body{font-family:'SF Pro Text','Segoe UI','Microsoft YaHei',Arial;color:#1d1d1f;}"
+        "h2{font-size:17px;margin:0 0 8px 0;}p{line-height:1.5;}"
+        ".grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0;}"
+        ".card{background:#fbfbfd;border:1px solid #e5e5ea;border-radius:12px;padding:10px;}"
+        ".num{font-size:22px;font-weight:750;color:#007aff;}.muted{color:#6e6e73;}"
+        ".ok{border-left:4px solid #34c759}.warn{border-left:4px solid #ff9f0a}"
+        "li{margin:4px 0;}"
+        "</style>"
+    );
+    html << QStringLiteral("<h2>%1</h2>").arg(Text(QStringLiteral("Clean-up comparison"), QStringLiteral("清洗前后对比")));
+    html << QStringLiteral("<p class='muted'>%1</p>").arg(Text(
+        QStringLiteral("TablePilot uses conservative repairs: remove empty structure and duplicate rows, fill safe missing values, and mark anomaly rows instead of deleting them."),
+        QStringLiteral("TablePilot 使用保守清洗：删除空结构和重复行，安全填补缺失值，并标记异常行而不是直接删除。")
+    ));
+    html << QStringLiteral("<div class='grid'>");
+    html << QStringLiteral("<div class='card'><b>%1</b><div class='num'>%2 x %3</div><span class='muted'>%4</span></div>")
+                .arg(Text(QStringLiteral("Before"), QStringLiteral("清洗前")))
+                .arg(value(summary, QStringLiteral("original_rows")))
+                .arg(value(summary, QStringLiteral("original_columns")))
+                .arg(previewLine(before).toHtmlEscaped());
+    html << QStringLiteral("<div class='card ok'><b>%1</b><div class='num'>%2 x %3</div><span class='muted'>%4</span></div>")
+                .arg(Text(QStringLiteral("After"), QStringLiteral("清洗后")))
+                .arg(value(summary, QStringLiteral("cleaned_rows")))
+                .arg(value(summary, QStringLiteral("cleaned_columns")))
+                .arg(previewLine(after).toHtmlEscaped());
+    html << QStringLiteral("</div><ul>");
+    html << QStringLiteral("<li>%1: %2</li>").arg(Text(QStringLiteral("Removed empty rows"), QStringLiteral("删除空行")), value(summary, QStringLiteral("removed_empty_rows")));
+    html << QStringLiteral("<li>%1: %2</li>").arg(Text(QStringLiteral("Removed empty columns"), QStringLiteral("删除空列")), value(summary, QStringLiteral("removed_empty_columns")));
+    html << QStringLiteral("<li>%1: %2</li>").arg(Text(QStringLiteral("Removed duplicate rows"), QStringLiteral("删除重复行")), value(summary, QStringLiteral("removed_duplicate_rows")));
+    html << QStringLiteral("<li>%1: %2</li>").arg(Text(QStringLiteral("Filled missing cells"), QStringLiteral("填补缺失单元格")), value(summary, QStringLiteral("filled_missing_cells")));
+    html << QStringLiteral("<li>%1: %2</li>").arg(Text(QStringLiteral("Marked anomaly rows"), QStringLiteral("标记异常行")), value(summary, QStringLiteral("marked_anomaly_rows")));
+    html << QStringLiteral("</ul>");
+    html << QStringLiteral("<p class='muted'>%1</p>").arg(Text(
+        QStringLiteral("Use Clean export when this comparison matches your expectation."),
+        QStringLiteral("如果这个对比符合预期，再使用“清洗导出”。")
+    ));
+    return html.join(QString());
+}
+
+void MainWindow::FocusAnomaly(int anomalyIndex)
+{
+    QJsonArray anomalies = lastProfile.value("anomalies").toArray();
+    if (anomalyIndex < 0 || anomalyIndex >= anomalies.size()) {
+        return;
+    }
+    QJsonObject anomaly = anomalies.at(anomalyIndex).toObject();
+    int row = anomaly.value("row").toInt(-1);
+    int column = ColumnIndexByName(anomaly.value("column").toString());
+    if (row < 0 || row >= ui->tableWidget->rowCount() || column < 0) {
+        return;
+    }
+    ui->tableWidget->setCurrentCell(row, column);
+    ui->tableWidget->scrollToItem(ui->tableWidget->item(row, column), QAbstractItemView::PositionAtCenter);
+    ui->tableWidget->setFocus();
+    statusBar()->showMessage(Text(
+        QStringLiteral("Located anomaly candidate at row %1, field %2."),
+        QStringLiteral("已定位异常候选：第 %1 行，字段 %2。")
+    ).arg(row + 1).arg(ColumnLabel(column)), 5000);
 }
 
 void MainWindow::FocusDataQuality()

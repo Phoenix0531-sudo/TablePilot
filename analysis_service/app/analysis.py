@@ -347,6 +347,16 @@ def profile_table(
         chart_recommendations,
         analysis_plan,
     )
+    decision_brief = build_decision_brief(
+        df,
+        schema,
+        numeric_df,
+        quality,
+        trends,
+        correlations,
+        anomalies,
+        recommended_views,
+    )
     tool_trace = [
         "load_table",
         "detect_encoding",
@@ -392,6 +402,7 @@ def profile_table(
         "analysis_plan": analysis_plan,
         "dataset_fingerprint": fingerprint,
         "insight_cards": insight_cards,
+        "decision_brief": decision_brief,
         "quality_repair_plan": quality_repair_plan,
         "executive_brief": executive_brief,
         "preview": build_table_preview(df),
@@ -475,6 +486,15 @@ def build_cleaned_table(df: pd.DataFrame, filename: str = "dataset") -> tuple[pd
         ],
     }
     return frame, summary
+
+
+def build_cleaning_preview(df: pd.DataFrame, filename: str = "dataset") -> dict[str, Any]:
+    cleaned, summary = build_cleaned_table(df, filename)
+    return {
+        "summary": summary,
+        "before": build_table_preview(df, max_rows=12),
+        "after": build_table_preview(cleaned, max_rows=12),
+    }
 
 
 def infer_schema(df: pd.DataFrame) -> list[dict[str, Any]]:
@@ -1122,6 +1142,150 @@ def build_insight_cards(
             }
         )
     return cards[:6]
+
+
+def build_decision_brief(
+    df: pd.DataFrame,
+    schema: list[dict[str, Any]],
+    numeric_df: pd.DataFrame,
+    quality: dict[str, Any],
+    trends: list[dict[str, Any]],
+    correlations: list[dict[str, Any]],
+    anomalies: list[dict[str, Any]],
+    recommended_views: list[dict[str, Any]],
+) -> dict[str, Any]:
+    roles = schema_roles(schema)
+    measures = roles["business_measures"] or roles["measures"]
+    dimensions = roles["dimensions"]
+    primary_measure = preferred_metric(schema, measures) if measures else None
+    primary_dimension = dimensions[0] if dimensions else None
+    findings: list[dict[str, Any]] = []
+
+    if primary_measure and primary_dimension and primary_measure in numeric_df.columns and primary_dimension in df.columns:
+        grouped = (
+            pd.DataFrame({"dimension": df[primary_dimension].astype(str), "measure": numeric_df[primary_measure]})
+            .dropna(subset=["measure"])
+            .groupby("dimension", dropna=True)["measure"]
+            .sum()
+            .sort_values(ascending=False)
+        )
+        if not grouped.empty:
+            total = float(grouped.sum())
+            top_name = str(grouped.index[0])
+            top_value = float(grouped.iloc[0])
+            share = round(top_value / total * 100, 1) if total else 0.0
+            second_text = ""
+            if len(grouped) > 1:
+                second_text = f" The next segment is {grouped.index[1]} at {_safe_float(float(grouped.iloc[1]))}."
+            findings.append(
+                {
+                    "id": "segment_leader",
+                    "priority": 1,
+                    "title": f"{top_name} leads {primary_measure}",
+                    "explanation": f"{top_name} contributes {share}% of total {primary_measure}.{second_text}",
+                    "evidence": f"Grouped {primary_measure} by {primary_dimension}; top value is {_safe_float(top_value)}.",
+                    "action": f"Compare {top_name} against the next segments and check whether the gap is expected.",
+                    "confidence": "high" if quality["score"] >= 80 else "medium",
+                }
+            )
+
+    if trends:
+        trend = trends[0]
+        findings.append(
+            {
+                "id": "trend_signal",
+                "priority": 2,
+                "title": f"{trend['column']} is moving {trend['direction']}",
+                "explanation": f"The first value is {trend['first']} and the last value is {trend['last']}; the simple slope is {trend['slope']}.",
+                "evidence": f"Calculated over record order for {trend['column']}.",
+                "action": "Open Chart Studio and verify whether this is a steady pattern or a few records driving the movement.",
+                "confidence": "medium",
+            }
+        )
+
+    if correlations:
+        corr = correlations[0]
+        findings.append(
+            {
+                "id": "relationship_signal",
+                "priority": 3,
+                "title": f"{corr['left']} and {corr['right']} move together",
+                "explanation": f"The correlation is {corr['correlation']} ({corr['strength']}). This can indicate linked behavior, duplicated logic, or shared drivers.",
+                "evidence": f"Correlation computed from available numeric values in {corr['left']} and {corr['right']}.",
+                "action": "Use the scatter or heatmap view before using one field to explain the other.",
+                "confidence": "medium",
+            }
+        )
+
+    if anomalies:
+        top = anomalies[0]
+        findings.append(
+            {
+                "id": "anomaly_queue",
+                "priority": 1,
+                "title": f"Row {top['row'] + 1} needs review",
+                "explanation": f"{top['column']} has a high-deviation value of {top['value']} with z-score {top['z_score']}.",
+                "evidence": f"{len(anomalies)} anomaly candidates were detected across numeric fields.",
+                "action": "Open the anomaly drawer, jump to the row, and decide whether to keep, correct, or annotate the value.",
+                "confidence": "medium",
+            }
+        )
+
+    if quality["missing_ratio"] > 0 or quality["duplicate_rows"] > 0:
+        findings.append(
+            {
+                "id": "quality_gate",
+                "priority": 1,
+                "title": "Clean-up should happen before final reporting",
+                "explanation": f"Missing ratio is {quality['missing_ratio']} and duplicate rows are {quality['duplicate_rows']}.",
+                "evidence": "Quality scoring detected issues that can distort aggregates, rankings, or charts.",
+                "action": "Use clean preview to compare the original and cleaned table before exporting a report.",
+                "confidence": "high",
+            }
+        )
+
+    if not findings and recommended_views:
+        view = recommended_views[0]
+        findings.append(
+            {
+                "id": "next_view",
+                "priority": 4,
+                "title": f"Start with {view['label']}",
+                "explanation": view["reason"],
+                "evidence": f"Recommended chart: {view['chart_type']} with x={view.get('x') or '-'} and y={view.get('y') or '-'}.",
+                "action": "Open Chart Studio and use this view as the first review path.",
+                "confidence": "medium",
+            }
+        )
+
+    findings = sorted(findings, key=lambda item: item["priority"])[:6]
+    primary_question = "What changed, what stands out, and what should be checked before reporting?"
+    if primary_measure and primary_dimension:
+        primary_question = f"What explains differences in {primary_measure}, especially across {primary_dimension}?"
+    elif primary_measure:
+        primary_question = f"What pattern and risk signals exist in {primary_measure}?"
+
+    return {
+        "primary_question": primary_question,
+        "summary": findings[0]["explanation"] if findings else "The table is loaded, but there is not enough structure for a stronger recommendation yet.",
+        "findings": findings,
+        "limitations": build_decision_limitations(df, quality, roles),
+    }
+
+
+def build_decision_limitations(df: pd.DataFrame, quality: dict[str, Any], roles: dict[str, list[str]]) -> list[str]:
+    limitations: list[str] = []
+    if len(df) < 10:
+        limitations.append("The sample is small, so trend and anomaly signals should be treated as prompts for review.")
+    if quality["missing_ratio"] > 0:
+        limitations.append("Missing values can change totals, averages, and rankings after cleaning.")
+    if not roles["time_axis"]:
+        limitations.append("No reliable time field was detected; trend charts use row order rather than calendar time.")
+    if not roles["dimensions"]:
+        limitations.append("No clear grouping field was detected, so segment comparison is limited.")
+    if not limitations:
+        limitations.append("Findings are exploratory and should be validated against business context before action.")
+    return limitations
 
 
 def build_local_ai_enhancement(profile: dict[str, Any], enabled_override: bool | None = None) -> dict[str, Any]:

@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from .agent import answer_question
 from .analysis import (
+    build_cleaning_preview,
     build_cleaned_table,
     build_html_report,
     build_markdown_report,
@@ -167,3 +168,19 @@ async def clean_upload(file: UploadFile, sheet: str | None = None, format: str =
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{stem}-cleaned.csv"'},
     )
+
+
+@app.post("/api/clean-preview-upload")
+async def clean_preview_upload(file: UploadFile, sheet: str | None = None) -> dict[str, object]:
+    suffix = Path(file.filename or "").suffix.lower()
+    try:
+        with NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            temp_file.write(await file.read())
+            temp_path = Path(temp_file.name)
+        loaded = load_table_with_metadata(temp_path, sheet_name=sheet)
+        return build_cleaning_preview(loaded["frame"], file.filename or temp_path.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        if "temp_path" in locals() and temp_path.exists():
+            temp_path.unlink()

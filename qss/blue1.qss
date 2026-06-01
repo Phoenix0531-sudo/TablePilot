@@ -263,6 +263,21 @@ QTextEdit#insightText {
     font-size: 13px;
 }
 
+QLabel#drawerTitle {
+    color: #1d1d1f;
+    font-size: 13px;
+    font-weight: 650;
+    padding: 2px 0;
+}
+
+QTableWidget#drawerTable {
+    background: #ffffff;
+    border: 1px solid #e5e5ea;
+    border-radius: 14px;
+    gridline-color: #eeeeef;
+    font-size: 12px;
+}
+
 QCustomPlot {
     background: #ffffff;
     border: 1px solid #e5e5ea;

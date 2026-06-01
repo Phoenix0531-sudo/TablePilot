@@ -5,3 +5,4 @@
 - Clean export must not re-infer headers after the file has already been normalized; otherwise the first data row can be mistaken for field names.
 - When the user says analysis is weak, do not add more raw metrics first. Add a decision layer: primary question, priority findings, evidence, recommended action, and limitations.
 - In bilingual UI, never pass English backend prose directly into the Chinese insight panel. Keep backend evidence structured and generate Chinese user-facing sentences in the desktop layer.
+- Bilingual screenshots must be produced from the latest built executable, not an earlier running instance. After switching language, refresh every derived panel including drawers and cached reports.

@@ -162,6 +162,42 @@ h2 {
   padding: 24px;
 }
 
+.screenshots {
+  margin: 42px 0;
+}
+
+.screenshots > p {
+  color: #6e6e73;
+  font-size: 18px;
+  margin-top: 0;
+}
+
+.shot-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+}
+
+figure {
+  margin: 0;
+  background: #ffffff;
+  border: 1px solid #e5e5ea;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.08);
+}
+
+figure img {
+  display: block;
+  width: 100%;
+}
+
+figcaption {
+  color: #515154;
+  font-size: 14px;
+  padding: 14px 18px 18px;
+}
+
 .stack {
   background: #1d1d1f;
   color: #ffffff;

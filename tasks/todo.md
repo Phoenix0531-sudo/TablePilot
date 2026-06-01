@@ -44,3 +44,19 @@
 - Windows release build passed and regenerated `dist/TablePilot.zip`.
 - Docker rebuild passed, `/health` passed, `/api/analyze` returned `business_analysis`, and local llama-compatible model returned `local_ai.status=generated`.
 - TablePilot desktop executable was launched from `dist/TablePilot/release/TablePilot.exe`.
+
+# TablePilot final presentation pass
+
+- [x] Align Docker Compose project, image, and container names with TablePilot.
+- [x] Compact the Chart Studio header so the chart canvas has enough vertical space.
+- [x] Add English and Chinese desktop screenshots to README, Chinese README, and GitHub Pages.
+- [x] Build and tag a Windows release package.
+- [x] Verify tests, Docker, desktop launch, commit, push, and release tag.
+
+## Review
+
+- Backend tests passed: 30 passed.
+- Docker rebuild passed; `tablepilot-analysis-service` reached healthy and `/health` returned ok.
+- Windows release build passed and regenerated `dist/TablePilot.zip`.
+- Desktop screenshots were recaptured in English and Chinese after compacting Chart Studio and fixing language refresh.
+- Release commit and `v0.1.0` tag were prepared for GitHub publishing.

@@ -27,6 +27,20 @@ TablePilot 是一个本地优先的桌面数据分析工作台，可以把混乱
 
 `TablePilot` 的意思是“表格数据驾驶员 / 表格分析助手”。它不是替代分析师，而是帮助用户快速加载陌生表格、理解字段结构、发现质量风险，并选择下一步最值得做的分析。
 
+## 项目截图
+
+### 桌面工作台
+
+![TablePilot 桌面工作台](assets/screenshots/tablepilot-desktop-overview.png)
+
+### 中文洞察面板
+
+![TablePilot 中文洞察面板](assets/screenshots/tablepilot-chinese-insights.png)
+
+### 清洗前后对比
+
+![TablePilot 清洗前后对比](assets/screenshots/tablepilot-clean-compare.png)
+
 ## 项目亮点
 
 - **Messy Table Autopilot**：支持 Excel、CSV、TXT，并自动识别分隔符、编码、表头行、空结构、合计行和多工作表。
@@ -89,6 +103,8 @@ qss/                           桌面端主题
 ```powershell
 docker compose up --build
 ```
+
+Docker Compose 项目名为 `tablepilot`，镜像名为 `tablepilot-analysis-service:latest`，容器名为 `tablepilot-analysis-service`。
 
 用 Qt Creator 打开：
 

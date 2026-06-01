@@ -27,6 +27,20 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 
 `TablePilot` means a co-pilot for tabular data. It does not try to replace a human analyst; it helps users load unfamiliar tables, understand their structure, spot quality risks, and choose the next useful analysis step.
 
+## Screenshots
+
+### Desktop workbench
+
+![TablePilot desktop workbench](assets/screenshots/tablepilot-desktop-overview.png)
+
+### Chinese insight panel
+
+![TablePilot Chinese insight panel](assets/screenshots/tablepilot-chinese-insights.png)
+
+### Clean-up comparison
+
+![TablePilot clean-up comparison](assets/screenshots/tablepilot-clean-compare.png)
+
 ## Highlights
 
 - **Messy Table Autopilot** for Excel, CSV, and TXT files, including delimiter, encoding, header-row, empty-structure, summary-row, and multi-sheet handling.
@@ -89,6 +103,8 @@ Start the local analysis service:
 ```powershell
 docker compose up --build
 ```
+
+Docker Compose uses the project name `tablepilot`, image `tablepilot-analysis-service:latest`, and container `tablepilot-analysis-service`.
 
 Open the desktop project with Qt Creator:
 

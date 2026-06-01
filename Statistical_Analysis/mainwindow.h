@@ -24,6 +24,7 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr); // 构造函数
     ~MainWindow(); // 析构函数
+    void OpenFileFromPath(const QString &filePath);
 
 private:
     Ui::MainWindow *ui;  // UI对象指针,Qt Designer自动生成的一个指向ui界面中定义的所有部件的指针
@@ -103,6 +104,7 @@ private:
     QComboBox *chartDimensionSelector;
     QComboBox *sheetSelector;
     QJsonObject lastProfile;
+    QJsonObject lastCleanCompare;
     QString currentFilePath;
     QStringList recentFiles;
     bool updatingSheetSelector;

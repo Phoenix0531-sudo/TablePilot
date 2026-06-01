@@ -1,5 +1,9 @@
+name: tablepilot
+
 services:
   tablepilot-analysis:
+    image: tablepilot-analysis-service:latest
+    container_name: tablepilot-analysis-service
     build:
       context: .
       dockerfile: analysis_service/Dockerfile

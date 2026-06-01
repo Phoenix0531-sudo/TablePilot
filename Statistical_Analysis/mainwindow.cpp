@@ -96,6 +96,14 @@ MainWindow::~MainWindow(){
     delete ui; // 删除ui对象指针，释放内存
 }
 
+void MainWindow::OpenFileFromPath(const QString &filePath)
+{
+    if (filePath.trimmed().isEmpty()) {
+        return;
+    }
+    AnalyzeFileWithService(filePath);
+}
+
 void MainWindow::InitWidget(){
     createActions();    // 调用创建各个功能标签的动作函数
     createToolBar();    // 调用创建工具栏的函数
@@ -425,7 +433,7 @@ void MainWindow::createInsightPanel()
     reviewLayout->setSpacing(10);
 
     QLabel *anomalyTitle = new QLabel(QStringLiteral("Anomaly review"), reviewPanel);
-    anomalyTitle->setObjectName(QStringLiteral("drawerTitle"));
+    anomalyTitle->setObjectName(QStringLiteral("anomalyReviewTitle"));
     reviewLayout->addWidget(anomalyTitle);
     anomalyTable = new QTableWidget(reviewPanel);
     anomalyTable->setObjectName(QStringLiteral("drawerTable"));
@@ -438,7 +446,7 @@ void MainWindow::createInsightPanel()
     reviewLayout->addWidget(anomalyTable, 2);
 
     QLabel *compareTitle = new QLabel(QStringLiteral("Clean preview"), reviewPanel);
-    compareTitle->setObjectName(QStringLiteral("drawerTitle"));
+    compareTitle->setObjectName(QStringLiteral("cleanPreviewTitle"));
     reviewLayout->addWidget(compareTitle);
     cleanCompareText = new QTextEdit(reviewPanel);
     cleanCompareText->setObjectName(QStringLiteral("insightText"));
@@ -461,9 +469,11 @@ void MainWindow::createChartHeaders()
     if (trendLayout && !trendChartTitleLabel) {
         QFrame *header = new QFrame(ui->centralWidget);
         header->setObjectName(QStringLiteral("chartHeader"));
+        header->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        header->setMaximumHeight(68);
         QHBoxLayout *layout = new QHBoxLayout(header);
-        layout->setContentsMargins(12, 8, 12, 8);
-        layout->setSpacing(10);
+        layout->setContentsMargins(12, 6, 12, 6);
+        layout->setSpacing(8);
         QVBoxLayout *copy = new QVBoxLayout;
         copy->setContentsMargins(0, 0, 0, 0);
         copy->setSpacing(2);
@@ -497,6 +507,8 @@ void MainWindow::createChartHeaders()
         layout->addWidget(sheetSelector);
         layout->addWidget(ui->pushButton);
         trendLayout->insertWidget(0, header);
+        trendLayout->setStretch(0, 0);
+        trendLayout->setStretch(1, 1);
         connect(chartTypeSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
             RenderChartStudio();
         });
@@ -578,12 +590,19 @@ void MainWindow::ApplyLanguage()
         if (suggestDistributionButton) suggestDistributionButton->setText(QStringLiteral("查看分布"));
         if (suggestQualityButton) suggestQualityButton->setText(QStringLiteral("复核质量"));
         if (exportReportButton) exportReportButton->setText(QStringLiteral("导出报告"));
+        if (QLabel *brand = findChild<QLabel*>(QStringLiteral("toolbarBrand"))) {
+            brand->setText(QStringLiteral("<b>TablePilot</b><br><span>复杂表格自动驾驶</span>"));
+        }
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("本地 AI 数据工作台"));
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("面向复杂表格、销售数据和 TXT/CSV 文件的本地可解释分析工作台。"));
         if (insightDock) insightDock->setWindowTitle(QStringLiteral("洞察面板"));
         if (reviewDock) reviewDock->setWindowTitle(QStringLiteral("复核抽屉"));
         if (insightText) insightText->setPlaceholderText(QStringLiteral("选择数据文件后，这里会显示分析摘要、数据质量、字段结构和下一步建议。"));
+        if (QLabel *label = findChild<QLabel*>(QStringLiteral("anomalyReviewTitle"))) label->setText(QStringLiteral("异常复核"));
+        if (QLabel *label = findChild<QLabel*>(QStringLiteral("cleanPreviewTitle"))) label->setText(QStringLiteral("清洗预览"));
+        if (anomalyTable) anomalyTable->setHorizontalHeaderLabels(QStringList() << QStringLiteral("行") << QStringLiteral("字段") << QStringLiteral("数值") << QStringLiteral("z") << QStringLiteral("动作"));
+        if (cleanCompareText) cleanCompareText->setPlaceholderText(QStringLiteral("打开文件后使用“清洗对比”，查看清洗前后的变化。"));
     } else {
         m_pAction1->setText(QStringLiteral("Open Excel"));
         m_pAction1->setToolTip(QStringLiteral("Open an Excel workbook and send it to the local analysis service"));
@@ -618,12 +637,19 @@ void MainWindow::ApplyLanguage()
         if (suggestDistributionButton) suggestDistributionButton->setText(QStringLiteral("Open distribution"));
         if (suggestQualityButton) suggestQualityButton->setText(QStringLiteral("Review quality"));
         if (exportReportButton) exportReportButton->setText(QStringLiteral("Export report"));
+        if (QLabel *brand = findChild<QLabel*>(QStringLiteral("toolbarBrand"))) {
+            brand->setText(QStringLiteral("<b>TablePilot</b><br><span>Messy Table Autopilot</span>"));
+        }
         if (eyebrowLabel) eyebrowLabel->setText(QStringLiteral("PRIVATE AI DATA WORKBENCH"));
         if (titleLabel) titleLabel->setText(QStringLiteral("TablePilot"));
         if (subtitleLabel) subtitleLabel->setText(QStringLiteral("A local, explainable workbench for messy spreadsheets and table-like files."));
         if (insightDock) insightDock->setWindowTitle(QStringLiteral("Analysis Panel"));
         if (reviewDock) reviewDock->setWindowTitle(QStringLiteral("Review Drawer"));
         if (insightText) insightText->setPlaceholderText(QStringLiteral("Open a data file to see the analysis brief, data quality, schema, and next moves."));
+        if (QLabel *label = findChild<QLabel*>(QStringLiteral("anomalyReviewTitle"))) label->setText(QStringLiteral("Anomaly review"));
+        if (QLabel *label = findChild<QLabel*>(QStringLiteral("cleanPreviewTitle"))) label->setText(QStringLiteral("Clean preview"));
+        if (anomalyTable) anomalyTable->setHorizontalHeaderLabels(QStringList() << QStringLiteral("Row") << QStringLiteral("Field") << QStringLiteral("Value") << QStringLiteral("z") << QStringLiteral("Action"));
+        if (cleanCompareText) cleanCompareText->setPlaceholderText(QStringLiteral("Use Compare after opening a file to review before/after clean-up."));
     }
     QMap<QString, QString> commandText;
     commandText.insert(QStringLiteral("open_excel"), m_pAction1->text());
@@ -676,6 +702,13 @@ void MainWindow::ApplyLanguage()
         PopulateStatsFromService(lastProfile);
         UpdateOverviewCards(lastProfile);
         UpdateRecommendationActions(lastProfile);
+        UpdateReviewDrawer(lastProfile);
+        if (cleanCompareText && !lastCleanCompare.isEmpty()) {
+            cleanCompareText->setHtml(FormatCleanCompareHtml(lastCleanCompare));
+        }
+        if (info_Label) {
+            info_Label->setText(Text(QStringLiteral("Analysis completed"), QStringLiteral("智能分析完成")));
+        }
         RenderChartStudio();
         RenderDynamicBarChart();
     }
@@ -1234,7 +1267,15 @@ void MainWindow::UpdateToolbarState(const QJsonObject &root)
         QJsonObject localAi = root.value("local_ai").toObject();
         QString model = localAi.value("model").toString(QStringLiteral("qwen3-4b"));
         QString status = localAi.value("status").toString(localAiRequested ? QStringLiteral("requested") : QStringLiteral("disabled"));
-        modelText = QStringLiteral("%1 · %2").arg(model, status);
+        QString statusText = status;
+        if (useChinese) {
+            if (status == QStringLiteral("disabled")) statusText = QStringLiteral("未启用");
+            else if (status == QStringLiteral("requested")) statusText = QStringLiteral("已请求");
+            else if (status == QStringLiteral("generated")) statusText = QStringLiteral("已生成");
+            else if (status == QStringLiteral("unavailable")) statusText = QStringLiteral("不可用");
+            else if (status == QStringLiteral("guardrail_failed")) statusText = QStringLiteral("护栏未通过");
+        }
+        modelText = QStringLiteral("%1 · %2").arg(model, statusText);
     }
     if (toolbarModelLabel) {
         toolbarModelLabel->setText(modelText);
@@ -1453,6 +1494,11 @@ void MainWindow::UpdateOverviewCards(const QJsonObject &root)
     QJsonObject plan = root.value("analysis_plan").toObject();
     QJsonObject source = root.value("source").toObject();
 
+    if (serviceBadge) {
+        serviceBadge->setText(QStringLiteral("<b>%1</b><br><span>%2</span>")
+                                  .arg(Text(QStringLiteral("Service"), QStringLiteral("服务")))
+                                  .arg(Text(QStringLiteral("connected"), QStringLiteral("已连接"))));
+    }
     if (datasetCard) {
         datasetCard->setText(QStringLiteral("<b>%1</b><br><span>%2 x %3</span><br><small>%4</small>")
                                  .arg(Text(QStringLiteral("Dataset"), QStringLiteral("数据集")))
@@ -3336,8 +3382,9 @@ void MainWindow::ShowCleanCompare()
         QMessageBox::warning(this, QStringLiteral("TablePilot"), Text(QStringLiteral("The clean preview response could not be parsed."), QStringLiteral("清洗预览结果无法解析。")));
         return;
     }
+    lastCleanCompare = document.object();
     if (cleanCompareText) {
-        cleanCompareText->setHtml(FormatCleanCompareHtml(document.object()));
+        cleanCompareText->setHtml(FormatCleanCompareHtml(lastCleanCompare));
     }
     if (reviewDock) {
         reviewDock->show();

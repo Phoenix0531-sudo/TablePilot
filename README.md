@@ -33,12 +33,14 @@ Most small spreadsheet utilities assume a fixed table shape or a single demo fil
 - **Schema inference** for numeric, date, category, text, empty, and high-cardinality fields.
 - **Data Quality Repair Plan + Clean Export** using missing values, duplicates, duplicate fields, anomalies, sample size, and analyzability, with conservative cleaned CSV/XLSX export.
 - **Analysis Planner** that recommends next steps based on schema roles, trends, correlations, anomalies, and quality risks.
+- **Business Role Analysis** that identifies the primary measure, grouping dimension, time axis, segment leaders, driver candidates, and review priorities.
 - **Decision Brief** that turns profiling output into a primary question, prioritized findings, evidence, limitations, and next actions.
 - **Insight Cards** that package findings into user-facing cards with evidence and suggested actions.
 - **Dynamic Chart Studio** with auto chart selection, grouped bars, scatter plots, correlation heatmaps, box plots, metric/dimension selectors, generated subtitles, and professional empty states.
 - **Review Drawer** for anomaly candidates, cell-level navigation, and before/after clean-up comparison.
 - **Session and Report System** with profile IDs, generation time, Markdown reports, HTML reports, and desktop report export.
 - **Desktop-native Qt UI** with dynamic preview tables, recent files, sheet switching, charts, profile cards, and a bilingual insight panel.
+- **Strict bilingual reporting**: Chinese mode renders user-facing analysis in Chinese, while English mode renders it in English. Dataset field names remain unchanged as evidence labels.
 - **Local-first architecture**: the Python analysis service runs locally through Docker.
 - **Optional local LLM support**: Ollama and OpenAI-compatible llama.cpp endpoints can be enabled from the desktop UI without making the LLM authoritative.
 - **Deterministic agent-style API** for question answering over loaded datasets.
@@ -60,6 +62,7 @@ FastAPI Analysis Service
       +--> Schema inference and semantic roles
       +--> Quality scoring, repair plan, and cleaned export
       +--> Trends, correlations, anomalies
+      +--> Business-role reading and driver candidates
       +--> Decision brief and review drawer data
       +--> Insight cards and analysis planner
       +--> Markdown / HTML reports and agent-style answers

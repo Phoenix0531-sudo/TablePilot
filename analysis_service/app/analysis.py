@@ -328,6 +328,7 @@ def profile_table(
     table_diagnostics = build_table_diagnostics(df, schema, source_info)
     quality_repair_plan = build_quality_repair_plan(df, schema, quality, anomalies, table_diagnostics)
     analysis_plan = build_analysis_plan(schema, quality, anomalies, trends, correlations, analysis_recommendations)
+    business_analysis = build_business_analysis(df, schema, numeric_df, quality, anomalies, trends, correlations)
     insight_cards = build_insight_cards(
         df,
         quality,
@@ -400,6 +401,7 @@ def profile_table(
         "recommended_views": recommended_views,
         "analysis_recommendations": analysis_recommendations,
         "analysis_plan": analysis_plan,
+        "business_analysis": business_analysis,
         "dataset_fingerprint": fingerprint,
         "insight_cards": insight_cards,
         "decision_brief": decision_brief,
@@ -1186,6 +1188,13 @@ def build_decision_brief(
                     "evidence": f"Grouped {primary_measure} by {primary_dimension}; top value is {_safe_float(top_value)}.",
                     "action": f"Compare {top_name} against the next segments and check whether the gap is expected.",
                     "confidence": "high" if quality["score"] >= 80 else "medium",
+                    "measure": primary_measure,
+                    "dimension": primary_dimension,
+                    "segment": top_name,
+                    "share": share,
+                    "value": _safe_float(top_value),
+                    "second_segment": str(grouped.index[1]) if len(grouped) > 1 else None,
+                    "second_value": _safe_float(float(grouped.iloc[1])) if len(grouped) > 1 else None,
                 }
             )
 
@@ -1200,6 +1209,11 @@ def build_decision_brief(
                 "evidence": f"Calculated over record order for {trend['column']}.",
                 "action": "Open Chart Studio and verify whether this is a steady pattern or a few records driving the movement.",
                 "confidence": "medium",
+                "column": trend["column"],
+                "direction": trend["direction"],
+                "first": trend["first"],
+                "last": trend["last"],
+                "slope": trend["slope"],
             }
         )
 
@@ -1214,6 +1228,10 @@ def build_decision_brief(
                 "evidence": f"Correlation computed from available numeric values in {corr['left']} and {corr['right']}.",
                 "action": "Use the scatter or heatmap view before using one field to explain the other.",
                 "confidence": "medium",
+                "left": corr["left"],
+                "right": corr["right"],
+                "correlation": corr["correlation"],
+                "strength": corr["strength"],
             }
         )
 
@@ -1228,6 +1246,11 @@ def build_decision_brief(
                 "evidence": f"{len(anomalies)} anomaly candidates were detected across numeric fields.",
                 "action": "Open the anomaly drawer, jump to the row, and decide whether to keep, correct, or annotate the value.",
                 "confidence": "medium",
+                "row": top["row"] + 1,
+                "column": top["column"],
+                "value": top["value"],
+                "z_score": top["z_score"],
+                "count": len(anomalies),
             }
         )
 
@@ -1241,6 +1264,8 @@ def build_decision_brief(
                 "evidence": "Quality scoring detected issues that can distort aggregates, rankings, or charts.",
                 "action": "Use clean preview to compare the original and cleaned table before exporting a report.",
                 "confidence": "high",
+                "missing_ratio": quality["missing_ratio"],
+                "duplicate_rows": quality["duplicate_rows"],
             }
         )
 
@@ -1286,6 +1311,198 @@ def build_decision_limitations(df: pd.DataFrame, quality: dict[str, Any], roles:
     if not limitations:
         limitations.append("Findings are exploratory and should be validated against business context before action.")
     return limitations
+
+
+def build_business_analysis(
+    df: pd.DataFrame,
+    schema: list[dict[str, Any]],
+    numeric_df: pd.DataFrame,
+    quality: dict[str, Any],
+    anomalies: list[dict[str, Any]],
+    trends: list[dict[str, Any]],
+    correlations: list[dict[str, Any]],
+) -> dict[str, Any]:
+    roles = schema_roles(schema)
+    measures = roles["business_measures"] or roles["measures"]
+    dimensions = roles["dimensions"]
+    primary_measure = preferred_metric(schema, measures) if measures else None
+    primary_dimension = dimensions[0] if dimensions else None
+    primary_time_axis = roles["time_axis"][0] if roles["time_axis"] else None
+
+    overview = {
+        "primary_measure": primary_measure,
+        "primary_dimension": primary_dimension,
+        "primary_time_axis": primary_time_axis,
+        "question": build_primary_business_question(primary_measure, primary_dimension, primary_time_axis),
+        "confidence": "high" if quality["score"] >= 80 and primary_measure else "medium" if primary_measure else "low",
+    }
+    return {
+        "overview": overview,
+        "segment_summary": build_segment_summary(df, numeric_df, primary_measure, primary_dimension),
+        "metric_mix": build_metric_mix(numeric_df, measures),
+        "driver_candidates": build_driver_candidates(primary_measure, trends, correlations),
+        "review_priorities": build_review_priorities(df, quality, anomalies),
+    }
+
+
+def build_primary_business_question(
+    primary_measure: str | None,
+    primary_dimension: str | None,
+    primary_time_axis: str | None,
+) -> str:
+    if primary_measure and primary_dimension and primary_time_axis:
+        return f"Which {primary_dimension} segments drive {primary_measure}, and how does that change over {primary_time_axis}?"
+    if primary_measure and primary_dimension:
+        return f"Which {primary_dimension} segments explain most of {primary_measure}?"
+    if primary_measure and primary_time_axis:
+        return f"How is {primary_measure} changing over {primary_time_axis}?"
+    if primary_measure:
+        return f"What pattern, risk, and distribution signals exist in {primary_measure}?"
+    return "What structure is available, and what should be cleaned before deeper analysis?"
+
+
+def build_segment_summary(
+    df: pd.DataFrame,
+    numeric_df: pd.DataFrame,
+    primary_measure: str | None,
+    primary_dimension: str | None,
+) -> dict[str, Any] | None:
+    if not primary_measure or not primary_dimension:
+        return None
+    if primary_measure not in numeric_df.columns or primary_dimension not in df.columns:
+        return None
+    grouped = (
+        pd.DataFrame({"dimension": df[primary_dimension].astype(str), "measure": numeric_df[primary_measure]})
+        .dropna(subset=["measure"])
+        .groupby("dimension", dropna=True)["measure"]
+        .sum()
+        .sort_values(ascending=False)
+    )
+    if grouped.empty:
+        return None
+    total = float(grouped.sum())
+    top_items = []
+    for name, value in grouped.head(5).items():
+        share = round(float(value) / total * 100, 1) if total else 0.0
+        top_items.append({"segment": str(name), "value": _safe_float(float(value)), "share": share})
+    concentration = top_items[0]["share"] if top_items else 0.0
+    return {
+        "dimension": primary_dimension,
+        "measure": primary_measure,
+        "total": _safe_float(total),
+        "top_segments": top_items,
+        "concentration": concentration,
+        "interpretation": "concentrated" if concentration >= 45 else "balanced" if concentration < 30 else "moderately_concentrated",
+    }
+
+
+def build_metric_mix(numeric_df: pd.DataFrame, measures: list[str]) -> list[dict[str, Any]]:
+    mix = []
+    for name in measures[:8]:
+        if name not in numeric_df.columns:
+            continue
+        series = numeric_df[name].dropna()
+        if series.empty:
+            continue
+        mix.append(
+            {
+                "metric": name,
+                "total": _safe_float(float(series.sum())),
+                "average": _safe_float(float(series.mean())),
+                "spread": _safe_float(float(series.max() - series.min())),
+                "missing": int(numeric_df[name].isna().sum()),
+            }
+        )
+    return sorted(mix, key=lambda item: metric_priority(item["metric"]), reverse=True)
+
+
+def build_driver_candidates(
+    primary_measure: str | None,
+    trends: list[dict[str, Any]],
+    correlations: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for trend in trends[:3]:
+        candidates.append(
+            {
+                "type": "trend",
+                "metric": trend["column"],
+                "direction": trend["direction"],
+                "slope": trend["slope"],
+                "evidence": f"{trend['column']} moved from {trend['first']} to {trend['last']}.",
+            }
+        )
+    for corr in correlations[:5]:
+        if primary_measure and primary_measure not in {corr["left"], corr["right"]}:
+            continue
+        other = corr["right"] if corr["left"] == primary_measure else corr["left"]
+        candidates.append(
+            {
+                "type": "relationship",
+                "metric": other,
+                "with": primary_measure or corr["left"],
+                "correlation": corr["correlation"],
+                "strength": corr["strength"],
+                "evidence": f"{corr['left']} vs {corr['right']} correlation is {corr['correlation']}.",
+            }
+        )
+    return candidates[:6]
+
+
+def build_review_priorities(
+    df: pd.DataFrame,
+    quality: dict[str, Any],
+    anomalies: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    priorities: list[dict[str, Any]] = []
+    if quality["missing_ratio"] > 0:
+        priorities.append(
+            {
+                "type": "missing",
+                "severity": "medium",
+                "title": "Missing values can change the result",
+                "count": int(df.isna().sum().sum()),
+            }
+        )
+    if quality["duplicate_rows"] > 0:
+        priorities.append(
+            {
+                "type": "duplicate",
+                "severity": "medium",
+                "title": "Duplicate rows may inflate totals",
+                "count": quality["duplicate_rows"],
+            }
+        )
+    if anomalies:
+        priorities.append(
+            {
+                "type": "anomaly",
+                "severity": "medium",
+                "title": "Anomaly candidates need row-level review",
+                "count": len(anomalies),
+                "first_row": anomalies[0]["row"] + 1,
+                "field": anomalies[0]["column"],
+            }
+        )
+    if quality.get("sample_warning"):
+        priorities.append(
+            {
+                "type": "sample",
+                "severity": "low",
+                "title": "Small samples limit confidence",
+                "count": len(df),
+            }
+        )
+    if not priorities:
+        priorities.append(
+            {
+                "type": "ready",
+                "severity": "info",
+                "title": "No blocking quality issue detected",
+                "count": 0,
+            }
+        )
+    return priorities
 
 
 def build_local_ai_enhancement(profile: dict[str, Any], enabled_override: bool | None = None) -> dict[str, Any]:
@@ -1746,6 +1963,7 @@ def build_markdown_report(profile: dict[str, Any]) -> str:
     insight_cards = profile.get("insight_cards", [])
     recommended_views = profile.get("recommended_views", [])
     local_ai = profile.get("local_ai", {})
+    business = profile.get("business_analysis", {})
     lines = [
         f"# TablePilot Analysis Report: {dataset['filename']}",
         "",
@@ -1785,6 +2003,23 @@ def build_markdown_report(profile: dict[str, Any]) -> str:
     ]
     for card in insight_cards:
         lines.append(f"- **{card['title']}**: {card['summary']} Evidence: {card['evidence']}")
+    if business:
+        overview = business.get("overview", {})
+        lines.extend(["", "## Business Role Analysis"])
+        lines.append(f"- Primary question: {overview.get('question', '')}")
+        lines.append(f"- Primary measure: {overview.get('primary_measure') or '-'}")
+        lines.append(f"- Primary dimension: {overview.get('primary_dimension') or '-'}")
+        lines.append(f"- Primary time axis: {overview.get('primary_time_axis') or '-'}")
+        segment = business.get("segment_summary") or {}
+        if segment.get("top_segments"):
+            top = segment["top_segments"][0]
+            lines.append(f"- Segment leader: {top['segment']} contributes {top['share']}% of {segment.get('measure', 'the measure')}.")
+        drivers = business.get("driver_candidates") or []
+        for item in drivers[:3]:
+            if item.get("type") == "trend":
+                lines.append(f"- Driver candidate: {item['metric']} trend is {item['direction']} with slope {item['slope']}.")
+            else:
+                lines.append(f"- Driver candidate: {item['metric']} correlation is {item.get('correlation')}.")
     if repair_plan:
         lines.extend(["", "## Data Quality Repair Plan"])
         for item in repair_plan:

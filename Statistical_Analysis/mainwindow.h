@@ -140,10 +140,18 @@ private:
     QString PlanTitle(const QJsonObject &step) const;
     QString PlanReason(const QJsonObject &step) const;
     QString InsightText(const QString &value, const QJsonObject &root) const;
+    QString DecisionTitleText(const QJsonObject &finding) const;
+    QString DecisionExplanationText(const QJsonObject &finding) const;
+    QString DecisionEvidenceText(const QJsonObject &finding) const;
+    QString DecisionActionText(const QJsonObject &finding) const;
+    QString LimitationText(const QString &value) const;
+    QString ViewReasonText(const QJsonObject &view) const;
     QString CardTitleText(const QJsonObject &card) const;
     QString CardSummaryText(const QJsonObject &card) const;
+    QString CardEvidenceText(const QJsonObject &card) const;
     QString RepairTitleText(const QJsonObject &item) const;
     QString RepairRecommendationText(const QJsonObject &item) const;
+    QString RepairImpactText(const QJsonObject &item) const;
     QString ViewLabelText(const QJsonObject &view) const;
     QString FormatCleanCompareHtml(const QJsonObject &root) const;
     void LoadRecentFiles();

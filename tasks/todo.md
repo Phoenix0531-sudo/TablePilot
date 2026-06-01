@@ -29,3 +29,18 @@
 - Windows release build passed and regenerated `dist/TablePilot.zip`.
 - Docker Desktop was started, Docker rebuild passed, `/health` passed, `/api/analyze` returned `decision_brief`, and `/api/clean-preview-upload` returned 200.
 - TablePilot desktop executable was launched from `dist/TablePilot/release/TablePilot.exe`.
+
+# TablePilot decision intelligence pass
+
+- [x] Add business-role analysis so the app explains drivers, segments, metric mix, and review priorities.
+- [x] Make Chinese insight output fully Chinese except dataset field names and product terms.
+- [x] Make English insight output fully English.
+- [x] Improve the report panel so it reads like a decision brief instead of developer diagnostics.
+- [x] Sync README, Chinese README, GitHub Pages, tests, build, run, commit, and push.
+
+## Review
+
+- Backend tests passed: 30 passed.
+- Windows release build passed and regenerated `dist/TablePilot.zip`.
+- Docker rebuild passed, `/health` passed, `/api/analyze` returned `business_analysis`, and local llama-compatible model returned `local_ai.status=generated`.
+- TablePilot desktop executable was launched from `dist/TablePilot/release/TablePilot.exe`.

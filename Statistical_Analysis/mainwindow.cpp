@@ -1726,6 +1726,166 @@ QString MainWindow::InsightText(const QString &value, const QJsonObject &root) c
     return value;
 }
 
+QString MainWindow::DecisionTitleText(const QJsonObject &finding) const
+{
+    if (!useChinese) {
+        return finding.value("title").toString();
+    }
+    const QString id = finding.value("id").toString();
+    if (id == "segment_leader") {
+        return QStringLiteral("%1 是 %2 的领先分组")
+            .arg(finding.value("segment").toString(), finding.value("measure").toString());
+    }
+    if (id == "trend_signal") {
+        return QStringLiteral("%1 正在%2")
+            .arg(finding.value("column").toString(), DirectionText(finding.value("direction").toString()));
+    }
+    if (id == "relationship_signal") {
+        return QStringLiteral("%1 与 %2 存在联动")
+            .arg(finding.value("left").toString(), finding.value("right").toString());
+    }
+    if (id == "anomaly_queue") {
+        return QStringLiteral("第 %1 行需要复核").arg(finding.value("row").toInt());
+    }
+    if (id == "quality_gate") {
+        return QStringLiteral("先完成清洗复核，再做最终结论");
+    }
+    if (id == "next_view") {
+        return QStringLiteral("建议先打开系统推荐视图");
+    }
+    return finding.value("title").toString();
+}
+
+QString MainWindow::DecisionExplanationText(const QJsonObject &finding) const
+{
+    if (!useChinese) {
+        return finding.value("explanation").toString();
+    }
+    const QString id = finding.value("id").toString();
+    if (id == "segment_leader") {
+        QString text = QStringLiteral("%1 贡献了 %2 总量的 %3%。")
+            .arg(finding.value("segment").toString(), finding.value("measure").toString())
+            .arg(finding.value("share").toDouble());
+        if (!finding.value("second_segment").isNull()) {
+            text += QStringLiteral("第二名是 %1，数值为 %2。")
+                .arg(finding.value("second_segment").toString())
+                .arg(finding.value("second_value").toDouble());
+        }
+        return text;
+    }
+    if (id == "trend_signal") {
+        return QStringLiteral("%1 从 %2 变化到 %3，简单斜率为 %4。")
+            .arg(finding.value("column").toString())
+            .arg(finding.value("first").toDouble())
+            .arg(finding.value("last").toDouble())
+            .arg(finding.value("slope").toDouble());
+    }
+    if (id == "relationship_signal") {
+        return QStringLiteral("相关系数为 %1，说明两个字段在当前样本中存在较明显的共同变化。")
+            .arg(finding.value("correlation").toDouble());
+    }
+    if (id == "anomaly_queue") {
+        return QStringLiteral("%1 的数值 %2 偏离较大，z-score 为 %3。")
+            .arg(finding.value("column").toString())
+            .arg(finding.value("value").toDouble())
+            .arg(finding.value("z_score").toDouble());
+    }
+    if (id == "quality_gate") {
+        return QStringLiteral("缺失比例为 %1，重复行数量为 %2，这些问题可能影响汇总、排序和图表。")
+            .arg(finding.value("missing_ratio").toDouble())
+            .arg(finding.value("duplicate_rows").toInt());
+    }
+    return finding.value("explanation").toString();
+}
+
+QString MainWindow::DecisionEvidenceText(const QJsonObject &finding) const
+{
+    if (!useChinese) {
+        return finding.value("evidence").toString();
+    }
+    const QString id = finding.value("id").toString();
+    if (id == "segment_leader") {
+        return QStringLiteral("按 %1 汇总 %2，最高分组数值为 %3。")
+            .arg(finding.value("dimension").toString(), finding.value("measure").toString())
+            .arg(finding.value("value").toDouble());
+    }
+    if (id == "trend_signal") {
+        return QStringLiteral("基于当前记录顺序计算 %1 的变化方向。").arg(finding.value("column").toString());
+    }
+    if (id == "relationship_signal") {
+        return QStringLiteral("基于 %1 和 %2 的有效数值记录计算相关性。")
+            .arg(finding.value("left").toString(), finding.value("right").toString());
+    }
+    if (id == "anomaly_queue") {
+        return QStringLiteral("共检测到 %1 个异常候选单元格。").arg(finding.value("count").toInt());
+    }
+    if (id == "quality_gate") {
+        return QStringLiteral("质量评分发现了会影响统计结论的数据问题。");
+    }
+    return finding.value("evidence").toString();
+}
+
+QString MainWindow::DecisionActionText(const QJsonObject &finding) const
+{
+    if (!useChinese) {
+        return finding.value("action").toString();
+    }
+    const QString id = finding.value("id").toString();
+    if (id == "segment_leader") {
+        return QStringLiteral("建议对比领先分组和后续分组，确认差距是否符合业务预期。");
+    }
+    if (id == "trend_signal") {
+        return QStringLiteral("建议打开图表工作台，确认变化是稳定趋势，还是少数记录造成的波动。");
+    }
+    if (id == "relationship_signal") {
+        return QStringLiteral("建议使用散点图或相关热力图复核，避免把相关性误读为因果关系。");
+    }
+    if (id == "anomaly_queue") {
+        return QStringLiteral("建议打开异常复核抽屉，跳转到原始单元格后决定保留、修正或备注。");
+    }
+    if (id == "quality_gate") {
+        return QStringLiteral("建议先查看清洗对比，再导出清洗后的数据或报告。");
+    }
+    return finding.value("action").toString();
+}
+
+QString MainWindow::LimitationText(const QString &value) const
+{
+    if (!useChinese) {
+        return value;
+    }
+    if (value.startsWith("The sample is small")) {
+        return QStringLiteral("样本量偏小，趋势和异常信号只能作为复核线索。");
+    }
+    if (value.startsWith("Missing values")) {
+        return QStringLiteral("缺失值可能改变总和、均值和排序结果。");
+    }
+    if (value.startsWith("No reliable time field")) {
+        return QStringLiteral("未识别到可靠时间字段，趋势图会按记录顺序展示。");
+    }
+    if (value.startsWith("No clear grouping field")) {
+        return QStringLiteral("未识别到清晰分组字段，分组对比能力有限。");
+    }
+    if (value.startsWith("Findings are exploratory")) {
+        return QStringLiteral("当前结论属于探索性分析，正式决策前需要结合业务背景验证。");
+    }
+    return value;
+}
+
+QString MainWindow::ViewReasonText(const QJsonObject &view) const
+{
+    if (!useChinese) {
+        return view.value("reason").toString();
+    }
+    const QString id = view.value("id").toString();
+    if (id == "trend") return QStringLiteral("检测到可用于趋势观察的数值指标，适合先看变化方向。");
+    if (id == "segment") return QStringLiteral("检测到分类维度和关键指标，适合比较不同分组的表现。");
+    if (id == "correlation") return QStringLiteral("存在多个数值字段，适合复核字段之间的联动关系。");
+    if (id == "distribution") return QStringLiteral("检测到可分析指标，适合查看分布、离散程度和异常值。");
+    if (id == "quality") return QStringLiteral("在解释结果前，应先确认缺失、重复和异常候选。");
+    return view.value("reason").toString();
+}
+
 QString MainWindow::CardTitleText(const QJsonObject &card) const
 {
     if (!useChinese) {
@@ -1758,6 +1918,22 @@ QString MainWindow::CardSummaryText(const QJsonObject &card) const
     return card.value("summary").toString();
 }
 
+QString MainWindow::CardEvidenceText(const QJsonObject &card) const
+{
+    if (!useChinese) {
+        return card.value("evidence").toString();
+    }
+    const QString id = card.value("id").toString();
+    if (id == "dataset_fingerprint") return QStringLiteral("根据行列规模、字段角色和质量评分生成。");
+    if (id == "quality_score") return QStringLiteral("综合缺失比例、重复行、异常候选和可分析字段比例。");
+    if (id == "top_trend") return QStringLiteral("基于首尾数值和记录顺序计算简单趋势。");
+    if (id == "top_correlation") return QStringLiteral("基于有效数值记录计算字段之间的相关性。");
+    if (id == "anomaly_review") return QStringLiteral("基于数值字段的 z-score 检测高偏离单元格。");
+    if (id == "distribution_ready") return QStringLiteral("至少有一个数值指标可用于查看分布。");
+    if (id == "segment_opportunity") return QStringLiteral("已识别到分类维度和可汇总指标。");
+    return card.value("evidence").toString();
+}
+
 QString MainWindow::RepairTitleText(const QJsonObject &item) const
 {
     if (!useChinese) {
@@ -1788,6 +1964,22 @@ QString MainWindow::RepairRecommendationText(const QJsonObject &item) const
     if (id == "sample_size") return QStringLiteral("当前样本量较小，适合探索，不适合做最终统计结论。");
     if (id == "quality_clear") return QStringLiteral("可以继续做趋势、分组和关系分析。");
     return item.value("recommendation").toString();
+}
+
+QString MainWindow::RepairImpactText(const QJsonObject &item) const
+{
+    if (!useChinese) {
+        return item.value("impact").toString();
+    }
+    const QString id = item.value("id").toString();
+    if (id == "empty_structure") return QStringLiteral("当前分析已经排除了全空行列。");
+    if (id == "duplicate_columns") return QStringLiteral("重复字段会让结构识别和相关性判断失真。");
+    if (id == "missing_values") return QStringLiteral("该问题会影响汇总、均值、排序和图表解释。");
+    if (id == "duplicate_rows") return QStringLiteral("重复记录可能抬高计数和求和结果。");
+    if (id == "anomaly_review") return QStringLiteral("异常值可能改变均值、趋势斜率和图表缩放。");
+    if (id == "sample_size") return QStringLiteral("样本较小时，结论只能作为探索线索。");
+    if (id == "quality_clear") return QStringLiteral("当前无需先做阻塞性清洗。");
+    return item.value("impact").toString();
 }
 
 QString MainWindow::ViewLabelText(const QJsonObject &view) const
@@ -1942,6 +2134,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
     QJsonArray charts = root.value("chart_recommendations").toArray();
     QJsonArray insightCards = root.value("insight_cards").toArray();
     QJsonObject decision = root.value("decision_brief").toObject();
+    QJsonObject business = root.value("business_analysis").toObject();
     QJsonArray repairPlan = root.value("quality_repair_plan").toArray();
     QJsonArray recommendedViews = root.value("recommended_views").toArray();
     QJsonObject fingerprint = root.value("dataset_fingerprint").toObject();
@@ -1975,6 +2168,16 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
             return Text(QStringLiteral("Local model wording is disabled for this run. The report is generated by deterministic rules."),
                         QStringLiteral("本次未启用本地模型润色，报告由确定性规则生成。"));
         };
+        auto statusText = [this](const QString &status) {
+            if (!useChinese) {
+                return status;
+            }
+            if (status == "generated") return QStringLiteral("已生成");
+            if (status == "guardrail_failed") return QStringLiteral("护栏拦截");
+            if (status == "unavailable") return QStringLiteral("不可用");
+            if (status == "disabled") return QStringLiteral("未启用");
+            return status;
+        };
 
         QStringList html;
         html << QStringLiteral(
@@ -2006,8 +2209,31 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
         if (useChinese) {
             if (dataType == "Sales or operations table") {
                 dataType = QStringLiteral("销售/运营表");
+            } else if (dataType == "Financial or transaction table") {
+                dataType = QStringLiteral("财务/交易表");
+            } else if (dataType == "Time-series measurement table") {
+                dataType = QStringLiteral("时间序列表");
+            } else if (dataType == "Dimensional analysis table") {
+                dataType = QStringLiteral("维度分析表");
             } else if (dataType == "Generic tabular dataset") {
                 dataType = QStringLiteral("通用表格数据");
+            }
+        }
+        QJsonObject businessOverview = business.value("overview").toObject();
+        QString primaryQuestion = decision.value("primary_question").toString(QStringLiteral("What changed, what stands out, and what should be checked before reporting?"));
+        if (useChinese) {
+            const QString measure = businessOverview.value("primary_measure").toString();
+            const QString dimension = businessOverview.value("primary_dimension").toString();
+            const QString timeAxis = businessOverview.value("primary_time_axis").toString();
+            if (!measure.isEmpty() && !dimension.isEmpty() && !timeAxis.isEmpty()) {
+                primaryQuestion = QStringLiteral("%1 的变化主要由哪些 %2 分组驱动？这种变化在 %3 上是否稳定？")
+                    .arg(measure, dimension, timeAxis);
+            } else if (!measure.isEmpty() && !dimension.isEmpty()) {
+                primaryQuestion = QStringLiteral("哪些 %1 分组最能解释 %2 的差异？").arg(dimension, measure);
+            } else if (!measure.isEmpty()) {
+                primaryQuestion = QStringLiteral("%1 里有哪些趋势、风险和分布信号？").arg(measure);
+            } else {
+                primaryQuestion = QStringLiteral("这份表有哪些可分析结构？在深入分析前需要先清理什么？");
             }
         }
 
@@ -2025,12 +2251,12 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 .arg(dataset.value("numeric_columns").toInt())
                 .arg(dataset.value("date_columns").toInt())
                 .arg(dataset.value("category_columns").toInt())
-                .arg(decision.value("primary_question").toString(QStringLiteral("哪些变化值得关注，哪些数据需要先复核？")))
+                .arg(primaryQuestion)
             : QStringLiteral("This table is ready for exploratory analysis. TablePilot found %1 numeric fields, %2 date fields, and %3 grouping fields. The first question is: %4")
                 .arg(dataset.value("numeric_columns").toInt())
                 .arg(dataset.value("date_columns").toInt())
                 .arg(dataset.value("category_columns").toInt())
-                .arg(decision.value("primary_question").toString(QStringLiteral("What changed, what stands out, and what should be checked before reporting?")));
+                .arg(primaryQuestion);
         html << QStringLiteral("<div class='hero %1'><b>%2</b><p>%3</p></div>")
                     .arg(scoreTone)
                     .arg(label(QStringLiteral("What TablePilot found"), QStringLiteral("TablePilot 发现了什么")).toHtmlEscaped())
@@ -2044,7 +2270,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
         html << QStringLiteral("<div class='card'><b>%1</b><div class='num'>%2</div><span class='muted'>%3</span></div>")
                     .arg(label(QStringLiteral("Recommended views"), QStringLiteral("推荐视图")), QString::number(recommendedViews.size()), label(QStringLiteral("chart options detected"), QStringLiteral("可用图表方案")));
         html << QStringLiteral("<div class='card'><b>%1</b><div class='num'>%2</div><span class='muted'>%3</span></div>")
-                    .arg(label(QStringLiteral("Model status"), QStringLiteral("模型状态")), localAi.value("status").toString("disabled"), localAi.value("model").toString("qwen3-4b"));
+                    .arg(label(QStringLiteral("Model status"), QStringLiteral("模型状态")), statusText(localAi.value("status").toString("disabled")), localAi.value("model").toString("qwen3-4b"));
         html << QStringLiteral("</div>");
 
         QJsonArray decisionFindings = decision.value("findings").toArray();
@@ -2053,10 +2279,81 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
             for (int i = 0; i < decisionFindings.size() && i < 5; ++i) {
                 QJsonObject finding = decisionFindings.at(i).toObject();
                 html << QStringLiteral("<div class='item'><b>%1</b><p>%2</p><span class='muted'>%3</span><p>%4</p></div>")
-                            .arg(finding.value("title").toString().toHtmlEscaped())
-                            .arg(finding.value("explanation").toString().toHtmlEscaped())
-                            .arg(finding.value("evidence").toString().toHtmlEscaped())
-                            .arg(finding.value("action").toString().toHtmlEscaped());
+                            .arg(DecisionTitleText(finding).toHtmlEscaped())
+                            .arg(DecisionExplanationText(finding).toHtmlEscaped())
+                            .arg(DecisionEvidenceText(finding).toHtmlEscaped())
+                            .arg(DecisionActionText(finding).toHtmlEscaped());
+            }
+        }
+
+        QJsonObject segment = business.value("segment_summary").toObject();
+        QJsonArray drivers = business.value("driver_candidates").toArray();
+        QJsonArray priorities = business.value("review_priorities").toArray();
+        if (!business.isEmpty()) {
+            html << QStringLiteral("<h2>%1</h2>").arg(label(QStringLiteral("Business reading"), QStringLiteral("业务解读")));
+            if (!segment.isEmpty()) {
+                QJsonArray topSegments = segment.value("top_segments").toArray();
+                if (!topSegments.isEmpty()) {
+                    QJsonObject top = topSegments.first().toObject();
+                    QString segmentText = useChinese
+                        ? QStringLiteral("%1 在 %2 中排名第一，贡献 %3%，总量为 %4。")
+                            .arg(top.value("segment").toString(), segment.value("measure").toString())
+                            .arg(top.value("share").toDouble())
+                            .arg(top.value("value").toDouble())
+                        : QStringLiteral("%1 ranks first for %2, contributing %3% with a total of %4.")
+                            .arg(top.value("segment").toString(), segment.value("measure").toString())
+                            .arg(top.value("share").toDouble())
+                            .arg(top.value("value").toDouble());
+                    html << QStringLiteral("<div class='action'><b>%1</b><p>%2</p></div>")
+                                .arg(label(QStringLiteral("Segment signal"), QStringLiteral("分组信号")).toHtmlEscaped())
+                                .arg(segmentText.toHtmlEscaped());
+                }
+            }
+            if (!drivers.isEmpty()) {
+                html << QStringLiteral("<ul>");
+                for (int i = 0; i < drivers.size() && i < 3; ++i) {
+                    QJsonObject driver = drivers.at(i).toObject();
+                    QString text;
+                    if (driver.value("type").toString() == "trend") {
+                        text = useChinese
+                            ? QStringLiteral("%1 的趋势方向为%2，斜率为 %3。")
+                                .arg(driver.value("metric").toString(), DirectionText(driver.value("direction").toString()))
+                                .arg(driver.value("slope").toDouble())
+                            : QStringLiteral("%1 is moving %2 with slope %3.")
+                                .arg(driver.value("metric").toString(), driver.value("direction").toString())
+                                .arg(driver.value("slope").toDouble());
+                    } else {
+                        text = useChinese
+                            ? QStringLiteral("%1 与 %2 的相关系数为 %3。")
+                                .arg(driver.value("metric").toString(), driver.value("with").toString())
+                                .arg(driver.value("correlation").toDouble())
+                            : QStringLiteral("%1 correlates with %2 at %3.")
+                                .arg(driver.value("metric").toString(), driver.value("with").toString())
+                                .arg(driver.value("correlation").toDouble());
+                    }
+                    html << QStringLiteral("<li>%1</li>").arg(text.toHtmlEscaped());
+                }
+                html << QStringLiteral("</ul>");
+            }
+            if (!priorities.isEmpty()) {
+                QJsonObject priority = priorities.first().toObject();
+                QString priorityLabel = priority.value("title").toString();
+                if (useChinese) {
+                    const QString type = priority.value("type").toString();
+                    if (type == "missing") priorityLabel = QStringLiteral("缺失值");
+                    else if (type == "duplicate") priorityLabel = QStringLiteral("重复行");
+                    else if (type == "anomaly") priorityLabel = QStringLiteral("异常候选");
+                    else if (type == "sample") priorityLabel = QStringLiteral("样本量偏小");
+                    else if (type == "ready") priorityLabel = QStringLiteral("暂无阻塞问题");
+                }
+                QString priorityText = useChinese
+                    ? QStringLiteral("当前最优先复核项：%1，数量 %2。")
+                        .arg(priorityLabel)
+                        .arg(priority.value("count").toInt())
+                    : QStringLiteral("Top review priority: %1, count %2.")
+                        .arg(priority.value("title").toString())
+                        .arg(priority.value("count").toInt());
+                html << QStringLiteral("<p class='muted'>%1</p>").arg(priorityText.toHtmlEscaped());
             }
         }
 
@@ -2067,7 +2364,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 html << QStringLiteral("<div class='item'><b>%1</b><p>%2</p><span class='muted'>%3</span></div>")
                             .arg(CardTitleText(card).toHtmlEscaped())
                             .arg(CardSummaryText(card).toHtmlEscaped())
-                            .arg(card.value("evidence").toString().toHtmlEscaped());
+                            .arg(CardEvidenceText(card).toHtmlEscaped());
             }
         }
 
@@ -2078,7 +2375,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 html << QStringLiteral("<div class='action'><b>%1</b><p>%2</p><span class='muted'>%3</span></div>")
                             .arg(RepairTitleText(item).toHtmlEscaped())
                             .arg(RepairRecommendationText(item).toHtmlEscaped())
-                            .arg(item.value("impact").toString().toHtmlEscaped());
+                            .arg(RepairImpactText(item).toHtmlEscaped());
             }
         }
 
@@ -2088,7 +2385,7 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                 QJsonObject view = recommendedViews.at(i).toObject();
                 html << QStringLiteral("<li><b>%1</b>：%2</li>")
                             .arg(ViewLabelText(view).toHtmlEscaped())
-                            .arg(view.value("reason").toString().toHtmlEscaped());
+                            .arg(ViewReasonText(view).toHtmlEscaped());
             }
             html << QStringLiteral("</ul>");
         }
@@ -2097,7 +2394,20 @@ QString MainWindow::FormatInsightHtml(const QJsonObject &root) const
                     .arg(label(QStringLiteral("Local model"), QStringLiteral("本地模型")))
                     .arg(localAiStatusText(localAi).toHtmlEscaped());
         if (!localAi.value("summary").toString().isEmpty()) {
-            html << QStringLiteral("<p>%1</p>").arg(localAi.value("summary").toString().toHtmlEscaped());
+            QString summary = localAi.value("summary").toString();
+            if (useChinese) {
+                summary = QStringLiteral("本地模型已基于结构化证据生成补充说明；如需查看模型原文，可切换到英文界面。");
+            }
+            html << QStringLiteral("<p>%1</p>").arg(summary.toHtmlEscaped());
+        }
+
+        QJsonArray limitations = decision.value("limitations").toArray();
+        if (!limitations.isEmpty()) {
+            html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Reading limits"), QStringLiteral("解读边界")));
+            for (const QJsonValue &value : limitations) {
+                html << QStringLiteral("<li>%1</li>").arg(LimitationText(value.toString()).toHtmlEscaped());
+            }
+            html << QStringLiteral("</ul>");
         }
 
         html << QStringLiteral("<h2>%1</h2><ul>").arg(label(QStringLiteral("Recommended workflow"), QStringLiteral("推荐工作流")));

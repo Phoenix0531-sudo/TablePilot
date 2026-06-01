@@ -40,6 +40,9 @@ def test_profiles_demo_excel_dataset():
     assert profile["insight_cards"]
     assert profile["decision_brief"]["findings"]
     assert profile["decision_brief"]["primary_question"]
+    assert profile["business_analysis"]["overview"]["primary_measure"]
+    assert profile["business_analysis"]["segment_summary"]["top_segments"]
+    assert profile["business_analysis"]["review_priorities"]
     assert profile["recommended_views"]
     assert any(view["id"] == "trend" for view in profile["recommended_views"])
     assert profile["quality_repair_plan"]
@@ -209,6 +212,7 @@ def test_markdown_report_endpoint():
     assert "## Executive Summary" in response.text
     assert "## Dataset Fingerprint" in response.text
     assert "## Insight Cards" in response.text
+    assert "## Business Role Analysis" in response.text
     assert "## Data Quality Repair Plan" in response.text
     assert "## Recommended Views" in response.text
     assert "## Analysis Plan" in response.text

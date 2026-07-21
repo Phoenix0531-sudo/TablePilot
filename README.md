@@ -272,3 +272,7 @@ The current desktop UI already supports Chinese/English switching. These config 
 ## Disclaimer
 
 TablePilot produces analytical summaries for learning and portfolio demonstration. It is not a business, financial, or operational recommendation system.
+
+## License
+
+[MIT](LICENSE) — free for commercial use with attribution.

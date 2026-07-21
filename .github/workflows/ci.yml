@@ -14,49 +14,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Tests
+  python-tests:
+    name: Python tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
-      - name: Install dependencies
+      - name: Install
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-dev.txt ]; then
-            python -m pip install -r requirements-dev.txt
-          elif [ -f requirements.txt ]; then
-            python -m pip install -r requirements.txt
-          elif [ -f pyproject.toml ]; then
-            python -m pip install -e . || python -m pip install .
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt
+          elif [ -f requirements.txt ]; then pip install -r requirements.txt || true
           fi
-          python -m pip install pytest ruff || true
-
-      - name: Lint (best effort)
+          if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e . || true; fi
+          pip install pytest
+      - name: Required files
         run: |
-          if command -v ruff >/dev/null 2>&1; then
-            ruff check . || true
-          fi
-
-      - name: Run tests (best effort)
+          test -f README.md
+          test -f LICENSE || test -f LICENSE.md
+      - name: Pytest (hard)
         run: |
-          if [ -d tests ] || ls test_*.py >/dev/null 2>&1; then
-            python -m pytest -q || true
+          if [ -d tests ] || [ -d Test ]; then
+            python -m pytest -q
           else
-            echo "No tests directory; smoke import check"
-            python - <<'PY'
-import importlib, pathlib, sys
-root = pathlib.Path('.')
-cands = [p for p in root.iterdir() if p.is_dir() and (p/ '__init__.py').exists()]
-print('packages', [c.name for c in cands[:10]])
-PY
+            python -m pytest -q || python -c "print('no tests collected is ok if none defined')"
           fi
 
+  go-build:
+    name: Go build (if present)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - name: Build modules
+        run: |
+          if ls **/*.go >/dev/null 2>&1 || ls *.go >/dev/null 2>&1; then
+            mapfile -t mods < <(find . -name go.mod -not -path './vendor/*' | head -10)
+            if [ ${#mods[@]} -eq 0 ]; then
+              echo "Go files without go.mod — skip build"
+            else
+              for m in "${mods[@]}"; do
+                dir=$(dirname "$m")
+                (cd "$dir" && go build ./...)
+              done
+            fi
+          else
+            echo "No Go sources"
+          fi

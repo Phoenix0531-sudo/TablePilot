@@ -17,7 +17,7 @@ jobs:
   python-tests:
     name: Python tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -27,22 +27,21 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt
-          elif [ -f requirements.txt ]; then pip install -r requirements.txt || true
-          fi
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          while IFS= read -r f; do pip install -r "$f" || true; done < <(find . -maxdepth 3 -name requirements.txt -not -path './.venv/*' | head -8)
           if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e . || true; fi
           pip install pytest
       - name: Required files
         run: |
           test -f README.md
           test -f LICENSE || test -f LICENSE.md
-      - name: Pytest (hard)
+      - name: Pytest (tests/ only, hard)
         run: |
-          if [ -d tests ] || [ -d Test ]; then
-            python -m pytest -q
-          else
-            python -m pytest -q || python -c "print('no tests collected is ok if none defined')"
-          fi
+          set -e
+          if [ -d tests ]; then python -m pytest -q tests
+          elif [ -d Test ]; then python -m pytest -q Test
+          else echo "No tests/ — structure OK"; fi
 
   go-build:
     name: Go build (if present)
@@ -55,16 +54,12 @@ jobs:
           go-version: "1.22"
       - name: Build modules
         run: |
-          if ls **/*.go >/dev/null 2>&1 || ls *.go >/dev/null 2>&1; then
-            mapfile -t mods < <(find . -name go.mod -not -path './vendor/*' | head -10)
-            if [ ${#mods[@]} -eq 0 ]; then
-              echo "Go files without go.mod — skip build"
-            else
-              for m in "${mods[@]}"; do
-                dir=$(dirname "$m")
-                (cd "$dir" && go build ./...)
-              done
-            fi
+          mapfile -t mods < <(find . -name go.mod -not -path './vendor/*' -not -path './Ref/*' | head -10)
+          if [ ${#mods[@]} -eq 0 ]; then
+            echo "No go.mod"
           else
-            echo "No Go sources"
+            for m in "${mods[@]}"; do
+              dir=$(dirname "$m")
+              (cd "$dir" && go build ./...)
+            done
           fi

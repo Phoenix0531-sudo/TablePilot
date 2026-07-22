@@ -11,6 +11,8 @@ Qt/C++ desktop experience with a Python analysis service.
 
 ## Preview
 
+![TablePilot schematic](docs/screenshots/preview.png)
+
 <table>
 <tr><td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot"></td><td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="TablePilot"></td></tr>
 <tr><td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="TablePilot"></td><td></td></tr>

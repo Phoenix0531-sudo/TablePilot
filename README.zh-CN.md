@@ -11,6 +11,8 @@ Qt/C++ 桌面体验 + Python 分析服务。
 
 ## 预览
 
+![架构示意](docs/screenshots/preview.png)
+
 <table>
 <tr><td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot"></td><td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="TablePilot"></td></tr>
 <tr><td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="TablePilot"></td><td></td></tr>

@@ -18,18 +18,25 @@ jobs:
     name: Python tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      QT_QPA_PLATFORM: offscreen
+      MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: pip
+          cache: ${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/uv.lock') != '' && 'pip' || '' }}
+          cache-dependency-path: |
+            **/requirements*.txt
+            **/pyproject.toml
+            **/uv.lock
       - name: Install
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-          while IFS= read -r f; do pip install -r "$f" || true; done < <(find . -maxdepth 3 -name requirements.txt -not -path './.venv/*' | head -8)
+          while IFS= read -r f; do pip install -r "$f" || true; done < <(find . -maxdepth 3 -name 'requirements*.txt' -not -path './.venv/*' | head -8)
           if [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e . || true; fi
           pip install pytest
       - name: Required files

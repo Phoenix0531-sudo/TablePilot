@@ -1,44 +1,48 @@
 # TablePilot
 
-**Local-first messy table workbench (Qt/C++ desktop + Python analysis service)**
+**Local-first messy table workbench — quality scores, analysis plans, chart suggestions.**
 
 [English](README.md) | [中文](README.zh-CN.md)
 
-![CI](https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg)
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+[![CI](https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
-TablePilot turns messy Excel / CSV / TXT tables into **explainable profiles**, quality scores, analysis plans, chart suggestions, and exportable reports — **local-first**.
+Local-first messy table workbench — quality scores, analysis plans, chart suggestions.
 
-Architecture: Qt/C++ desktop experience + Python analysis service (`analysis_service/`), with optional local LLM (e.g. Ollama) paths for narrative briefs.
+Qt/C++ desktop experience + Python analysis service.
 
-Project page: https://phoenix0531-sudo.github.io/TablePilot/
 
-## Why this exists
+## Screenshots
 
-Business tables arrive dirty. Spreadsheet UIs show cells; they do not ship an analysis plan or quality ledger. TablePilot is a portfolio modernization of an older statistical desktop into a hybrid stack.
+<table>
+<tr><td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="Desktop overview"><br><em>Desktop overview</em></td><td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="Chinese insights"><br><em>Chinese insights</em></td></tr>
+<tr><td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="Clean compare"><br><em>Clean compare</em></td><td></td></tr>
+</table>
 
 ## Features
 
-- Local file intake (Excel / CSV / TXT)
-- Schema inference and data-quality scoring
-- Analysis planner + insight-oriented cards
-- Chart recommendation hooks
-- Python service under `analysis_service/` (FastAPI-oriented)
-- Docker compose for service packaging experiments
+- 📁 Local Excel / CSV / TXT intake
+- 🧭 Schema inference + data-quality scoring
+- 🗂️ Analysis planner + insight-oriented cards
+- 📊 Chart recommendation hooks
+- 🐍 FastAPI-oriented `analysis_service/`
+- 🌐 Project page: https://phoenix0531-sudo.github.io/TablePilot/
 
-## Install / run
+## Get started
+
+### Install
 
 ```bash
 git clone https://github.com/Phoenix0531-sudo/TablePilot.git
-cd TablePilot
-# analysis service
-cd analysis_service && pip install -r requirements.txt
-# desktop: build via packaging/ / CMake or scripts documented in docs/
+cd TablePilot/analysis_service
+pip install -r requirements.txt
+# desktop build: packaging/ / CMake — see docs/
 ```
 
-Use `demo/` sample tables when available.
+### Usage
 
-## Tests
+Use `demo/` sample tables when present. Run service tests:
 
 ```bash
 pytest tests/ analysis_service/tests/
@@ -48,18 +52,15 @@ pytest tests/ analysis_service/tests/
 
 ```
 analysis_service/
-Statistical_Analysis/   # legacy / related analysis modules
-demo/
-docs/
-packaging/
+Statistical_Analysis/
+demo/  packaging/  assets/screenshots/
 tests/
 ```
 
-## What this is not
+## Notes
 
-- Not a cloud BI SaaS
-- Not a full Excel replacement
+Not a cloud BI SaaS and not a full Excel replacement.
 
 ## License
 
-MIT. Free for commercial use with attribution. See [LICENSE](LICENSE).
+MIT. Free for commercial use with attribution where applicable. See [LICENSE](LICENSE).

@@ -1,0 +1,35 @@
+name: Docker analysis-service
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-health:
+    name: Build + /health
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: docker build -f analysis_service/Dockerfile -t tablepilot-analysis:ci .
+      - name: Run and healthcheck
+        run: |
+          set -e
+          docker run -d --name tp-ci -p 8000:8000 -e DATA_DIR=/data tablepilot-analysis:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health; then
+              echo health OK
+              docker rm -f tp-ci
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs tp-ci || true
+          docker rm -f tp-ci || true
+          exit 1

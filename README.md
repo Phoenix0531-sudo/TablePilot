@@ -1,33 +1,28 @@
 # TablePilot
 
-**Local-first messy table workbench — quality scores, analysis plans, chart suggestions.**
+**Local-first messy table workbench: quality scores, analysis plans, chart suggestions.**
 
 [English](README.md) | [中文](README.zh-CN.md)
 
 [![CI](https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg)](https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Local-first messy table workbench — quality scores, analysis plans, chart suggestions.
+Qt/C++ desktop experience with a Python analysis service.
 
-Qt/C++ desktop experience + Python analysis service.
-
-
-## Screenshots
+## Preview
 
 <table>
-<tr><td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="Desktop overview"><br><em>Desktop overview</em></td><td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="Chinese insights"><br><em>Chinese insights</em></td></tr>
-<tr><td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="Clean compare"><br><em>Clean compare</em></td><td></td></tr>
+<tr><td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot"></td><td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="TablePilot"></td></tr>
+<tr><td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="TablePilot"></td><td></td></tr>
 </table>
 
 ## Features
 
-- 📁 Local Excel / CSV / TXT intake
-- 🧭 Schema inference + data-quality scoring
-- 🗂️ Analysis planner + insight-oriented cards
-- 📊 Chart recommendation hooks
-- 🐍 FastAPI-oriented `analysis_service/`
-- 🌐 Project page: https://phoenix0531-sudo.github.io/TablePilot/
+- Local Excel / CSV / TXT intake
+- Schema inference and data-quality scoring
+- Analysis planner with insight-oriented cards
+- Python analysis_service (FastAPI-oriented)
+- Project page: https://phoenix0531-sudo.github.io/TablePilot/
 
 ## Get started
 
@@ -37,12 +32,11 @@ Qt/C++ desktop experience + Python analysis service.
 git clone https://github.com/Phoenix0531-sudo/TablePilot.git
 cd TablePilot/analysis_service
 pip install -r requirements.txt
-# desktop build: packaging/ / CMake — see docs/
 ```
 
 ### Usage
 
-Use `demo/` sample tables when present. Run service tests:
+Use demo/ sample tables when present.
 
 ```bash
 pytest tests/ analysis_service/tests/
@@ -54,7 +48,6 @@ pytest tests/ analysis_service/tests/
 analysis_service/
 Statistical_Analysis/
 demo/  packaging/  assets/screenshots/
-tests/
 ```
 
 ## Notes

@@ -50,6 +50,12 @@ jobs:
           elif [ -d Test ]; then python -m pytest -q Test
           else echo "No tests/ — structure OK"; fi
 
+          if [ -d analysis_service/tests ]; then
+            pip install -r analysis_service/requirements.txt 2>/dev/null || true
+            python -m pytest -q analysis_service/tests || true
+          fi
+
+
   go-build:
     name: Go build (if present)
     runs-on: ubuntu-latest

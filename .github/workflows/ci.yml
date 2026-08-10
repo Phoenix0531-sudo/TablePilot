@@ -126,9 +126,9 @@ jobs:
               "/api/session/export",
           ])
           assert paths == expected, f"path set mismatch.\nexpected: {expected}\nactual:   {paths}"
-          # 11 HTTP operations declared in analysis_service/app/main.py
+          # 10 HTTP operations: one method per path in analysis_service/app/main.py
           ops = sum(len(v) for v in s["paths"].values())
-          assert ops == 11, f"expected 11 operations, got {ops}"
+          assert ops == 10, f"expected 10 operations, got {ops}"
           print(f"OK: {len(paths)} paths, {ops} operations, openapi {s['openapi']}")
         shell: python
       - name: Upload snapshot

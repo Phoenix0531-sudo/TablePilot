@@ -3,7 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TablePilot</title>
+    <title>TablePilot — local-first messy-table analysis workbench</title>
+    <meta name="description" content="Local-first workbench for messy Excel/CSV/TXT: profile, clean, plan, and report. Python FastAPI service (v0.5.0) plus a Qt/C++ desktop shell.">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -14,40 +15,50 @@
           <div>
             <a href="https://github.com/Phoenix0531-sudo/TablePilot">GitHub</a>
             <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions">CI</a>
+            <a href="https://github.com/Phoenix0531-sudo/TablePilot/blob/main/docs/API.md">API</a>
           </div>
         </nav>
         <div class="hero-grid">
           <div>
-            <p class="eyebrow">LOCAL-FIRST MESSY TABLE AUTOPILOT</p>
-            <h1>Turn messy tables into explainable analysis.</h1>
+            <p class="eyebrow">LOCAL-FIRST · MESSY-TABLE ANALYSIS</p>
+            <h1>Profile, clean, plan, and report over messy tables.</h1>
             <p class="lead">
-              TablePilot loads messy Excel, CSV, and TXT files, detects structure, infers schema,
-              scores quality, identifies business roles, recommends Chart Studio views, builds a decision brief, exports cleaned data, and generates evidence-grounded reports.
+              TablePilot is a local-first workbench for messy Excel, CSV, and TXT files. A
+              Python FastAPI service (v0.5.0) profiles your tables, previews and applies
+              cleaning, and generates HTML & Markdown reports — optionally narrated by a
+              local model. A Qt/C++ desktop shell drives the same endpoints with a real
+              keyboard-and-table UI.
             </p>
             <p class="lead zh">
-              TablePilot 是一个本地优先的复杂表格分析工作台，把混乱表格转化为字段画像、业务角色解读、质量评分、决策简报、动态图表、清洗导出和可解释摘要。
+              本地优先的脏表工作台。对 Excel / CSV / TXT 做画像、清洗预览与结果、分析方案与可解释报告；
+              Python FastAPI 服务（v0.5.0）+ Qt/C++ 桌面壳。默认仅本地文件，不上云。
+            </p>
+            <p class="lead">
+              <strong>Not a cloud BI SaaS.</strong> Files are read from disk and processed
+              locally. The <code>local_ai</code> path points at a local model (e.g.
+              <code>ollama</code>) — nothing leaves your machine unless you configure it to.
             </p>
           </div>
-          <div class="product-card" aria-label="TablePilot product preview">
+          <div class="product-card" aria-label="TablePilot service surface">
             <div class="toolbar">
-              <span>Open Excel</span>
-              <span>Charts</span>
-              <span>中文</span>
+              <span>FastAPI</span>
+              <span>11 endpoints</span>
+              <span>Swagger UI</span>
             </div>
             <div class="panel">
               <div>
-                <small>Quality</small>
-                <strong>94 / 100</strong>
+                <small>Service</small>
+                <strong>v0.5.0</strong>
               </div>
               <div>
-                <small>Autopilot</small>
-                <strong>Clean + Chart</strong>
+                <small>Stack</small>
+                <strong>Python · Qt</strong>
               </div>
             </div>
-            <div class="chart"></div>
+            <div class="chart" aria-hidden="true"></div>
             <div class="brief">
-              <b>Chart Studio</b>
-              <p>Auto-selects grouped bars, scatter plots, heatmaps, box plots, and trend views, then ties each chart back to a user-facing decision brief.</p>
+              <b>Service is the contract</b>
+              <p>Every feature is an HTTP endpoint — <code>/api/datasets</code>, <code>/api/analyze</code>, <code>/api/clean-preview-upload</code>, <code>/api/report/html</code>, <code>/api/agent/query</code>. The desktop shell and the Swagger UI drive exactly the same surface.</p>
             </div>
           </div>
         </div>
@@ -55,42 +66,42 @@
 
       <section class="features">
         <article>
-          <h2>Messy Table Autopilot</h2>
-          <p>Detects delimiters, encoding, late headers, Excel sheets, empty structure, duplicate fields, and summary rows.</p>
+          <h2>Table profiling</h2>
+          <p><code>profile_dataset</code> / <code>profile_table</code> produce a schema- and quality-oriented profile per table, reachable at <code>POST /api/analyze</code> or <code>/api/analyze-upload</code>.</p>
         </article>
         <article>
-          <h2>Decision Brief</h2>
-          <p>Turns raw profiling into a primary question, segment leaders, driver candidates, evidence, limitations, and suggested next actions.</p>
+          <h2>Cleaning preview & output</h2>
+          <p><code>/api/clean-preview-upload</code> shows what would change; <code>/api/clean-upload</code> returns the cleaned CSV or XLSX. Compare before/after directly.</p>
         </article>
         <article>
-          <h2>Bilingual Reports</h2>
-          <p>Chinese mode renders user-facing analysis in Chinese, while English mode stays fully English. Field names remain unchanged as evidence labels.</p>
+          <h2>Explainable reports</h2>
+          <p><code>/api/report/markdown</code> (plain text) and <code>/api/report/html</code> (HTML) generate copy-pasteable, evidence-grounded artifacts.</p>
         </article>
         <article>
-          <h2>Clean Export</h2>
-          <p>Compares before/after clean-up, then exports conservative cleaned CSV/XLSX files.</p>
+          <h2>Agent narrative</h2>
+          <p><code>/api/agent/query</code> answers a free-text question over a table; pass <code>local_ai: true</code> for the optional local-model enhancement.</p>
         </article>
         <article>
-          <h2>Local AI Optional</h2>
-          <p>Runs deterministically by default, with optional OpenAI-compatible llama.cpp or Ollama wording that never overrides structured evidence.</p>
+          <h2>Session export</h2>
+          <p><code>/api/session/export</code> snapshots the current analysis session as JSON. <code>GET /health</code> covers liveness and container probes.</p>
         </article>
       </section>
 
       <section class="screenshots">
-        <h2>Product Screenshots</h2>
-        <p>真实桌面端截图：加载销售样例、中文洞察面板，以及清洗前后对比。</p>
+        <h2>Product screenshots</h2>
+        <p>真实桌面端截图：销售样例总览、中文洞察面板，以及清洗前后对比。</p>
         <div class="shot-grid">
           <figure>
-            <img src="screenshots/tablepilot-desktop-overview.png" alt="TablePilot desktop workbench with data preview, chart studio, and analysis brief">
-            <figcaption>Desktop workbench</figcaption>
+            <img src="screenshots/tablepilot-desktop-overview.png" alt="TablePilot desktop workbench overview with data preview and analysis brief">
+            <figcaption>Desktop workbench — overview</figcaption>
           </figure>
           <figure>
-            <img src="screenshots/tablepilot-chinese-insights.png" alt="TablePilot Chinese insight panel">
-            <figcaption>中文洞察面板</figcaption>
+            <img src="screenshots/tablepilot-chinese-insights.png" alt="TablePilot Chinese-language insights panel">
+            <figcaption>中文洞察面板 — Chinese insights</figcaption>
           </figure>
           <figure>
-            <img src="screenshots/tablepilot-clean-compare.png" alt="TablePilot clean-up comparison drawer">
-            <figcaption>Clean-up comparison</figcaption>
+            <img src="screenshots/tablepilot-clean-compare.png" alt="TablePilot cleaned-vs-original compare view">
+            <figcaption>Clean-up comparison — before/after</figcaption>
           </figure>
         </div>
       </section>
@@ -98,15 +109,17 @@
       <section class="stack">
         <h2>Architecture</h2>
         <div class="flow">
-          <span>Qt Desktop</span>
-          <span>FastAPI</span>
-          <span>Messy Parser</span>
-          <span>Business Roles</span>
-          <span>Clean Export</span>
-          <span>Decision Brief</span>
-          <span>Planner</span>
-          <span>Reports + Charts</span>
+          <span>Local files<br><small>Excel · CSV · TXT</small></span>
+          <span>Profile<br><small>schema · quality</small></span>
+          <span>Clean<br><small>preview · output</small></span>
+          <span>Report<br><small>HTML · Markdown</small></span>
+          <span>Agent<br><small>optional local_ai</small></span>
+          <span>Qt shell<br><small>HTTP / JSON</small></span>
         </div>
+        <p style="margin-top:22px;color:#98a2b3;font-size:14px;line-height:1.6">
+          Local files → FastAPI analysis service (v0.5.0) → Qt/C++ desktop shell and reports.
+          Every capability is an endpoint; nothing is uploaded unless you explicitly configure it.
+        </p>
       </section>
     </main>
   </body>

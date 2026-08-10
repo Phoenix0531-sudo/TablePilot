@@ -58,7 +58,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-然后打开自动生成的文档 <http://127.0.0.1:8000/docs>，依次试 `GET /api/datasets` + `POST /api/analyze`。
+然后打开自动生成的文档 <http://127.0.0.1:8000/docs>，依次试 `GET /api/datasets` + `POST /api/analyze`。完整端点参考（含可复制的 `curl` 示例与 `demo/` 样表走查）见 **[docs/API.md](docs/API.md)**。
 
 | 目标 | 命令 |
 | --- | --- |
@@ -151,6 +151,10 @@ tests/
 
 默认哪儿都不去。文件来自本地数据目录（或上传），并在进程内处理；TablePilot 不会把你的表格传输、同步或持久化到任何远程位置。
 </details>
+
+## 贡献
+
+欢迎贡献 —— 见 [CONTRIBUTING.md](CONTRIBUTING.md)。简版原则：**本地优先**（默认路径不上传远程）、**证据为本**（agent/report 产物源自真实画像数据）、**文档诚实**（不描述代码没有的能力）。提交 PR 前跑 `python -m pytest -q analysis_service/tests`。
 
 ## 许可证
 

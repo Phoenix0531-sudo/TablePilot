@@ -56,6 +56,39 @@ jobs:
           fi
 
 
+  readme-audit:
+    name: README links & SVG audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit local image and link targets
+        run: |
+          set -e
+          rc=0
+          for f in README.md README.zh-CN.md; do
+            [ -f "$f" ] || { echo "missing $f"; rc=1; continue; }
+            # local targets inside markdown image syntax and <img src=...>
+            grep -oE '!\[[^]]*]\(([^) #]+)(?: [^)]*)?\)' "$f" \
+              | sed -E 's/.*\(([^) #]+).*/\1/' \
+              | grep -vE '^(https?:|data:|#)' | sort -u | while read -r img; do
+                [ -f "$img" ] || { echo "$f: missing image $img"; rc=1; }
+              done
+            grep -oE 'src="([^"]+)"' "$f" \
+              | sed -E 's/src="([^"]+)"/\1/' \
+              | grep -vE '^(https?:|data:|#)' | sort -u | while read -r img; do
+                [ -f "$img" ] || { echo "$f: missing img src $img"; rc=1; }
+              done
+          done
+          # SVG basics: every *.svg must have viewBox + <title>, no <script> / foreignObject
+          while IFS= read -r -d '' svg; do
+            grep -q 'viewBox'    "$svg" || { echo "$svg: missing viewBox";    rc=1; }
+            grep -q '<title'     "$svg" || { echo "$svg: missing <title>";   rc=1; }
+            grep -qE '<script|foreignObject' "$svg" \
+              && { echo "$svg: contains <script> or foreignObject"; rc=1; } || true
+          done < <(find . -name '*.svg' -not -path './.git/*' -print0)
+          exit $rc
+
   go-build:
     name: Go build (if present)
     runs-on: ubuntu-latest

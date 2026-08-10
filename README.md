@@ -58,7 +58,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Then open the auto-generated docs at <http://127.0.0.1:8000/docs> and try `GET /api/datasets` + `POST /api/analyze`.
+Then open the auto-generated docs at <http://127.0.0.1:8000/docs> and try `GET /api/datasets` + `POST /api/analyze`. For a full endpoint reference with copy-pasteable `curl` examples and a `demo/` sample-table walkthrough, see **[docs/API.md](docs/API.md)**.
 
 | Goal | Command |
 | --- | --- |
@@ -151,6 +151,10 @@ Yes. The service is a first-class surface on its own: <code>pip install -r requi
 
 Nowhere by default. Files are loaded from a local data directory (or an upload) and processed in-process; TablePilot does not transmit, sync, or persist your tables to any remote location.
 </details>
+
+## Contributing
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep it **local-first** (no remote uploads in the default path), **evidence-grounded** (agent/report output derives from the actual profiled data), and **honest in docs** (don't describe a capability the code doesn't ship). Run `python -m pytest -q analysis_service/tests` before opening a PR.
 
 ## License
 

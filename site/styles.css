@@ -219,6 +219,12 @@ figcaption {
 .flow span {
   color: #1d1d1f;
   padding: 14px 16px;
+  text-align: center;
+}
+
+.flow small {
+  color: #6e6e73;
+  font-size: 12px;
 }
 
 @media (max-width: 900px) {

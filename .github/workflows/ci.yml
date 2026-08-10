@@ -89,6 +89,97 @@ jobs:
           done < <(find . -name '*.svg' -not -path './.git/*' -print0)
           exit $rc
 
+  openapi-export:
+    name: OpenAPI snapshot (contract guard)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install analysis_service deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r analysis_service/requirements.txt
+      - name: Dump openapi.json
+        run: python scripts/dump_openapi.py
+      - name: Validate schema shape
+        run: |
+          import json, sys
+          with open("docs/openapi.json", encoding="utf-8") as f:
+              s = json.load(f)
+          paths = sorted(s.get("paths", {}).keys())
+          assert s["openapi"].startswith("3."), f"unexpected openapi version: {s['openapi']}"
+          assert s["info"]["title"] == "TablePilot Analysis Service", s["info"]["title"]
+          assert s["info"]["version"] == "0.5.0", s["info"]["version"]
+          expected = sorted([
+              "/health",
+              "/api/datasets",
+              "/api/analyze",
+              "/api/analyze-upload",
+              "/api/clean-upload",
+              "/api/clean-preview-upload",
+              "/api/agent/query",
+              "/api/report/markdown",
+              "/api/report/html",
+              "/api/session/export",
+          ])
+          assert paths == expected, f"path set mismatch.\nexpected: {expected}\nactual:   {paths}"
+          # 11 HTTP operations declared in analysis_service/app/main.py
+          ops = sum(len(v) for v in s["paths"].values())
+          assert ops == 11, f"expected 11 operations, got {ops}"
+          print(f"OK: {len(paths)} paths, {ops} operations, openapi {s['openapi']}")
+        shell: python
+      - name: Upload snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-json
+          path: docs/openapi.json
+          if-no-files-found: error
+
+  assets-render:
+    name: SVG -> PNG fallback (contract guard)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install cairosvg
+        run: |
+          python -m pip install --upgrade pip
+          pip install cairosvg
+      - name: Render PNGs
+        run: python scripts/render_assets.py
+      - name: Validate PNG size & dimensions
+        run: |
+          import struct, sys
+          from pathlib import Path
+          expected = {
+              "docs/screenshots/banner.png": (1200, 280),
+              "docs/screenshots/banner@2x.png": (2400, 560),
+              "docs/screenshots/avatar.png": (256, 256),
+              "docs/screenshots/avatar@2x.png": (512, 512),
+          }
+          for rel, (w, h) in expected.items():
+              p = Path(rel)
+              assert p.exists() and p.stat().st_size > 0, f"missing/empty {rel}"
+              data = p.read_bytes()
+              assert data[:8] == b"\x89PNG\r\n\x1a\n", f"{rel}: not a PNG"
+              # IHDR width/height are big-endian uint32 at offset 16/20
+              iw, ih = struct.unpack(">II", data[16:24])
+              assert (iw, ih) == (w, h), f"{rel}: expected {w}x{h}, got {iw}x{ih}"
+              print(f"OK: {rel} {iw}x{ih} ({len(data)} bytes)")
+        shell: python
+      - name: Upload PNGs
+        uses: actions/upload-artifact@v4
+        with:
+          name: png-fallbacks
+          path: docs/screenshots/*.png
+          if-no-files-found: error
+
   go-build:
     name: Go build (if present)
     runs-on: ubuntu-latest

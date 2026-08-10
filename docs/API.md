@@ -15,6 +15,13 @@ auto-generated Swagger UI is at `http://127.0.0.1:8000/docs` once the service is
 > The local data directory defaults to `../demo` (overridable with the `DATA_DIR` env var).
 > Sample tables ship in `demo/` — see [Sample tables](#sample-tables) below.
 
+> **OpenAPI schema** — the live spec is served at `http://127.0.0.1:8000/openapi.json`
+> (FastAPI default). To freeze a snapshot into the repo for review, run
+> `python scripts/dump_openapi.py`, which writes `docs/openapi.json` from the exact
+> `app.main:app` instance described here. CI re-runs that script on every change as
+> a contract guard. The Swagger UI (`/docs`) and ReDoc (`/redoc`) are both served by
+> the same app — no separate build step.
+
 ---
 
 ## Request model

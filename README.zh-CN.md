@@ -1,8 +1,14 @@
 <p align="center">
-  <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot —— 本地优先的脏表分析工作台：对 Excel/CSV/TXT 做画像、清洗、方案与报告">
+  <picture>
+    <source srcset="docs/screenshots/banner.png, docs/screenshots/banner@2x.png" type="image/png">
+    <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot —— 本地优先的脏表分析工作台：对 Excel/CSV/TXT 做画像、清洗、方案与报告">
+  </picture>
 </p>
 
-<p align="center"><strong>TablePilot —— 本地优先的脏表工作台。<br>对 Excel / CSV / TXT 做画像、清洗、方案与报告。</strong></p>
+<p align="center">
+  <img src="docs/screenshots/avatar.svg" width="64" alt="TablePilot icon" align="top">
+  <strong>TablePilot —— 本地优先的脏表工作台。<br>对 Excel / CSV / TXT 做画像、清洗、方案与报告。</strong>
+</p>
 
 <p align="center">
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -102,7 +108,7 @@ flowchart LR
 
 ```
 analysis_service/      # FastAPI 服务（主要自动化接口），v0.5.0
-Statistical_Analysis/  # 相关 / 旧版分析模块
+Statistical_Analysis/  # Qt / C++ 桌面壳源码（main.cpp、mainwindow.*、.pro）
 demo/                  # 示例表格
 packaging/             # 桌面打包
 assets/screenshots/    # 真实 UI 截图

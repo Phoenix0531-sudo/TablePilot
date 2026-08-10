@@ -1,8 +1,14 @@
 <p align="center">
-  <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot — local-first messy-table analysis workbench: profile, clean, plan, and report over Excel/CSV/TXT">
+  <picture>
+    <source srcset="docs/screenshots/banner.png, docs/screenshots/banner@2x.png" type="image/png">
+    <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot — local-first messy-table analysis workbench: profile, clean, plan, and report over Excel/CSV/TXT">
+  </picture>
 </p>
 
-<p align="center"><strong>TablePilot — local-first messy-table workbench.<br>Profile, clean, plan, and report over Excel / CSV / TXT.</strong></p>
+<p align="center">
+  <img src="docs/screenshots/avatar.svg" width="64" alt="TablePilot icon" align="top">
+  <strong>TablePilot — local-first messy-table workbench.<br>Profile, clean, plan, and report over Excel / CSV / TXT.</strong>
+</p>
 
 <p align="center">
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -102,7 +108,7 @@ The **service is the contract**: every feature is an HTTP endpoint, so the deskt
 
 ```
 analysis_service/      # FastAPI service (primary automated surface), v0.5.0
-Statistical_Analysis/  # related / legacy analysis modules
+Statistical_Analysis/  # Qt / C++ desktop shell sources (main.cpp, mainwindow.*, .pro)
 demo/                  # sample tables
 packaging/             # desktop packaging
 assets/screenshots/    # real UI captures

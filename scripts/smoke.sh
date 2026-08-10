@@ -49,15 +49,14 @@ echo
 
 probe "GET  /health"           "$TP_BASE/health"
 probe "GET  /api/datasets"     "$TP_BASE/api/datasets"
-probe "POST /api/analyze"      "-X POST $TP_BASE/api/analyze -H 'Content-Type: application/json' -d \"{\\\"filename\\\":\\\"$TP_SAMPLE\\\"}\" >/dev/null" >/dev/null 2>&1
-# the probe above is a status-only shorthand; the real capture is below
+# The POST /api/analyze status check happens via the capture below.
 
 echo
 echo "Capturing POST /api/analyze ($TP_SAMPLE) -> $TP_OUT"
-if curl -s -X POST "$TP_BASE/api/analyze" \
+capture_code=$(curl -s -o "$TP_OUT" -w '%{http_code}' -X POST "$TP_BASE/api/analyze" \
         -H 'Content-Type: application/json' \
-        -d "{\"filename\":\"$TP_SAMPLE\"}" \
-        -o "$TP_OUT" 2>/dev/null; then
+        -d "{\"filename\":\"$TP_SAMPLE\"}" 2>/dev/null || echo 000)
+if [ "$capture_code" = "200" ]; then
     # pretty-print in place if python is available, otherwise leave compact JSON
     if command -v python >/dev/null 2>&1; then
         python -m json.tool "$TP_OUT" > "$TP_OUT.tmp" 2>/dev/null && mv "$TP_OUT.tmp" "$TP_OUT"

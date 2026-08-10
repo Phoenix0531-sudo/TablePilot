@@ -43,13 +43,24 @@ The demo dataset directory (`../demo`) is scanned automatically by `GET /api/dat
 4. **Update docs.** If you touch an endpoint, update `docs/API.md` and the relevant README
    section in the same PR. If you add a screenshot or asset, place it under `assets/` or
    `docs/screenshots/` and reference it locally (no external image links).
-5. **Describe honestly in CHANGELOG.** Add an entry under `[Unreleased]` (or the next
+5. **Don't hand-edit generated artifacts.** The following files are produced by scripts,
+   not authored by hand — regenerate them instead:
+   - `docs/openapi.json` — from `scripts/dump_openapi.py`
+   - `docs/screenshots/{banner,avatar}{,@2x}.png` — from `scripts/render_assets.py`
+   - `docs/screenshots/api-analyze-sample.json` — from `scripts/smoke.sh` against a running uvicorn
+
+   Locally you can run those scripts directly (see their headers). On GitHub, the
+   `.github/workflows/sync-artifacts.yml` workflow (`workflow_dispatch`) regenerates any
+   subset and opens a PR with the result — trigger it from the Actions tab when docs and
+   code drift.
+6. **Describe honestly in CHANGELOG.** Add an entry under `[Unreleased]` (or the next
    version) using the Keep a Changelog categories (Added / Changed / Fixed / Removed).
 
 ## Areas that especially welcome help
 
-- **Endpoint-level tests** — `analysis_service/tests/` currently covers imports and
-  structure; per-endpoint behavior tests would raise confidence.
+- **Endpoint behavior tests** — `analysis_service/tests/test_analysis_service.py` covers
+  happy paths and `test_endpoints_extra.py` covers the error and intent-routing gaps. New
+  fixtures and negative-path tests raise confidence further.
 - **Sample tables** — small, realistic, anonymized demo tables that exercise specific
   messy-data patterns (encoding fallback, late headers, multi-sheet, whitespace-delimited).
 - **Docs** — clearer walkthroughs, more `curl` examples, translation accuracy for

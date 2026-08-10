@@ -1,0 +1,157 @@
+---
+name: Sync generated artifacts
+
+# Manual-only artifact sync. Clones main, regenerates one or more generated
+# artifacts (openapi snapshot, PNG fallbacks, captured analyze sample JSON),
+# commits them to a throwaway branch, and opens a PR for human review/merge.
+#
+# Why manual-only: ci.yml stays on `contents: read`; only this workflow is
+# granted `contents: write` + `pull-requests: write`. Nothing auto-pushes to
+# main on every commit. You decide when to re-sync by clicking Run workflow.
+#
+# Inputs:
+#   artifact_set  which family to regenerate. default "all".
+#                 - openapi      -> docs/openapi.json
+#                 - png          -> docs/screenshots/{banner,avatar}{,@2x}.png
+#                 - sample_json  -> docs/screenshots/api-analyze-sample.json
+#                 - all          -> all three
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_set:
+        description: Which generated artifact(s) to sync
+        type: choice
+        default: all
+        options:
+          - all
+          - openapi
+          - png
+          - sample_json
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-artifacts
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Regenerate ${{ github.event.inputs.artifact_set || 'all' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      # bind uvicorn to loopback inside the runner; not exposed externally
+      SVC_HOST: "127.0.0.1"
+      SVC_PORT: "8765"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install analysis_service deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r analysis_service/requirements.txt
+
+      - name: Render OpenAPI snapshot
+        if: github.event.inputs.artifact_set == 'all' || github.event.inputs.artifact_set == 'openapi'
+        run: python scripts/dump_openapi.py
+
+      - name: Install cairosvg and render PNG fallbacks
+        if: github.event.inputs.artifact_set == 'all' || github.event.inputs.artifact_set == 'png'
+        run: |
+          pip install cairosvg
+          python scripts/render_assets.py
+
+      - name: Start service and capture live analyze sample JSON
+        if: github.event.inputs.artifact_set == 'all' || github.event.inputs.artifact_set == 'sample_json'
+        run: |
+          set -e
+          BASE="http://${SVC_HOST}:${SVC_PORT}"
+          # Start uvicorn in the background and wait for /health.
+          uvicorn app.main:app --host "$SVC_HOST" --port "$SVC_PORT" --app-dir analysis_service > uvicorn.log 2>&1 &
+          svc_pid=$!
+          for i in $(seq 1 30); do
+            if curl -sf "${BASE}/health" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -sf "${BASE}/health" || { cat uvicorn.log; kill $svc_pid; exit 1; }
+          # Capture a REAL profile from the live service (no TP_OUT override:
+          # smoke.sh's default writes docs/screenshots/api-analyze-sample.json).
+          DATA_DIR="$PWD/demo" TP_BASE="$BASE" bash scripts/smoke.sh || {
+            kill $svc_pid || true; cat uvicorn.log; exit 1;
+          }
+          kill $svc_pid 2>/dev/null || true
+          # Rewrite the file header so the captured payload is honestly labeled
+          # as captured (not "example"). smoke.sh leaves whatever header the
+          # service returns intact; we annotate here.
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("docs/screenshots/api-analyze-sample.json")
+          if p.exists():
+              d = json.loads(p.read_text(encoding="utf-8"))
+              d["_README"] = "Captured from a live uvicorn instance by scripts/smoke.sh via the sync-artifacts workflow. Key structure matches profile_table() in analysis_service/app/analysis.py."
+              p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+          PY
+
+      - name: Detect changes
+        id: diff
+        run: |
+          set -e
+          git add -A
+          # Was anything staged?
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "summary<<EOF" >> "$GITHUB_OUTPUT"
+            git diff --cached --stat >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open PR with the regenerated artifacts
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: chore/sync-artifacts-${{ github.run_id }}
+          delete-branch: true
+          commit-message: |
+            chore(artifacts): sync generated artifacts (${{ github.event.inputs.artifact_set || 'all' }})
+
+            Regenerated via the sync-artifacts workflow (workflow_dispatch).
+            No source or dependency change; only generated artifacts:
+
+            ${{ steps.diff.outputs.summary }}
+          title: 'chore(artifacts): sync ${{ github.event.inputs.artifact_set || 'all' }}'
+          body: |
+            Automated artifact re-sync triggered by @${{ github.actor }} via
+            the `sync-artifacts` workflow (`workflow_dispatch`).
+
+            **Set:** `${{ github.event.inputs.artifact_set || 'all' }}` —
+            see the commit diff for the exact files.
+
+            - `openapi` -> `docs/openapi.json` (via `scripts/dump_openapi.py`)
+            - `png`     -> `docs/screenshots/{banner,avatar}{,@2x}.png` (via `scripts/render_assets.py`)
+            - `sample_json` -> `docs/screenshots/api-analyze-sample.json` (start uvicorn + `scripts/smoke.sh`)
+
+            Source/dependencies are untouched. Review the shape against the
+            README/docs claims, then merge. If the workflow reported
+            `changed=false` it means the regenerated artifacts already match
+            what's committed, in which case this PR was not created.
+          labels: chore, generated
+          draft: false
+
+      - name: No changes
+        if: steps.diff.outputs.changed == 'false'
+        run: |
+          echo "Regenerated artifacts match what's already in the repo. No PR opened."
+          echo "Stat:"
+          echo "${{ steps.diff.outputs.summary }}"

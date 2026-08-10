@@ -26,6 +26,8 @@ __pycache__/
 .venv/
 venv/
 .env
+# sync-artifacts workflow service log
+uvicorn.log
 
 # Local Codex build scratch
 .codex-qt-build/

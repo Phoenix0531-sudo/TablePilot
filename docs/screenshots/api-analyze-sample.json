@@ -1,1 +1,904 @@
-﻿{"_README":"EXAMPLE payload, NOT captured from a live run. Key structure matches profile_table() in analysis_service/app/analysis.py. Values are illustrative. Run `bash scripts/smoke.sh` against a running uvicorn instance to capture a real payload over this same shape.","session":{"id":"1a2b3c4d5e6f7a8b","generated_at":"2026-06-08T12:00:00+00:00","report_formats":["markdown","html"]},"dataset":{"filename":"quality_issues_demo.csv","extension":".csv","rows":120,"columns":6,"numeric_columns":3,"date_columns":1,"category_columns":2,"missing_cells":18},"source":{"encoding":"utf-8","delimiter":"comma","has_header":true,"header_row_index":0,"dropped_empty_rows":2,"dropped_empty_columns":0,"sheets":[],"sheet_name":null,"parser":"pandas.read_csv"},"table_diagnostics":{"header_row_index":0,"has_header":true,"encoding":"utf-8","delimiter":"comma","dropped_empty_rows":2,"dropped_empty_columns":0,"empty_columns":[],"duplicate_columns":[],"likely_identifier_columns":["order_id"],"high_cardinality_columns":["customer_name"],"total_like_rows":0,"messy_score":15},"schema":[{"name":"order_id","semantic_type":"category","missing_count":0,"missing_ratio":0,"unique_count":120,"unique_ratio":1,"is_analyzable":true,"role_hint":"identifier"},{"name":"order_date","semantic_type":"date","missing_count":3,"missing_ratio":0.025,"unique_count":90,"unique_ratio":0.75,"is_analyzable":true,"role_hint":"time_axis"},{"name":"region","semantic_type":"category","missing_count":0,"missing_ratio":0,"unique_count":5,"unique_ratio":0.04,"is_analyzable":true,"role_hint":"dimension"},{"name":"product","semantic_type":"category","missing_count":2,"missing_ratio":0.017,"unique_count":8,"unique_ratio":0.07,"is_analyzable":true,"role_hint":"dimension"},{"name":"quantity","semantic_type":"numeric","missing_count":5,"missing_ratio":0.042,"unique_count":25,"unique_ratio":0.21,"is_analyzable":true,"role_hint":"measure"},{"name":"revenue","semantic_type":"numeric","missing_count":8,"missing_ratio":0.067,"unique_count":95,"unique_ratio":0.79,"is_analyzable":true,"role_hint":"business_measure"}],"quality":{"score":84,"level":"high","numeric_ratio":0.5,"analyzable_ratio":0.83,"missing_ratio":0.025,"duplicate_rows":0,"anomaly_count":3,"sample_warning":false},"quality_repair_plan":[{"id":"missing_values","severity":"medium","title":"Review missing values in revenue","evidence":"8 missing cells, ratio 0.067.","recommendation":"Decide whether to fill, exclude, or keep missing values before charting.","auto_fix":true,"impact":"About 6.7% of this field may be affected."},{"id":"anomaly_review","severity":"medium","title":"Review high-deviation values in revenue","evidence":"Top z-score is 3.1 at row 42.","recommendation":"Inspect highlighted values before using them in summaries.","auto_fix":false,"impact":"Outliers can change averages, trend slopes, and chart scaling."}],"insight_cards":[{"id":"dataset_fingerprint","title":"Sales or operations table","summary":"Sales table with 2 measure fields, 2 dimensions, and 1 time axis.","confidence":"high","severity":"info","action":{"label":"Review data structure","view":"quality"}},{"id":"quality_score","title":"Data quality is high","summary":"Quality score 84/100 with 3 anomaly candidates.","confidence":"high","severity":"positive","action":{"label":"Review quality","view":"quality"}}],"anomalies":[{"row":42,"column":"revenue","value":999999,"z_score":3.1},{"row":78,"column":"revenue","value":-120,"z_score":2.8},{"row":101,"column":"quantity","value":250,"z_score":2.6}],"local_ai":{"provider":"ollama","model":"qwen2.5:1.5b","status":"disabled","summary":null,"guardrail":"Local AI wording is disabled; deterministic evidence is used."},"tool_trace":["load_table","detect_encoding","detect_delimiter","infer_header","detect_sheet","infer_schema","profile_quality","detect_anomalies","recommend_analysis","compose_insight"]}
+{
+  "session": {
+    "id": "991cc1502152d615",
+    "generated_at": "2026-08-10T06:30:59.962213+00:00",
+    "report_formats": [
+      "markdown",
+      "html"
+    ]
+  },
+  "dataset": {
+    "filename": "quality_issues_demo.csv",
+    "extension": ".csv",
+    "rows": 14,
+    "columns": 6,
+    "numeric_columns": 3,
+    "date_columns": 1,
+    "category_columns": 2,
+    "missing_cells": 2
+  },
+  "source": {
+    "encoding": "utf-8",
+    "delimiter": ",",
+    "has_header": true,
+    "header_row_index": 0,
+    "dropped_empty_rows": 0,
+    "dropped_empty_columns": 0,
+    "sheets": [],
+    "sheet_name": null,
+    "parser": "pandas.read_csv"
+  },
+  "table_diagnostics": {
+    "header_row_index": 0,
+    "has_header": true,
+    "encoding": "utf-8",
+    "delimiter": ",",
+    "sheet_name": null,
+    "sheets": [],
+    "dropped_empty_rows": 0,
+    "dropped_empty_columns": 0,
+    "empty_columns": [],
+    "duplicate_columns": [],
+    "likely_identifier_columns": [],
+    "high_cardinality_columns": [],
+    "total_like_rows": 0,
+    "messy_score": 0
+  },
+  "schema": [
+    {
+      "name": "date",
+      "semantic_type": "date",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 13,
+      "unique_ratio": 0.9286,
+      "is_analyzable": true,
+      "role_hint": "time_axis"
+    },
+    {
+      "name": "region",
+      "semantic_type": "category",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 4,
+      "unique_ratio": 0.2857,
+      "is_analyzable": true,
+      "role_hint": "dimension"
+    },
+    {
+      "name": "channel",
+      "semantic_type": "category",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 3,
+      "unique_ratio": 0.2143,
+      "is_analyzable": true,
+      "role_hint": "dimension"
+    },
+    {
+      "name": "orders",
+      "semantic_type": "numeric",
+      "missing_count": 1,
+      "missing_ratio": 0.0714,
+      "unique_count": 12,
+      "unique_ratio": 0.9231,
+      "is_analyzable": true,
+      "role_hint": "measure"
+    },
+    {
+      "name": "revenue",
+      "semantic_type": "numeric",
+      "missing_count": 1,
+      "missing_ratio": 0.0714,
+      "unique_count": 12,
+      "unique_ratio": 0.9231,
+      "is_analyzable": true,
+      "role_hint": "business_measure"
+    },
+    {
+      "name": "return_rate",
+      "semantic_type": "numeric",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 13,
+      "unique_ratio": 0.9286,
+      "is_analyzable": true,
+      "role_hint": "measure"
+    }
+  ],
+  "quality": {
+    "score": 81,
+    "level": "high",
+    "numeric_ratio": 0.5,
+    "analyzable_ratio": 1.0,
+    "missing_ratio": 0.0238,
+    "duplicate_rows": 1,
+    "anomaly_count": 2,
+    "sample_warning": true
+  },
+  "columns": [
+    {
+      "column": "date",
+      "name": "date",
+      "semantic_type": "date",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 13,
+      "unique_ratio": 0.9286,
+      "is_analyzable": true,
+      "role_hint": "time_axis"
+    },
+    {
+      "column": "region",
+      "name": "region",
+      "semantic_type": "category",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 4,
+      "unique_ratio": 0.2857,
+      "is_analyzable": true,
+      "role_hint": "dimension"
+    },
+    {
+      "column": "channel",
+      "name": "channel",
+      "semantic_type": "category",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 3,
+      "unique_ratio": 0.2143,
+      "is_analyzable": true,
+      "role_hint": "dimension"
+    },
+    {
+      "column": "orders",
+      "name": "orders",
+      "semantic_type": "numeric",
+      "missing_count": 1,
+      "missing_ratio": 0.0714,
+      "unique_count": 12,
+      "unique_ratio": 0.9231,
+      "is_analyzable": true,
+      "role_hint": "measure",
+      "count": 13,
+      "mean": 177.6154,
+      "std": 239.735,
+      "min": 58.0,
+      "median": 118.0,
+      "max": 999.0
+    },
+    {
+      "column": "revenue",
+      "name": "revenue",
+      "semantic_type": "numeric",
+      "missing_count": 1,
+      "missing_ratio": 0.0714,
+      "unique_count": 12,
+      "unique_ratio": 0.9231,
+      "is_analyzable": true,
+      "role_hint": "business_measure",
+      "count": 13,
+      "mean": 243730.7692,
+      "std": 300201.5538,
+      "min": 48700.0,
+      "median": 174500.0,
+      "max": 1250000.0
+    },
+    {
+      "column": "return_rate",
+      "name": "return_rate",
+      "semantic_type": "numeric",
+      "missing_count": 0,
+      "missing_ratio": 0.0,
+      "unique_count": 13,
+      "unique_ratio": 0.9286,
+      "is_analyzable": true,
+      "role_hint": "measure",
+      "count": 14,
+      "mean": 0.0245,
+      "std": 0.0137,
+      "min": 0.006,
+      "median": 0.02,
+      "max": 0.052
+    }
+  ],
+  "anomalies": [
+    {
+      "row": 13,
+      "column": "orders",
+      "value": 999.0,
+      "z_score": 3.4262
+    },
+    {
+      "row": 13,
+      "column": "revenue",
+      "value": 1250000.0,
+      "z_score": 3.352
+    }
+  ],
+  "correlations": [
+    {
+      "left": "orders",
+      "right": "revenue",
+      "correlation": 0.9934,
+      "strength": "strong"
+    },
+    {
+      "left": "revenue",
+      "right": "return_rate",
+      "correlation": -0.564,
+      "strength": "moderate"
+    },
+    {
+      "left": "orders",
+      "right": "return_rate",
+      "correlation": -0.4971,
+      "strength": "weak"
+    }
+  ],
+  "trends": [
+    {
+      "column": "revenue",
+      "direction": "up",
+      "slope": 88666.6667,
+      "first": 186000.0,
+      "last": 1250000.0
+    },
+    {
+      "column": "orders",
+      "direction": "up",
+      "slope": 73.25,
+      "first": 120.0,
+      "last": 999.0
+    },
+    {
+      "column": "return_rate",
+      "direction": "down",
+      "slope": -0.0009,
+      "first": 0.018,
+      "last": 0.006
+    }
+  ],
+  "chart_recommendations": [
+    {
+      "chart_type": "line",
+      "x": "date",
+      "y": "orders,revenue,return_rate",
+      "reason": "Best for showing measures over time."
+    }
+  ],
+  "recommended_views": [
+    {
+      "id": "trend",
+      "label": "Trend",
+      "chart_type": "line",
+      "x": "date",
+      "y": "revenue,orders,return_rate",
+      "reason": "A time field and numeric measures were detected.",
+      "priority": 1,
+      "enabled": true
+    },
+    {
+      "id": "quality",
+      "label": "Quality",
+      "chart_type": "table_review",
+      "x": "",
+      "y": "",
+      "reason": "Quality review keeps missing values, duplicates, and anomalies visible before interpretation.",
+      "priority": 1,
+      "enabled": true
+    },
+    {
+      "id": "segment",
+      "label": "Segment",
+      "chart_type": "bar",
+      "x": "region",
+      "y": "revenue",
+      "reason": "A categorical dimension can explain differences in a key metric.",
+      "priority": 2,
+      "enabled": true
+    },
+    {
+      "id": "correlation",
+      "label": "Correlation",
+      "chart_type": "heatmap",
+      "x": "numeric_fields",
+      "y": "numeric_fields",
+      "reason": "Multiple numeric fields are available for relationship review.",
+      "priority": 3,
+      "enabled": true
+    },
+    {
+      "id": "distribution",
+      "label": "Distribution",
+      "chart_type": "bar",
+      "x": "record_index",
+      "y": "revenue",
+      "reason": "A selected metric can be reviewed for spread and outliers.",
+      "priority": 4,
+      "enabled": true
+    }
+  ],
+  "analysis_recommendations": [
+    {
+      "type": "trend",
+      "title": "Analyze orders over date",
+      "reason": "A date column and numeric measure were detected."
+    },
+    {
+      "type": "group_compare",
+      "title": "Compare orders by region",
+      "reason": "Categorical dimensions can explain differences in numeric measures."
+    },
+    {
+      "type": "correlation",
+      "title": "Review relationships between numeric columns",
+      "reason": "Multiple numeric columns are available for correlation analysis."
+    },
+    {
+      "type": "anomaly_review",
+      "title": "Review high-deviation data points",
+      "reason": "High z-score cells were detected."
+    }
+  ],
+  "analysis_plan": {
+    "dataset_story": "This looks like a sales or operations table.",
+    "roles": {
+      "time_axis": [
+        "date"
+      ],
+      "dimensions": [
+        "region",
+        "channel"
+      ],
+      "measures": [
+        "orders",
+        "revenue",
+        "return_rate"
+      ],
+      "business_measures": [
+        "revenue"
+      ],
+      "identifiers": [],
+      "text_fields": []
+    },
+    "confidence": "high",
+    "steps": [
+      {
+        "stage": "quality_gate",
+        "title": "Run data quality gate before interpretation",
+        "why": "Missing values, duplicates, anomalies, and small samples can distort downstream conclusions."
+      },
+      {
+        "stage": "trend",
+        "title": "Trend review: orders over date",
+        "why": "A time axis and numeric measure were detected, so temporal movement is likely meaningful."
+      },
+      {
+        "stage": "segment",
+        "title": "Segment comparison: orders by region",
+        "why": "A categorical dimension can explain variance in the selected measure."
+      },
+      {
+        "stage": "relationship",
+        "title": "Relationship review: orders vs revenue",
+        "why": "The strongest observed correlation is 0.9934 (strong)."
+      },
+      {
+        "stage": "review_queue",
+        "title": "Review high-deviation records",
+        "why": "Detected values far from their column distribution; these may be errors or important events."
+      }
+    ]
+  },
+  "business_analysis": {
+    "overview": {
+      "primary_measure": "revenue",
+      "primary_dimension": "region",
+      "primary_time_axis": "date",
+      "question": "Which region segments drive revenue, and how does that change over date?",
+      "confidence": "high"
+    },
+    "segment_summary": {
+      "dimension": "region",
+      "measure": "revenue",
+      "total": 3168500.0,
+      "top_segments": [
+        {
+          "segment": "West",
+          "value": 1798200.0,
+          "share": 56.8
+        },
+        {
+          "segment": "East",
+          "value": 620000.0,
+          "share": 19.6
+        },
+        {
+          "segment": "South",
+          "value": 443700.0,
+          "share": 14.0
+        },
+        {
+          "segment": "North",
+          "value": 306600.0,
+          "share": 9.7
+        }
+      ],
+      "concentration": 56.8,
+      "interpretation": "concentrated"
+    },
+    "metric_mix": [
+      {
+        "metric": "revenue",
+        "total": 3168500.0,
+        "average": 243730.7692,
+        "spread": 1201300.0,
+        "missing": 1
+      }
+    ],
+    "driver_candidates": [
+      {
+        "type": "trend",
+        "metric": "revenue",
+        "direction": "up",
+        "slope": 88666.6667,
+        "evidence": "revenue moved from 186000.0 to 1250000.0."
+      },
+      {
+        "type": "trend",
+        "metric": "orders",
+        "direction": "up",
+        "slope": 73.25,
+        "evidence": "orders moved from 120.0 to 999.0."
+      },
+      {
+        "type": "trend",
+        "metric": "return_rate",
+        "direction": "down",
+        "slope": -0.0009,
+        "evidence": "return_rate moved from 0.018 to 0.006."
+      },
+      {
+        "type": "relationship",
+        "metric": "orders",
+        "with": "revenue",
+        "correlation": 0.9934,
+        "strength": "strong",
+        "evidence": "orders vs revenue correlation is 0.9934."
+      },
+      {
+        "type": "relationship",
+        "metric": "return_rate",
+        "with": "revenue",
+        "correlation": -0.564,
+        "strength": "moderate",
+        "evidence": "revenue vs return_rate correlation is -0.564."
+      }
+    ],
+    "review_priorities": [
+      {
+        "type": "missing",
+        "severity": "medium",
+        "title": "Missing values can change the result",
+        "count": 2
+      },
+      {
+        "type": "duplicate",
+        "severity": "medium",
+        "title": "Duplicate rows may inflate totals",
+        "count": 1
+      },
+      {
+        "type": "anomaly",
+        "severity": "medium",
+        "title": "Anomaly candidates need row-level review",
+        "count": 2,
+        "first_row": 14,
+        "field": "orders"
+      },
+      {
+        "type": "sample",
+        "severity": "low",
+        "title": "Small samples limit confidence",
+        "count": 14
+      }
+    ]
+  },
+  "dataset_fingerprint": {
+    "type": "sales_operations",
+    "label": "Sales or operations table",
+    "confidence": "high",
+    "confidence_score": 95,
+    "summary": "Sales or operations table with 3 measure fields, 2 dimensions, and 1 time axes. Sample size is limited, so conclusions should stay exploratory.",
+    "roles": {
+      "time_axis": [
+        "date"
+      ],
+      "dimensions": [
+        "region",
+        "channel"
+      ],
+      "measures": [
+        "orders",
+        "revenue",
+        "return_rate"
+      ],
+      "business_measures": [
+        "revenue"
+      ],
+      "identifiers": [],
+      "text_fields": []
+    },
+    "field_counts": {
+      "measures": 3,
+      "dimensions": 2,
+      "time_axis": 1,
+      "identifiers": 0,
+      "text_fields": 0
+    },
+    "primary_time_axis": "date",
+    "primary_measure": "revenue",
+    "primary_dimension": "region"
+  },
+  "insight_cards": [
+    {
+      "id": "dataset_fingerprint",
+      "title": "Sales or operations table",
+      "summary": "Sales or operations table with 3 measure fields, 2 dimensions, and 1 time axes. Sample size is limited, so conclusions should stay exploratory.",
+      "evidence": "14 rows, 6 columns, confidence high.",
+      "confidence": "high",
+      "severity": "info",
+      "action": {
+        "label": "Review data structure",
+        "view": "quality"
+      }
+    },
+    {
+      "id": "quality_score",
+      "title": "Data quality is high",
+      "summary": "Quality score is 81/100 with 2 anomaly candidates.",
+      "evidence": "Missing ratio 0.0238, duplicate rows 1.",
+      "confidence": "high",
+      "severity": "positive",
+      "action": {
+        "label": "Review quality",
+        "view": "quality"
+      }
+    },
+    {
+      "id": "top_trend",
+      "title": "revenue is moving up",
+      "summary": "The strongest simple trend is revenue with slope 88666.6667.",
+      "evidence": "First value 186000.0, last value 1250000.0.",
+      "confidence": "medium",
+      "severity": "info",
+      "action": {
+        "label": "Open trend",
+        "view": "trend"
+      }
+    },
+    {
+      "id": "segment_opportunity",
+      "title": "Compare revenue by region",
+      "summary": "A category field and a key measure can be used for segment comparison.",
+      "evidence": "Recommended view uses bar with x=region and y=revenue.",
+      "confidence": "medium",
+      "severity": "info",
+      "action": {
+        "label": "Open segment view",
+        "view": "segment"
+      }
+    },
+    {
+      "id": "top_correlation",
+      "title": "orders and revenue are strongly related",
+      "summary": "Correlation is 0.9934. Review whether this relationship is expected.",
+      "evidence": "Calculated from available numeric records for orders and revenue.",
+      "confidence": "medium",
+      "severity": "info",
+      "action": {
+        "label": "Review relationship",
+        "view": "correlation"
+      }
+    },
+    {
+      "id": "anomaly_review",
+      "title": "Some values need review",
+      "summary": "2 high-deviation cells were detected.",
+      "evidence": "Highest candidate: row 14, orders = 999.0.",
+      "confidence": "medium",
+      "severity": "warning",
+      "action": {
+        "label": "Inspect quality",
+        "view": "quality"
+      }
+    }
+  ],
+  "decision_brief": {
+    "primary_question": "What explains differences in revenue, especially across region?",
+    "summary": "West contributes 56.8% of total revenue. The next segment is East at 620000.0.",
+    "findings": [
+      {
+        "id": "segment_leader",
+        "priority": 1,
+        "title": "West leads revenue",
+        "explanation": "West contributes 56.8% of total revenue. The next segment is East at 620000.0.",
+        "evidence": "Grouped revenue by region; top value is 1798200.0.",
+        "action": "Compare West against the next segments and check whether the gap is expected.",
+        "confidence": "high",
+        "measure": "revenue",
+        "dimension": "region",
+        "segment": "West",
+        "share": 56.8,
+        "value": 1798200.0,
+        "second_segment": "East",
+        "second_value": 620000.0
+      },
+      {
+        "id": "anomaly_queue",
+        "priority": 1,
+        "title": "Row 14 needs review",
+        "explanation": "orders has a high-deviation value of 999.0 with z-score 3.4262.",
+        "evidence": "2 anomaly candidates were detected across numeric fields.",
+        "action": "Open the anomaly drawer, jump to the row, and decide whether to keep, correct, or annotate the value.",
+        "confidence": "medium",
+        "row": 14,
+        "column": "orders",
+        "value": 999.0,
+        "z_score": 3.4262,
+        "count": 2
+      },
+      {
+        "id": "quality_gate",
+        "priority": 1,
+        "title": "Clean-up should happen before final reporting",
+        "explanation": "Missing ratio is 0.0238 and duplicate rows are 1.",
+        "evidence": "Quality scoring detected issues that can distort aggregates, rankings, or charts.",
+        "action": "Use clean preview to compare the original and cleaned table before exporting a report.",
+        "confidence": "high",
+        "missing_ratio": 0.0238,
+        "duplicate_rows": 1
+      },
+      {
+        "id": "trend_signal",
+        "priority": 2,
+        "title": "revenue is moving up",
+        "explanation": "The first value is 186000.0 and the last value is 1250000.0; the simple slope is 88666.6667.",
+        "evidence": "Calculated over record order for revenue.",
+        "action": "Open Chart Studio and verify whether this is a steady pattern or a few records driving the movement.",
+        "confidence": "medium",
+        "column": "revenue",
+        "direction": "up",
+        "first": 186000.0,
+        "last": 1250000.0,
+        "slope": 88666.6667
+      },
+      {
+        "id": "relationship_signal",
+        "priority": 3,
+        "title": "orders and revenue move together",
+        "explanation": "The correlation is 0.9934 (strong). This can indicate linked behavior, duplicated logic, or shared drivers.",
+        "evidence": "Correlation computed from available numeric values in orders and revenue.",
+        "action": "Use the scatter or heatmap view before using one field to explain the other.",
+        "confidence": "medium",
+        "left": "orders",
+        "right": "revenue",
+        "correlation": 0.9934,
+        "strength": "strong"
+      }
+    ],
+    "limitations": [
+      "Missing values can change totals, averages, and rankings after cleaning."
+    ]
+  },
+  "quality_repair_plan": [
+    {
+      "id": "missing_values",
+      "severity": "medium",
+      "title": "Review missing values in orders",
+      "evidence": "1 missing cells, ratio 0.0714.",
+      "recommendation": "Decide whether to fill, exclude, or keep missing values before charting.",
+      "auto_fix": true,
+      "impact": "About 7.14% of this field may be affected."
+    },
+    {
+      "id": "duplicate_rows",
+      "severity": "medium",
+      "title": "Review duplicate records",
+      "evidence": "1 duplicate rows detected.",
+      "recommendation": "Confirm whether duplicates are legitimate repeated events or import errors.",
+      "auto_fix": false,
+      "impact": "1 rows may inflate counts or sums if they are accidental duplicates."
+    },
+    {
+      "id": "anomaly_review",
+      "severity": "medium",
+      "title": "Review high-deviation values in orders",
+      "evidence": "Top z-score is 3.4262 at row 14.",
+      "recommendation": "Inspect highlighted values before using them in summaries.",
+      "auto_fix": false,
+      "impact": "Outliers can change averages, trend slopes, and chart scaling."
+    },
+    {
+      "id": "sample_size",
+      "severity": "low",
+      "title": "Treat results as exploratory",
+      "evidence": "Only 14 rows are available.",
+      "recommendation": "Use the report for directional review, not final statistical conclusions.",
+      "auto_fix": false,
+      "impact": "Small samples reduce confidence in trend, correlation, and anomaly findings."
+    }
+  ],
+  "executive_brief": {
+    "headline": "This looks like a sales or operations table. Loaded 14 rows and 6 columns with 6 analyzable fields. Strongest trend: revenue moving up.",
+    "confidence": "high",
+    "watchouts": [
+      "Missing values may bias aggregates and charts.",
+      "High z-score values should be reviewed before drawing conclusions."
+    ],
+    "next_moves": [
+      "Analyze orders over date",
+      "Compare orders by region",
+      "Review relationships between numeric columns",
+      "Run data quality gate before interpretation",
+      "Trend review: orders over date",
+      "Render a line chart for orders,revenue,return_rate."
+    ]
+  },
+  "preview": {
+    "columns": [
+      "date",
+      "region",
+      "channel",
+      "orders",
+      "revenue",
+      "return_rate"
+    ],
+    "rows": [
+      [
+        "2026-01-01",
+        "East",
+        "Online",
+        "120",
+        "186000",
+        "0.018"
+      ],
+      [
+        "2026-01-01",
+        "East",
+        "Online",
+        "120",
+        "186000",
+        "0.018"
+      ],
+      [
+        "2026-01-03",
+        "South",
+        "Partner",
+        "72",
+        "68400",
+        "0.031"
+      ],
+      [
+        "2026-01-04",
+        "North",
+        "Online",
+        "",
+        "119000",
+        "0.022"
+      ],
+      [
+        "2026-01-05",
+        "West",
+        "Direct",
+        "112",
+        "174500",
+        "0.014"
+      ],
+      [
+        "2026-01-06",
+        "East",
+        "Partner",
+        "69",
+        "",
+        "0.044"
+      ],
+      [
+        "2026-01-07",
+        "South",
+        "Direct",
+        "140",
+        "221000",
+        "0.016"
+      ],
+      [
+        "2026-01-08",
+        "North",
+        "Online",
+        "101",
+        "133200",
+        "0.027"
+      ],
+      [
+        "2026-01-09",
+        "West",
+        "Partner",
+        "58",
+        "48700",
+        "0.052"
+      ],
+      [
+        "2026-01-10",
+        "East",
+        "Direct",
+        "155",
+        "248000",
+        "0.012"
+      ],
+      [
+        "2026-01-11",
+        "South",
+        "Online",
+        "118",
+        "154300",
+        "0.025"
+      ],
+      [
+        "2026-01-12",
+        "North",
+        "Direct",
+        "64",
+        "54400",
+        "0.047"
+      ],
+      [
+        "2026-01-13",
+        "West",
+        "Online",
+        "181",
+        "325000",
+        "0.011"
+      ],
+      [
+        "2026-01-14",
+        "West",
+        "Online",
+        "999",
+        "1250000",
+        "0.006"
+      ]
+    ],
+    "returned_rows": 14,
+    "max_rows": 500
+  },
+  "tool_trace": [
+    "load_table",
+    "detect_encoding",
+    "detect_delimiter",
+    "infer_header",
+    "detect_sheet",
+    "infer_schema",
+    "profile_quality",
+    "detect_anomalies",
+    "recommend_analysis",
+    "compose_insight"
+  ],
+  "insights": [
+    "Loaded 14 rows and 6 columns.",
+    "Detected 3 numeric columns, 1 date columns, and 2 categorical columns.",
+    "Data quality is high with a score of 81/100.",
+    "Found 2 missing cells; downstream analysis should account for incomplete data.",
+    "Detected 2 high z-score cells for review.",
+    "The strongest simple trend is column revenue moving up.",
+    "Recommended next analysis: Analyze orders over date."
+  ],
+  "local_ai": {
+    "provider": "ollama",
+    "model": "qwen2.5:1.5b",
+    "status": "disabled",
+    "summary": null,
+    "guardrail": "Local AI wording is disabled; deterministic evidence is used."
+  },
+  "_README": "Captured from a live uvicorn instance by scripts/smoke.sh via the sync-artifacts workflow. Key structure matches profile_table() in analysis_service/app/analysis.py."
+}

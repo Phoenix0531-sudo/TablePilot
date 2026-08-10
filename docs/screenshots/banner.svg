@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="280" viewBox="0 0 1200 280"
+     role="img" aria-labelledby="title desc">
+  <title id="title">TablePilot — local-first messy-table analysis workbench</title>
+  <desc id="desc">TablePilot turns messy Excel/CSV/TXT into profiles, cleaning previews, analysis plans and explainable reports. A FastAPI service plus a Qt/C++ desktop shell.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#38BDF8"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="280" rx="18" fill="#0F172A"/>
+
+  <!-- faint table-grid motif behind title (rows + column dividers) -->
+  <g transform="translate(56 36)" opacity="0.10" stroke="#38BDF8" stroke-width="1.5" fill="none">
+    <rect x="0" y="0" width="640" height="208" rx="8"/>
+    <line x1="0" y1="56" x2="640" y2="56"/>
+    <line x1="160" y1="0" x2="160" y2="208"/>
+    <line x1="348" y1="0" x2="348" y2="208"/>
+    <line x1="492" y1="0" x2="492" y2="208"/>
+  </g>
+
+  <!-- title block -->
+  <g transform="translate(56 56)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <!-- eyebrow -->
+    <text x="0" y="0" font-size="18" font-weight="600" letter-spacing="3" fill="#38BDF8">LOCAL-FIRST · MESSY-TABLE ANALYSIS</text>
+    <!-- repo name -->
+    <text x="0" y="56" font-size="58" font-weight="800" fill="#F1F5F9" letter-spacing="-1">TablePilot</text>
+    <!-- one-line promise -->
+    <text x="0" y="100" font-size="22" font-weight="500" fill="#CBD5E1">Profile, clean, plan, and report over Excel / CSV / TXT.</text>
+    <!-- stack metadata -->
+    <g transform="translate(0 142)" font-size="15" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" fill="#94A3B8">
+      <text x="0" y="0">stack  FastAPI 0.5.0  ·  pandas  ·  Qt/C++ desktop shell</text>
+      <text x="0" y="24">scope  local files only — not a cloud BI SaaS</text>
+    </g>
+  </g>
+
+  <!-- right: analysis pipeline (Profile -> Clean -> Report) -->
+  <g transform="translate(810 60)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <!-- file-format chips at top -->
+    <g transform="translate(0 0)">
+      <g transform="translate(0 0)">
+        <rect x="0" y="0" width="84" height="30" rx="6" fill="#1E293B" stroke="#334155"/>
+        <text x="42" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#F1F5F9" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">.xlsx</text>
+      </g>
+      <g transform="translate(96 0)">
+        <rect x="0" y="0" width="84" height="30" rx="6" fill="#1E293B" stroke="#334155"/>
+        <text x="42" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#F1F5F9" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">.csv</text>
+      </g>
+      <g transform="translate(192 0)">
+        <rect x="0" y="0" width="84" height="30" rx="6" fill="#1E293B" stroke="#334155"/>
+        <text x="42" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#F1F5F9" font-family="ui-monospace, SFMono-Regular, Menlo, monospace">.txt</text>
+      </g>
+    </g>
+
+    <!-- Stage 1: Profile -->
+    <g transform="translate(0 58)">
+      <rect x="0" y="0" width="276" height="44" rx="8" fill="#1E293B" stroke="#38BDF8"/>
+      <text x="16" y="22" font-size="15" font-weight="700" fill="#38BDF8">1 · Profile</text>
+      <text x="16" y="38" font-size="12" fill="#94A3B8">schema · quality · types</text>
+    </g>
+    <path d="M138 110 L138 132" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Stage 2: Clean -->
+    <g transform="translate(0 120)">
+      <rect x="0" y="0" width="276" height="44" rx="8" fill="#1E293B" stroke="#38BDF8"/>
+      <text x="16" y="22" font-size="15" font-weight="700" fill="#38BDF8">2 · Clean (preview)</text>
+      <text x="16" y="38" font-size="12" fill="#94A3B8">preview vs cleaned output</text>
+    </g>
+    <path d="M138 182 L138 204" stroke="#38BDF8" stroke-width="2" marker-end="url(#arrow)"/>
+
+    <!-- Stage 3: Report -->
+    <g transform="translate(0 192)">
+      <rect x="0" y="0" width="276" height="44" rx="8" fill="#1E293B" stroke="#F59E0B"/>
+      <text x="16" y="22" font-size="15" font-weight="700" fill="#F59E0B">3 · Report & insights</text>
+      <text x="16" y="38" font-size="12" fill="#94A3B8">HTML · Markdown · cards</text>
+    </g>
+  </g>
+</svg>

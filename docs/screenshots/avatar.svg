@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="256" height="256" viewBox="0 0 256 256"
+     role="img" aria-labelledby="title desc">
+  <title id="title">TablePilot icon</title>
+  <desc id="desc">A table-grid motif under an analysis arrow, on a slate background, marking the TablePilot workbench.</desc>
+
+  <defs>
+    <marker id="av-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#F59E0B"/>
+    </marker>
+  </defs>
+
+  <rect width="256" height="256" rx="44" fill="#0F172A"/>
+
+  <!-- table grid -->
+  <g transform="translate(48 64)" stroke="#38BDF8" stroke-width="3" fill="none" opacity="1">
+    <rect x="0" y="0" width="160" height="104" rx="10"/>
+    <!-- header band -->
+    <rect x="0" y="0" width="160" height="28" rx="10" fill="#38BDF8" opacity="0.18"/>
+    <line x1="0" y1="28" x2="160" y2="28"/>
+    <line x1="0" y1="66" x2="160" y2="66"/>
+    <line x1="53" y1="0" x2="53" y2="104"/>
+    <line x1="107" y1="0" x2="107" y2="104"/>
+  </g>
+
+  <!-- analysis arrow sweeping across the grid, ending in amber -->
+  <path d="M56 196 L196 196" stroke="#F59E0B" stroke-width="6" stroke-linecap="round" marker-end="url(#av-arrow)"/>
+</svg>

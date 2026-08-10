@@ -130,7 +130,7 @@ jobs:
             No source or dependency change; only generated artifacts:
 
             ${{ steps.diff.outputs.summary }}
-          title: 'chore(artifacts): sync ${{ github.event.inputs.artifact_set || 'all' }}'
+          title: "chore(artifacts): sync ${{ github.event.inputs.artifact_set || 'all' }}"
           body: |
             Automated artifact re-sync triggered by @${{ github.actor }} via
             the `sync-artifacts` workflow (`workflow_dispatch`).

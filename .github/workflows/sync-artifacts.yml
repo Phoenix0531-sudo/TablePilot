@@ -47,7 +47,7 @@ jobs:
       SVC_HOST: "127.0.0.1"
       SVC_PORT: "8765"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: true
 

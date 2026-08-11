@@ -1,0 +1,48 @@
+# Normalize line endings and mark binary assets so the working-tree LF/CRLF
+# warnings stop and cross-platform checkouts stay predictable.
+#
+# Default: Git auto-detects text vs binary and normalizes text to LF in the
+# object store. EOL conversions happen on checkout per platform convention.
+* text=auto eol=lf
+
+# Source code and text formats — always LF in the repo, native on checkout
+# (text=auto already covers these, but listing them keeps intent explicit).
+*.py     text eol=lf
+*.html   text eol=lf
+*.css    text eol=lf
+*.js     text eol=lf
+*.json   text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+*.yaml   text eol=lf
+*.toml   text eol=lf
+*.svg    text eol=lf
+*.txt    text eol=lf
+*.sh     text eol=lf
+*.dockerfile text eol=lf
+Dockerfile text eol=lf
+
+# Windows-only scripts and manifests — CRLF in the repo too, so PowerShell
+# and cmd never mis-handle a lone LF in a .bat / .ps1 / .cmd.
+*.ps1    text eol=crlf
+*.bat    text eol=crlf
+*.cmd    text eol=crlf
+*.psm1   text eol=crlf
+
+# Binary assets — never normalize, never diff as text.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.ico    binary
+*.pdf    binary
+*.zip    binary
+*.gz     binary
+*.whl    binary
+*.lock   text eol=lf
+
+# Linguist hints so GitHub renders this repo's languages correctly.
+*.pro    linguist-language=QML
+*.qss    linguist-language=CSS
+*.ui     linguist-language=XML

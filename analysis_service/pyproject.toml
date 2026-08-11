@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tablepilot-analysis-service"
-version = "0.4.0"
+version = "0.5.0"
 description = "FastAPI planner and profiling service for TablePilot."
 requires-python = ">=3.11"
 dependencies = [
@@ -25,3 +25,27 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["build", "dist", ".venv"]
+
+[tool.ruff.lint]
+# Conservative starter rule set: catch real bugs and obvious style, not
+# nitpicks. Add F (pyflakes) for unused imports/undefined names, E (pycodestyle
+# errors), I (isort), UP (pyupgrade modern syntax), B (bugbear), N (naming).
+select = ["E", "F", "I", "UP", "B", "N"]
+ignore = [
+    "E501",   # line too long (handled by formatter, not linter)
+    "B008",   # Do not perform function call in argument defaults (FastAPI Depends)
+    "N805",   # first-argument-method name (pydantic validators)
+    "N818",   # error suffix (we do not suffix exception names with Error)
+    "I001",   # import block un-sorted; pre-existing style, revisit later
+    "UP017",   # use datetime.UTC alias (Python 3.11+ but keep tz for clarity)
+    "UP037",   # remove quotes from type annotation (style, revisit later)
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests may legitimately use longer lines, unused fixtures, and assert.
+"tests/*.py" = ["E402", "F811"]

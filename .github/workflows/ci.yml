@@ -52,7 +52,7 @@ jobs:
 
           if [ -d analysis_service/tests ]; then
             pip install -r analysis_service/requirements.txt 2>/dev/null || true
-            python -m pytest -q analysis_service/tests || true
+            python -m pytest -q analysis_service/tests
           fi
 
 
@@ -88,6 +88,21 @@ jobs:
               && { echo "$svg: contains <script> or foreignObject"; rc=1; } || true
           done < <(find . -name '*.svg' -not -path './.git/*' -print0)
           exit $rc
+
+  ruff-lint:
+    name: Ruff lint (analysis_service)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: python -m pip install --upgrade pip "ruff==0.6.9"
+      - name: ruff check
+        working-directory: analysis_service
+        run: ruff check .
 
   openapi-export:
     name: OpenAPI snapshot (contract guard)

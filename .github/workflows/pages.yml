@@ -28,6 +28,15 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
+      - name: Sync screenshots from assets/
+        run: |
+          set -e
+          mkdir -p site/screenshots
+          cp -v assets/screenshots/* site/screenshots/
+          # Reuse the README hero banner as the site hero too (single source).
+          cp -v docs/screenshots/banner.svg site/banner.svg
+          cp -v docs/screenshots/avatar.svg site/avatar.svg
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:

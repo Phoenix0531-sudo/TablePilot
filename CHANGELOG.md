@@ -5,6 +5,49 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] — 0.6.0 candidate (internal + engineering hygiene)
+
+Internal cleanup, CI tightening, and dependency bumps landed after the public `1.0.0` cut. No breaking service-contract changes; no new user-facing endpoints. Service component version is unchanged (`v0.5.0`) — these are repo-level and CI-level changes.
+
+### Added
+
+- **`.gitattributes`** at repo root — normalizes text files to LF in the object store, pins Windows-only scripts (`*.ps1`/`*.bat`/`*.cmd`) to CRLF, marks image binaries as `binary`, and adds Linguist hints (`.qss` as CSS, `.ui` as XML). Resolves the recurring `LF will be replaced by CRLF` warnings.
+- **Ruff lint configuration** in `analysis_service/pyproject.toml` (`[tool.ruff]` + a conservative starter rule set `E, F, I, UP, B, N`) and a new **`Ruff lint (analysis_service)`** job in the CI workflow. Runs on Python 3.11 with `ruff==0.6.9`. Suppresses `I001` / `UP017` / `UP037` purely so the initial pass is green without rewriting service imports — revisit later.
+- **`Sync screenshots from assets/`** step in the `Pages` workflow — copies `assets/screenshots/*.png` and the README hero (`docs/screenshots/banner.svg`, `avatar.svg`) into `site/` before the Pages artifact upload, so `site/` no longer carries a second hand-maintained copy of the same bytes.
+- **Banner hero on the project page** — `site/index.html` now opens with `<p class="banner"><img src="banner.svg" ...></p>`, reusing the same README hero. New `.banner` CSS in `site/styles.css` (responsive, centered, max-width 960 px).
+
+### Changed
+
+- **`analysis_service/pyproject.toml`** `version` raised `0.4.0 → 0.5.0` to match the runtime `FastAPI(version="0.5.0")` in `app/main.py`. The package metadata is now self-consistent with the running service.
+- **GitHub Actions `CI` workflow** — the `Pytest` step no longer appends `|| true` to the `analysis_service/tests` run, so real test regressions now fail CI instead of being silently swallowed.
+- **`docs/CHANGELOG.md`** — this section.
+
+### Fixed
+
+- **`analysis_service/tests/test_endpoints_extra.py`** — corrected three `/api/agent/query` intent assertions that had become latent regressions hidden by the previous `|| true`:
+  - `data_quality` case question no longer triggers the `anomaly_review` route (the "风险" keyword was being matched first).
+  - `correlation_review` and `dataset_overview` cases now assert against the real `profile_dataset` tool trace (`load_table` / `infer_schema`-class steps) instead of the `plan.tools` placeholder names (`calculate_correlations` / `profile_dataset`), which `answer_question` does not surface verbatim in `tools_used`.
+- All 41 tests pass under the new dependencies below.
+
+### Dependencies bumped (via Dependabot, squash-merged to `main`)
+
+| Package / Action | From | To |
+| --- | --- | --- |
+| `fastapi` | `0.115.6` | `0.141.1` |
+| `uvicorn[standard]` | `0.34.0` | `0.52.1` |
+| `pandas` | `2.2.3` | `3.0.5` |
+| `xlrd` | `2.0.1` | `2.0.2` |
+| `python-multipart` | `0.0.20` | `0.0.32` |
+| `actions/checkout` | `v4` | `v7` |
+| `actions/configure-pages` | `v5` | `v6` |
+| `actions/upload-pages-artifact` | `v3` | `v5` |
+
+Eight open Dependabot PRs were closed in this window; `main` is current with no outstanding bot PRs.
+
+### Removed
+
+- **`site/screenshots/*.png`** — three duplicate copies of `assets/screenshots/` content (verified identical by SHA-256). Now built in CI by the `Sync screenshots from assets/` step.
+
 ## [1.0.0] - 2026-06-08
 
 First public release. **Local-first messy-table analysis workbench** — a Python FastAPI

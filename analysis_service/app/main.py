@@ -11,8 +11,8 @@ from pydantic import BaseModel, Field, model_validator
 
 from .agent import answer_question
 from .analysis import (
-    build_cleaning_preview,
     build_cleaned_table,
+    build_cleaning_preview,
     build_html_report,
     build_markdown_report,
     list_datasets,
@@ -39,7 +39,7 @@ class DatasetRequest(BaseModel):
     local_ai: bool | None = Field(default=None, description="Override optional local model enhancement.")
 
     @model_validator(mode="after")
-    def require_dataset_name(self) -> "DatasetRequest":
+    def require_dataset_name(self) -> DatasetRequest:
         if self.filename is None and self.dataset is None:
             raise ValueError("filename or dataset is required")
         if self.filename is None:

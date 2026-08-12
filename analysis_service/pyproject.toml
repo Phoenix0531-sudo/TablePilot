@@ -41,9 +41,6 @@ ignore = [
     "B008",   # Do not perform function call in argument defaults (FastAPI Depends)
     "N805",   # first-argument-method name (pydantic validators)
     "N818",   # error suffix (we do not suffix exception names with Error)
-    "I001",   # import block un-sorted; pre-existing style, revisit later
-    "UP017",   # use datetime.UTC alias (Python 3.11+ but keep tz for clarity)
-    "UP037",   # remove quotes from type annotation (style, revisit later)
 ]
 
 [tool.ruff.lint.per-file-ignores]

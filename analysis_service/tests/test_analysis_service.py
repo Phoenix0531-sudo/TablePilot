@@ -3,9 +3,15 @@ from pathlib import Path
 import pandas as pd
 from fastapi.testclient import TestClient
 
-from app.analysis import build_cleaned_table, load_table_with_metadata, list_datasets, profile_dataset, profile_table, validate_local_ai_summary
+from app.analysis import (
+    build_cleaned_table,
+    list_datasets,
+    load_table_with_metadata,
+    profile_dataset,
+    profile_table,
+    validate_local_ai_summary,
+)
 from app.main import app
-
 
 client = TestClient(app)
 ROOT = Path(__file__).resolve().parents[2]

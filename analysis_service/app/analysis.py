@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import math
 import os
 import re
-import json
 import urllib.error
 import urllib.request
 import warnings
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
 from typing import Any
@@ -371,7 +371,7 @@ def profile_table(
         "compose_insight",
     ]
     profile_id = build_profile_id(filename, source_info, df)
-    generated_at = datetime.now(timezone.utc).isoformat()
+    generated_at = datetime.now(UTC).isoformat()
 
     profile = {
         "session": {

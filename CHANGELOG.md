@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] — 0.6.0 candidate (internal + engineering hygiene)
+## [1.1.0] - 2026-08-12
 
 Internal cleanup, CI tightening, and dependency bumps landed after the public `1.0.0` cut. No breaking service-contract changes; no new user-facing endpoints. Service component version is unchanged (`v0.5.0`) — these are repo-level and CI-level changes.
 

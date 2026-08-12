@@ -56,7 +56,45 @@ The demo dataset directory (`../demo`) is scanned automatically by `GET /api/dat
 6. **Describe honestly in CHANGELOG.** Add an entry under `[Unreleased]` (or the next
    version) using the Keep a Changelog categories (Added / Changed / Fixed / Removed).
 
+## Visual verification of the project page
+
+The GitHub Pages site (`site/index.html` deployed at
+`https://phoenix0531-sudo.github.io/TablePilot/`) is the public landing surface — you
+should sanity-check it renders after any `site/` or hero-asset change.
+
+### Quick static check (no dependencies)
+
+```bash
+# Every referenced asset returns 200 and banner.svg is a real SVG with viewBox + <title>:
+for u in / \      styles.css banner.svg avatar.svg \
+      screenshots/tablepilot-desktop-overview.png \
+      screenshots/tablepilot-chinese-insights.png \
+      screenshots/tablepilot-clean-compare.png ; do
+      code=$(curl -s -o /dev/null -w '%{http_code}' "https://phoenix0531-sudo.github.io/TablePilot$u")
+      printf '%s\t%s\n' "$code" "$u"
+    done
+curl -s https://phoenix0531-sudo.github.io/TablePilot/banner.svg | grep -q viewBox \
+  && echo 'banner viewBox: ok'
+```
+
+### Browser screenshot (optional, needs upstream `agent-browser` CLI)
+
+For a real rendered screenshot under Pi's `agent_browser` tool, install the upstream
+CLI once on your machine (`npm i -g agent-browser`; see
+<https://agent-browser.dev/>), then:
+
+```
+# inside Pi:
+> Use the agent_browser tool to open https://phoenix0531-sudo.github.io/TablePilot/
+    and take a screenshot to /tmp/pages-banner.png
+```
+
+This step is **not** required for a PR — the static check above is enough — but it's
+the fastest way to verify that a new `<picture>` / srcset or banner edit actually
+renders in a browser.
+
 ## Areas that especially welcome help
+
 
 - **Endpoint behavior tests** — `analysis_service/tests/test_analysis_service.py` covers
   happy paths and `test_endpoints_extra.py` covers the error and intent-routing gaps. New

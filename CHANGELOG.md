@@ -14,6 +14,7 @@ Post-`1.1.0` documentation-only patches caught by a static audit of rendered sur
 - **README FastAPI badge** (`README.md`, `README.zh-CN.md`) — the static shield badge still read `FastAPI-0.115` while `analysis_service/requirements.txt` had already moved to `0.141.1` (`1.1.0` Dependabot bump). Synced the badge to `FastAPI-0.141`.
 - **Banner PNG-fallback `srcset`** (`README.md`, `README.zh-CN.md`) — the `<picture>` `<source>` listed `banner.png` and `banner@2x.png` with no density descriptors, so browsers parsed both as `1x` (a duplicate-descriptor invalid srcset) and the HiDPI/retina fallback was never selected. Added explicit `1x` / `2x` descriptors.
 - **`GITHUB_ABOUT.md`** — outdated snapshot of the repo's About panel (stale long description, 21 topics while GitHub caps at 20). Rewritten as an honest snapshot of the live values (short description, the live 20-topic set) with a header note to keep it in sync.
+- **Endpoint count** (`site/index.html`, `CHANGELOG.md` 1.0.0 entry) — claimed "11 endpoints" / "11 live endpoints" while the actual decorated route count in `app/main.py` and in the generated `docs/openapi.json` is **10** (the OpenAPI snapshot guard already asserts `ops == 10`). Corrected in both places to `10 endpoints` / `10 live endpoints`.
 
 ## [1.1.0] - 2026-08-12
 
@@ -66,7 +67,7 @@ uploading.
 
 ### Added
 
-- **FastAPI analysis service (`analysis_service/`, v0.5.0)** with 11 live endpoints:
+- **FastAPI analysis service (`analysis_service/`, v0.5.0)** with 10 live endpoints:
   - `GET /health` — liveness / container probe
   - `GET /api/datasets` — list local data directory
   - `POST /api/analyze` and `POST /api/analyze-upload` — table profiling by name or upload

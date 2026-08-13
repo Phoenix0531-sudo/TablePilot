@@ -5,6 +5,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **`docker.yml` now prints the built image size** after the `docker build` step (`docker images tablepilot-analysis:ci --format ... {{.Size}} {{.VirtualSize}}`), plus an `::notice` annotation. This is a regression-visibility diagnostic for image bloat — it does not gate the build.
+
+### Investigated (no change)
+
+- **Dockerfile multi-stage split — evaluated and rejected.** The CI build reported the single-stage image at **320 MB** (`Size` 320 MB, `VirtualSize` 319.7 MB, ubuntu-24.04 runner). The threshold to reconsider a builder/runtime split is ~500 MB, so the current Dockerfile is justified: `pandas` ships pre-built wheels (no on-image C compilation), so there is no builder-stage toolchain to strip. Do not re-introduce this question unless the size instrumentation crosses the threshold or a wheel starts requiring compilation.
+
 ## [1.1.2] - 2026-08-13
 
 ### Added

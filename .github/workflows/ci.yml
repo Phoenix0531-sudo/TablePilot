@@ -23,7 +23,7 @@ jobs:
       MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: ${{ hashFiles('**/requirements*.txt', '**/pyproject.toml', '**/uv.lock') != '' && 'pip' || '' }}
@@ -93,8 +93,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 6
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install ruff
@@ -109,7 +109,7 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install analysis_service deps
@@ -146,7 +146,7 @@ jobs:
           print(f"OK: {len(paths)} paths, {ops} operations, openapi {s['openapi']}")
         shell: python
       - name: Upload snapshot
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: openapi-json
           path: docs/openapi.json
@@ -158,7 +158,7 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Install cairosvg
@@ -188,7 +188,7 @@ jobs:
               print(f"OK: {rel} {iw}x{ih} ({len(data)} bytes)")
         shell: python
       - name: Upload PNGs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: png-fallbacks
           path: docs/screenshots/*.png
@@ -200,7 +200,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.22"
       - name: Build modules

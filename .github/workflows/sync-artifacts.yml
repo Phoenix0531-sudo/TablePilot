@@ -51,7 +51,7 @@ jobs:
         with:
           persist-credentials: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
@@ -119,7 +119,7 @@ jobs:
 
       - name: Open PR with the regenerated artifacts
         if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/sync-artifacts-${{ github.run_id }}
           delete-branch: true

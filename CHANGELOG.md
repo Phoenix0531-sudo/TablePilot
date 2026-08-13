@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.1] - 2026-08-13
 
 Post-`1.1.0` documentation-only patches caught by a static audit of rendered surfaces (README badges, Pages hero, About snapshot). No service or CI behavior changes.
 

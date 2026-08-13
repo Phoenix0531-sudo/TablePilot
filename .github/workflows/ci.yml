@@ -47,7 +47,6 @@ jobs:
         run: |
           set -e
           if [ -d tests ]; then python -m pytest -q tests
-          elif [ -d Test ]; then python -m pytest -q Test
           else echo "No tests/ — structure OK"; fi
 
           if [ -d analysis_service/tests ]; then

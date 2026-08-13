@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: TablePilot Pages site
+    url: https://phoenix0531-sudo.github.io/TablePilot/
+    about: Public landing page — what TablePilot does and where to find it.
+  - name: API reference (OpenAPI 3.1)
+    url: https://github.com/Phoenix0531-sudo/TablePilot/blob/main/docs/API.md
+    about: 11 endpoints with parameters, response keys, and cURL examples.

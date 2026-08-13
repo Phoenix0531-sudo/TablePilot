@@ -5,6 +5,12 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **`SECURITY.md`** at repo root — a private-vulnerability-reporting policy (GitHub Security Advisories, not public issues), with a TurboPilot-specific scope statement (FastAPI HTTP surface + Docker image in scope; local Qt shell reading user files and the operator-chosen `local_ai` localhost path out of scope) and a 7-day initial-response target. GitHub surfaces this in the issue chooser and the Security tab.
+
 ## [1.1.1] - 2026-08-13
 
 Post-`1.1.0` documentation-only patches caught by a static audit of rendered surfaces (README badges, Pages hero, About snapshot). No service or CI behavior changes.

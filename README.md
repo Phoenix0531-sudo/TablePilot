@@ -16,7 +16,7 @@
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
-  <img src="https://img.shields.io/badge/FastAPI-0.115-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/FastAPI-0.141-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/Qt-C++-41CD52.svg?logo=qt&logoColor=white" alt="Qt / C++">
   <img src="https://img.shields.io/badge/Local--first-files%20only-0F172A.svg" alt="Local-first — files only">
 </p>

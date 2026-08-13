@@ -93,6 +93,22 @@ This step is **not** required for a PR — the static check above is enough — 
 the fastest way to verify that a new `<picture>` / srcset or banner edit actually
 renders in a browser.
 
+#### Known limitation: `agent_browser` on Windows + empty session namespace
+
+If invoking `agent_browser` fails with
+`The wrapper could not verify this managed session's live daemon restore policy`,
+it is an upstream `pi-agent-browser-native` Windows defect, **not** a TablePilot
+issue. Under the hood the managed-session policy probe runs
+`agent-browser --json --namespace "" --session default session info`; the wrapper's
+Windows PowerShell wrapper mishandles the empty-namespace quote, so the CLI reports
+`Unknown command: default` and the probe returns `unknown`. Repro and workaround were
+confirmed against `pi-agent-browser-native@0.3.0` on Node 26 + Windows: probing with
+a **named** namespace (`--namespace default`) returns `active: false` / exit 0 and
+succeeds, while the empty-namespace probe exits 1. Until the extension fixes the
+empty-namespace quoting on Windows, fall back to the static check above or verify in
+a normal browser window. CLI version (0.33.2 vs 0.34.0) is **not** the cause — both
+fail the same way here.
+
 ## Areas that especially welcome help
 
 

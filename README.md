@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source srcset="docs/screenshots/banner.png, docs/screenshots/banner@2x.png" type="image/png">
+    <source srcset="docs/screenshots/banner.png 1x, docs/screenshots/banner@2x.png 2x" type="image/png">
     <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot — local-first messy-table analysis workbench: profile, clean, plan, and report over Excel/CSV/TXT">
   </picture>
 </p>

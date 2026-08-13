@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source srcset="docs/screenshots/banner.png, docs/screenshots/banner@2x.png" type="image/png">
+    <source srcset="docs/screenshots/banner.png 1x, docs/screenshots/banner@2x.png 2x" type="image/png">
     <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot —— 本地优先的脏表分析工作台：对 Excel/CSV/TXT 做画像、清洗、方案与报告">
   </picture>
 </p>

@@ -5,6 +5,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+Post-`1.1.0` documentation-only patches caught by a static audit of rendered surfaces (README badges, Pages hero, About snapshot). No service or CI behavior changes.
+
+### Fixed
+
+- **README FastAPI badge** (`README.md`, `README.zh-CN.md`) — the static shield badge still read `FastAPI-0.115` while `analysis_service/requirements.txt` had already moved to `0.141.1` (`1.1.0` Dependabot bump). Synced the badge to `FastAPI-0.141`.
+- **Banner PNG-fallback `srcset`** (`README.md`, `README.zh-CN.md`) — the `<picture>` `<source>` listed `banner.png` and `banner@2x.png` with no density descriptors, so browsers parsed both as `1x` (a duplicate-descriptor invalid srcset) and the HiDPI/retina fallback was never selected. Added explicit `1x` / `2x` descriptors.
+- **`GITHUB_ABOUT.md`** — outdated snapshot of the repo's About panel (stale long description, 21 topics while GitHub caps at 20). Rewritten as an honest snapshot of the live values (short description, the live 20-topic set) with a header note to keep it in sync.
+
 ## [1.1.0] - 2026-08-12
 
 Internal cleanup, CI tightening, and dependency bumps landed after the public `1.0.0` cut. No breaking service-contract changes; no new user-facing endpoints. Service component version is unchanged (`v0.5.0`) — these are repo-level and CI-level changes.

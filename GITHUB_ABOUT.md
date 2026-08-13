@@ -1,9 +1,13 @@
 # GitHub About
 
+This file is a snapshot of the repository's GitHub "About" panel (description, website,
+topics). Keep it in sync with the live values — when you change the live About via the
+GitHub UI or `gh api`, update this file in the same commit.
+
 Repository description:
 
 ```text
-TablePilot：本地优先的复杂表格智能分析工作台，把混乱 Excel/CSV/TXT 转化为质量修复计划、洞察卡片和可解释报告。 | Local-first messy table analysis workbench for repair plans, insight cards, and explainable reports over Excel/CSV/TXT files.
+TablePilot：本地优先的复杂表格智能分析工作台 | Local-first messy table analysis workbench for repair plans, insights, and explainable reports
 ```
 
 Website:
@@ -12,28 +16,27 @@ Website:
 https://phoenix0531-sudo.github.io/TablePilot/
 ```
 
-Topics:
+Topics (GitHub caps at 20; live set is below):
 
 ```text
-qt
+analysis-planner
 cpp
-python
-fastapi
-docker
 data-analysis
 data-profiling
-schema-inference
 data-quality
-analysis-planner
-messy-data
 data-quality-repair
-insight-cards
-ollama
-local-ai
-executive-brief
 desktop-app
-visualization
-qt-desktop
-release-packaging
+docker
+executive-brief
+fastapi
+insight-cards
+local-ai
 local-first
+messy-data
+ollama
+python
+qt
+qt-desktop
+schema-inference
+visualization
 ```

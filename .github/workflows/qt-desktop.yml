@@ -1,0 +1,68 @@
+name: Qt desktop build
+
+# Empirically validates that the Qt/C++ desktop shell
+# (Statistical_Analysis/Statistical_Analysis.pro) compiles on a clean
+# Windows runner — not just on the maintainer's hardcoded local Qt path
+# (packaging/build-windows-release.ps1 points at E:\1_Code\QT\6.11.1).
+# The README claims "Qt 6.5+"; this job proves the .pro builds under a
+# stock Qt 6.8 MinGW install and surfaces real breakage (removed APIs,
+# missing modules, qcustomplot drift) instead of letting it rot silently.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-windows:
+    name: Build TablePilot.exe (MinGW, Qt 6.8)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Qt 6.8 (MinGW 64-bit)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          arch: win64_mingw
+          modules: 'qtprintsupport'
+          tools: 'tools_mingw'
+          set-env: true
+
+      - name: qmake (release)
+        shell: bash
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
+
+      - name: mingw32-make
+        shell: bash
+        run: |
+          cd build
+          mingw32-make -j"$NUMBER_OF_PROCESSORS"
+
+      - name: Locate & verify TablePilot.exe
+        shell: bash
+        run: |
+          exe="$(find build -name TablePilot.exe -type f | head -1)"
+          echo "exe=$exe"
+          test -n "$exe"
+          ls -la "$exe"
+
+      - name: Upload TablePilot.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: TablePilot-windows-exe
+          path: build/**/TablePilot.exe
+          if-no-files-found: error
+          retention-days: 14

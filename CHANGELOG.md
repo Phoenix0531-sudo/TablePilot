@@ -5,6 +5,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **`qt-desktop.yml` workflow — Qt/C++ desktop shell now compiles on a clean runner.** The desktop half (`Statistical_Analysis/Statistical_Analysis.pro`) previously had **zero CI coverage**; `packaging/build-windows-release.ps1` hardcodes the maintainer's local Qt path (`E:\1_Code\QT\6.11.1`) and was never proven on a clean machine, so the README's "Qt 6.5+" claim was an unenforced assertion. The new `build-windows` job installs stock **Qt 6.8 `win64_msvc2022_64`** via `jurplel/install-qt-action@v4`, sets up the MSVC 2022 dev shell via `vswhere → vcvars64.bat` (no third-party action), runs `qmake -spec win32-msvc CONFIG+=release` + `nmake release`, and uploads `TablePilot.exe` (≈1.02 MB) as a 14-day artifact. Proven green at commit `d76f2ef` (run `31788596183`, 2m19s). This makes the desktop shell compile-breakage visible (removed Qt APIs, missing modules, qcustomplot drift) instead of rotting silently.
+
+### Investigated (no change)
+
+- **MinGW build path — evaluated and rejected.** Qt 6.8's official MinGW prebuilt entrypoint (`libQt6EntryPoint.a`) still references the MSVCRT-style import symbol `__imp___argc`, which the MSYS2 `mingw64` GCC 15 runtime no longer exports → link failure (`undefined reference to \`__imp___argc'`). The aqt-bundled `tools_mingw` is GCC 8.1 (has the symbol) but trips a `static_assert` in `QtCore/qcomparehelpers.h` against Qt 6.8 headers → compile failure. aqt does not ship a newer MinGW tool (`tools_mingw1310_64` is not a real aqt tool id). MSVC was chosen instead because it matches how Qt ships its own Windows binaries and sidesteps the runtime ABI mismatch entirely. The `.pro` is compiler-agnostic — the only MinGW-specific flag (`-Wa,-mbig-obj`) is guarded by a `win32-g++` scope.
+
 ## [1.1.3] - 2026-08-14
 
 Internal docs/CI polish after `1.1.2`. No service or desktop-shell changes; service component version is unchanged (`v0.5.0`).

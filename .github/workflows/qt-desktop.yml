@@ -5,8 +5,12 @@ name: Qt desktop build
 # Windows runner — not just on the maintainer's hardcoded local Qt path
 # (packaging/build-windows-release.ps1 points at E:\1_Code\QT\6.11.1).
 # The README claims "Qt 6.5+"; this job proves the .pro builds under a
-# stock Qt 6.8 MinGW install and surfaces real breakage (removed APIs,
-# missing modules, qcustomplot drift) instead of letting it rot silently.
+# stock Qt 6.8 MinGW (GCC 13) install and surfaces real breakage
+# (removed APIs, missing modules, qcustomplot drift) instead of letting
+# it rot silently. Pin tools_mingw1310_64 because Qt 6.8 mingw_64
+# prebuilt headers need GCC >= 13; the default tools_mingw pulls
+# mingw810_64 (GCC 8.1.0) which trips a static_assert in
+# QtCore/qcomparehelpers.h.
 
 on:
   push:
@@ -29,12 +33,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Qt 6.8 (MinGW 64-bit)
+      - name: Install Qt 6.8 (MinGW 64-bit, GCC 13)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.*'
           arch: win64_mingw
-          tools: 'tools_mingw'
+          tools: 'tools_mingw1310_64'
           set-env: true
 
       - name: qmake (release)

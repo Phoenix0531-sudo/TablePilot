@@ -54,7 +54,7 @@ jobs:
           mkdir build
           cd build
           qmake -spec win32-msvc ..\Statistical_Analysis\Statistical_Analysis.pro "CONFIG+=release"
-          nmake -f Makefile.Release release
+          nmake release
 
       - name: Locate & verify TablePilot.exe
         shell: bash

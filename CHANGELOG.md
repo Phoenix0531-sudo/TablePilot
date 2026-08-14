@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- **README download badge for the Windows release exe.** Both `README.md` and `README.zh-CN.md` now lead the badge row with a Windows-branded download badge linking directly to `releases/download/v1.1.4/TablePilot-v1.1.4.exe` (the CI-built MSVC artifact pinned in the v1.1.4 release), so visitors land on a one-click Windows install instead of having to drill into the Releases tab. The badge is version-pinned to `v1.1.4` and will need a one-line bump on the next tagged release.
 
 ## [1.1.4] - 2026-08-14
 

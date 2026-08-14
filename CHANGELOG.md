@@ -5,16 +5,23 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.3] - 2026-08-14
+
+Internal docs/CI polish after `1.1.2`. No service or desktop-shell changes; service component version is unchanged (`v0.5.0`).
 
 ### Changed
 
 - **`docker.yml` now prints the built image size** after the `docker build` step (`docker images tablepilot-analysis:ci --format ... {{.Size}} {{.VirtualSize}}`), plus an `::notice` annotation. This is a regression-visibility diagnostic for image bloat — it does not gate the build.
+- **`docker.yml` concurrency group** — added `concurrency: { group: docker-${{ github.ref }}, cancel-in-progress: true }`, mirroring `ci.yml` / `pages.yml` / `sync-artifacts.yml`, so a rapid push or review no longer queues redundant ~25-minute Docker builds.
 
 ### Investigated (no change)
 
 - **Dockerfile multi-stage split — evaluated and rejected.** The CI build reported the single-stage image at **320 MB** (`Size` 320 MB, `VirtualSize` 319.7 MB, ubuntu-24.04 runner). The threshold to reconsider a builder/runtime split is ~500 MB, so the current Dockerfile is justified: `pandas` ships pre-built wheels (no on-image C compilation), so there is no builder-stage toolchain to strip. Do not re-introduce this question unless the size instrumentation crosses the threshold or a wheel starts requiring compilation.
 - **`agent_browser` visual verification on Windows — root-caused and deferred to upstream.** `agent_browser` tool calls failed with `could not verify this managed session's live daemon restore policy`. Traced to `pi-agent-browser-native@0.3.0` on Node 26 + Windows: the managed-session policy probe runs `agent-browser --json --namespace "" --session default session info`, and the wrapper's Windows PowerShell quoting mishandles the **empty** namespace, so the CLI reports `Unknown command: default` and the probe exits `unknown`. Proven not a CLI-version issue: reprobed with a **named** namespace (`--namespace default`) → `active: false` / exit 0; empty namespace → exit 1; both 0.33.2 and 0.34.0 fail identically. Documented as a "Known limitation" under the Pages visual-verification SOP in `CONTRIBUTING.md`; no TablePilot code change is warranted — the static asset-200 + SVG `viewBox`/`<title>` check remains the PR gate.
+
+### Removed
+
+- **`docs/index.md`** — orphan stale readme (`FastAPI-0.104+`, `Qt-6.5+` badges) that nothing referenced: the Pages workflow deploys `site/` (not `docs/`), and no workflow or link points at it. Removed to stop a misleading second readme from drifting further from `README.md` / `README.zh-CN.md`.
 
 ## [1.1.2] - 2026-08-13
 

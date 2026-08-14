@@ -46,22 +46,14 @@ jobs:
           arch: win64_msvc2022_64
           set-env: true
 
-      - name: Set up MSVC dev shell
-        uses: ilammy/msvc-dev-shell@v1
-        with:
-          arch: x64
-
-      - name: qmake (release, win32-msvc spec)
+      - name: qmake + nmake (MSVC dev shell via vswhere)
         shell: cmd
         run: |
+          for /f "usebackq delims=" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set "VSPATH=%%i"
+          call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat"
           mkdir build
           cd build
           qmake -spec win32-msvc ..\Statistical_Analysis\Statistical_Analysis.pro "CONFIG+=release"
-
-      - name: nmake
-        shell: cmd
-        run: |
-          cd build
           nmake -f Makefile.Release release
 
       - name: Locate & verify TablePilot.exe

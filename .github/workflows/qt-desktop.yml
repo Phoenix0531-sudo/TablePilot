@@ -33,13 +33,17 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Qt 6.8 (MinGW 64-bit, GCC 13)
+      - name: Install Qt 6.8 (MinGW 64-bit headers/libs only)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.*'
           arch: win64_mingw
-          tools: 'tools_mingw1310_64'
+          autodesktop: false
           set-env: true
+
+      - name: Add MSYS2 MinGW64 GCC 13 to PATH
+        shell: bash
+        run: echo "C:\msys64\mingw64\bin" >> "$GITHUB_PATH"
 
       - name: qmake (release)
         shell: bash

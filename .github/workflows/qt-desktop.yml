@@ -92,7 +92,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          mv release-assets/TablePilot.exe "TablePilot-${tag}.exe"
+          # upload-artifact preserved the build/release/ path of the exe,
+          # so locate it recursively rather than at the download root.
+          exe="$(find release-assets -name TablePilot.exe -type f | head -1)"
+          test -n "$exe"
+          mv "$exe" "TablePilot-${tag}.exe"
           # Create a draft release for the tag if one does not yet exist;
           # if a release was already published manually, this is a no-op.
           gh release create "$tag" --draft --generate-notes --repo "$GITHUB_REPOSITORY" || true

@@ -7,9 +7,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [1.1.4] - 2026-08-14
+
+Patch release landing the Qt desktop CI and wiring the built exe into releases. No service or source changes; service component version is unchanged (`v0.5.0`).
+
 ### Added
 
 - **`qt-desktop.yml` workflow — Qt/C++ desktop shell now compiles on a clean runner.** The desktop half (`Statistical_Analysis/Statistical_Analysis.pro`) previously had **zero CI coverage**; `packaging/build-windows-release.ps1` hardcodes the maintainer's local Qt path (`E:\1_Code\QT\6.11.1`) and was never proven on a clean machine, so the README's "Qt 6.5+" claim was an unenforced assertion. The new `build-windows` job installs stock **Qt 6.8 `win64_msvc2022_64`** via `jurplel/install-qt-action@v4`, sets up the MSVC 2022 dev shell via `vswhere → vcvars64.bat` (no third-party action), runs `qmake -spec win32-msvc CONFIG+=release` + `nmake release`, and uploads `TablePilot.exe` (≈1.02 MB) as a 14-day artifact. Proven green at commit `d76f2ef` (run `31788596183`, 2m19s). This makes the desktop shell compile-breakage visible (removed Qt APIs, missing modules, qcustomplot drift) instead of rotting silently.
+
+- **`qt-desktop.yml` bridges its built `TablePilot.exe` into the tag release assets.** A new `release-assets` job — gated to `push: tags: ['v*']`, isolated with its own `permissions: contents: write` so the build job itself stays read-only — downloads the exe artifact, renames it to `TablePilot-<tag>.exe`, creates a draft release for the tag if one does not yet exist, then uploads the versioned exe with `--clobber`. Tagging a release now lands a downloadable Windows desktop exe alongside the FastAPI service tarball.
+
+### Changed
+
+- **`actions/upload-artifact` bumped `v4 → v7`** in `qt-desktop.yml`, matching `ci.yml`. The `v4` action targets Node 20, which GitHub Actions is deprecating on hosted runners (warnings beginning 2025-09-19); `v7` targets Node 24 and removes the deprecation annotation from the Qt build page.
 
 ### Investigated (no change)
 

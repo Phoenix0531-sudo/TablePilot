@@ -21,6 +21,7 @@ name: Qt desktop build
 on:
   push:
     branches: [main, master]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -65,9 +66,34 @@ jobs:
           ls -la "$exe"
 
       - name: Upload TablePilot.exe
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TablePilot-windows-exe
           path: build/**/TablePilot.exe
           if-no-files-found: error
           retention-days: 14
+
+  release-assets:
+    name: Attach TablePilot.exe to the tag release
+    needs: build-windows
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download built exe
+        uses: actions/download-artifact@v7
+        with:
+          name: TablePilot-windows-exe
+          path: release-assets
+
+      - name: Attach versioned exe to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          mv release-assets/TablePilot.exe "TablePilot-${tag}.exe"
+          # Create a draft release for the tag if one does not yet exist;
+          # if a release was already published manually, this is a no-op.
+          gh release create "$tag" --draft --generate-notes --repo "$GITHUB_REPOSITORY" || true
+          gh release upload "$tag" "TablePilot-${tag}.exe" --clobber --repo "$GITHUB_REPOSITORY"

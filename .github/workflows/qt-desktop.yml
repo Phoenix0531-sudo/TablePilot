@@ -5,12 +5,18 @@ name: Qt desktop build
 # Windows runner — not just on the maintainer's hardcoded local Qt path
 # (packaging/build-windows-release.ps1 points at E:\1_Code\QT\6.11.1).
 # The README claims "Qt 6.5+"; this job proves the .pro builds under a
-# stock Qt 6.8 MinGW (GCC 13) install and surfaces real breakage
-# (removed APIs, missing modules, qcustomplot drift) instead of letting
-# it rot silently. Pin tools_mingw1310_64 because Qt 6.8 mingw_64
-# prebuilt headers need GCC >= 13; the default tools_mingw pulls
-# mingw810_64 (GCC 8.1.0) which trips a static_assert in
-# QtCore/qcomparehelpers.h.
+# stock Qt 6.8 MSVC 2022 install and surfaces real breakage (removed
+# APIs, missing modules, qcustomplot drift) instead of letting the
+# desktop shell rot silently.
+#
+# Why MSVC, not MinGW: Qt 6.8's official MinGW prebuilt entrypoint
+# (libQt6EntryPoint.a) still references the MSVCRT-style import symbol
+# __imp___argc, which newer MSYS2 mingw-w64 runtimes no longer export;
+# compiling under MSYS2 GCC 15 therefore fails at link time. The aqt
+# bundled tools_mingw is GCC 8.1 (has the symbol) but trips a
+# static_assert in QtCore/qcomparehelpers.h against Qt 6.8 headers.
+# MSVC sidesteps the runtime ABI mismatch entirely and matches how Qt's
+# own CI ships the win64_msvc2022_64 binaries.
 
 on:
   push:
@@ -27,36 +33,36 @@ concurrency:
 
 jobs:
   build-windows:
-    name: Build TablePilot.exe (MinGW, Qt 6.8)
+    name: Build TablePilot.exe (MSVC, Qt 6.8)
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Qt 6.8 (MinGW 64-bit headers/libs only)
+      - name: Install Qt 6.8 (MSVC 2022 64-bit)
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.*'
-          arch: win64_mingw
-          autodesktop: false
+          arch: win64_msvc2022_64
           set-env: true
 
-      - name: Add MSYS2 MinGW64 GCC 13 to PATH
-        shell: bash
-        run: echo "C:\msys64\mingw64\bin" >> "$GITHUB_PATH"
+      - name: Set up MSVC dev shell
+        uses: ilammy/msvc-dev-shell@v1
+        with:
+          arch: x64
 
-      - name: qmake (release)
-        shell: bash
+      - name: qmake (release, win32-msvc spec)
+        shell: cmd
         run: |
-          mkdir -p build
+          mkdir build
           cd build
-          qmake ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
+          qmake -spec win32-msvc ..\Statistical_Analysis\Statistical_Analysis.pro "CONFIG+=release"
 
-      - name: mingw32-make
-        shell: bash
+      - name: nmake
+        shell: cmd
         run: |
           cd build
-          mingw32-make -j"$NUMBER_OF_PROCESSORS"
+          nmake -f Makefile.Release release
 
       - name: Locate & verify TablePilot.exe
         shell: bash

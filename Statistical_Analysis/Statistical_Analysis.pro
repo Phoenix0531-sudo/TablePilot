@@ -34,10 +34,12 @@ win32-g++:QMAKE_CXXFLAGS += -Wa,-mbig-obj
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
+        webresearchdock.cpp \
         qcustomplot.cpp \
 
 HEADERS += \
         mainwindow.h \
+        webresearchdock.h \
         qcustomplot.h
 
 FORMS += \

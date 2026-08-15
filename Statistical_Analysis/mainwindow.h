@@ -13,6 +13,8 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
+class WebResearchDock;
+
 namespace Ui {
 class MainWindow;
 }
@@ -105,6 +107,8 @@ private:
     QComboBox *sheetSelector;
     QJsonObject lastProfile;
     QJsonObject lastCleanCompare;
+    WebResearchDock *m_webResearchDock = nullptr;
+    QPushButton *m_webResearchToolbarButton = nullptr;
     QString currentFilePath;
     QStringList recentFiles;
     bool updatingSheetSelector;

@@ -1,5 +1,6 @@
 #include "mainwindow.h"   // 包含自定义的MainWindow类的头文件
 #include "ui_mainwindow.h" // 包含自动生成的ui界面文件的头文件
+#include "webresearchdock.h"  // 自包含的 Exa 网络检索 dock
 #include <QAbstractItemView>
 #include <QCoreApplication>
 #include <QDir>
@@ -119,6 +120,12 @@ void MainWindow::InitWidget(){
 void MainWindow::InitObject(){
     // 初始化对象
     CheckAnalysisService();
+    // Web research dock (self-contained Exa search). Lazily created so the
+    // shell stays usable without the EXA_API_KEY env var set.
+    m_webResearchDock = new WebResearchDock(this);
+    m_webResearchDock->setUseChinese(useChinese);
+    addDockWidget(Qt::LeftDockWidgetArea, m_webResearchDock);
+    m_webResearchDock->hide();  // hidden until the user toggles it from the toolbar
 }
 
 void MainWindow::createToolBar(){// 创建工具栏
@@ -183,6 +190,22 @@ void MainWindow::createToolBar(){// 创建工具栏
     layout->addWidget(cleanCompareButton);
     connect(cleanCompareButton, &QPushButton::clicked, this, [this]() {
         ShowCleanCompare();
+    });
+
+    m_webResearchToolbarButton = new QPushButton(bar);
+    m_webResearchToolbarButton->setObjectName(QStringLiteral("commandButtonSecondary"));
+    m_webResearchToolbarButton->setProperty("actionKey", QStringLiteral("web_research"));
+    m_webResearchToolbarButton->setCursor(Qt::PointingHandCursor);
+    m_webResearchToolbarButton->setText(Text(QStringLiteral("Web research"), QStringLiteral("网络检索")));
+    layout->addWidget(m_webResearchToolbarButton);
+    connect(m_webResearchToolbarButton, &QPushButton::clicked, this, [this]() {
+        if (!m_webResearchDock) return;
+        if (m_webResearchDock->isVisible()) m_webResearchDock->hide();
+        else {
+            m_webResearchDock->show();
+            m_webResearchDock->raise();
+            m_webResearchDock->activateWindow();
+        }
     });
 
     layout->addStretch(1);
@@ -712,6 +735,8 @@ void MainWindow::ApplyLanguage()
         RenderChartStudio();
         RenderDynamicBarChart();
     }
+    if (m_webResearchDock) m_webResearchDock->retranslateUi();
+    if (m_webResearchToolbarButton) m_webResearchToolbarButton->setText(Text(QStringLiteral("Web research"), QStringLiteral("网络检索")));
 }
 
 void MainWindow::CheckAnalysisService()

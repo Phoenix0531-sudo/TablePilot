@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe"><img src="https://img.shields.io/badge/Download_Windows_TablePilot_v1.1.4-0078D6.svg?logo=windows&logoColor=white" alt="Download TablePilot for Windows (v1.1.4)"></a>
+  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.5/TablePilot-v1.1.5.exe"><img src="https://img.shields.io/badge/Download_Windows_TablePilot_v1.1.5-0078D6.svg?logo=windows&logoColor=white" alt="Download TablePilot for Windows (v1.1.5)"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml/badge.svg" alt="Docker analysis-service"></a>
 <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt desktop build"></a>
@@ -63,7 +63,7 @@ Desktop shell adds a Qt/C++ oriented experience on top of the same service surfa
 
 Grab the CI-built binary from Releases — no Python, Qt, or compiler needed on your machine:
 
-1. Download **`TablePilot-v1.1.4.exe`** (~1.0 MB) from [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe) — it is the same `TablePilot.exe` the `qt-desktop` CI builds from `Statistical_Analysis.pro` on a clean Windows runner.
+1. Download **`TablePilot-v1.1.5.exe`** (~1.0 MB) from [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.5/TablePilot-v1.1.5.exe) — it is the same `TablePilot.exe` the `qt-desktop` CI builds from `Statistical_Analysis.pro` on a clean Windows runner.
 2. Double-click to launch the desktop shell.
 3. To use profile / clean / report features, point the shell at a running analysis service — either `docker compose up --build` (below) or `uvicorn app.main:app --reload` (further below).
 

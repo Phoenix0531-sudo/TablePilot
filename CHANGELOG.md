@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **`sync-artifacts` workflow can now bump the README badge on a new tag.** A new `artifact_set: readme_badge` option (plus a `release_tag` input, e.g. `v1.1.5`) runs `scripts/bump_readme_version.py`, which rewrites every version-pinned occurrence in the badge + Quickstart one-click subsection of both READMEs from the current tag to the target and opens a PR. The script auto-detects the current pin, refuses to run if the two READMEs disagree, and is a clean no-op when `release_tag` equals the current pin (proven via a `readme_badge`/`v1.1.4` dispatch). This removes the manual one-line bump noted in the badge entry above — tagging the next release + dispatching this set keeps the READMEs in sync without hand-editing.
 
+- **`ci.yml` `openapi-export` job now enforces an endpoint coverage gate.** A new `Endpoint coverage threshold (routes == openapi)` step greps `@app.(get|post|put|delete|patch)(` decorators in `analysis_service/app/main.py` and asserts that count equals both the path count and the operation count in the freshly-dumped `docs/openapi.json`. The existing `Validate schema shape` step already curated a hardcoded expected-path list; the new gate is dynamic — if someone adds/removes a route in `app/main.py` but forgets to regenerate `docs/openapi.json` (and the curated expected list), the count mismatch fails the build instead of letting the contract drift. Currently 10 routes == 10 paths == 10 ops.
+
 ## [1.1.4] - 2026-08-14
 
 Patch release landing the Qt desktop CI and wiring the built exe into releases. No service or source changes; service component version is unchanged (`v0.5.0`).

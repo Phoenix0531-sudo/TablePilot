@@ -145,6 +145,35 @@ jobs:
           assert ops == 10, f"expected 10 operations, got {ops}"
           print(f"OK: {len(paths)} paths, {ops} operations, openapi {s['openapi']}")
         shell: python
+      - name: Endpoint coverage threshold (routes == openapi)
+        run: |
+          import json, re
+          from pathlib import Path
+          # Count route decorators actually declared in app/main.py (the source
+          # of truth for the API surface). If someone adds/removes an endpoint
+          # but forgets to regenerate docs/openapi.json, this drift check fails
+          # even when the curated expected list in the Validate step above is
+          # kept in sync by hand.
+          src = Path("analysis_service/app/main.py").read_text(encoding="utf-8")
+          routes = re.findall(r'@app\.(get|post|put|delete|patch)\(', src)
+          n_routes = len(routes)
+          assert n_routes > 0, "no route decorators found in app/main.py — regex broken?"
+          with open("docs/openapi.json", encoding="utf-8") as f:
+              spec = json.load(f)
+          paths = spec.get("paths", {})
+          n_paths = len(paths)
+          n_ops = sum(len(v) for v in paths.values())
+          assert n_paths == n_routes, (
+              f"openapi path count ({n_paths}) != route decorator count ({n_routes}) "
+              f"— an endpoint was added/removed in app/main.py but docs/openapi.json "
+              f"was not regenerated (run `python scripts/dump_openapi.py`)."
+          )
+          assert n_ops == n_routes, (
+              f"openapi operation count ({n_ops}) != route count ({n_routes}) "
+              f"— a path declares !=1 method; review app/main.py."
+          )
+          print(f"coverage gate OK: {n_paths} paths == {n_routes} routes, {n_ops} ops")
+        shell: python
       - name: Upload snapshot
         uses: actions/upload-artifact@v7
         with:

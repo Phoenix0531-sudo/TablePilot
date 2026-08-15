@@ -59,6 +59,18 @@ TablePilot 是一个**本地优先的脏表工作台**：把你磁盘上混乱�
 
 ## 快速开始
 
+### Windows 一键安装（预构建桌面壳）
+
+从 Releases 下载 CI 构建的二进制——本机无需 Python / Qt / 编译器：
+
+1. 从 [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe) 下载 **`TablePilot-v1.1.4.exe`**（约 1.0 MB）——它就是 `qt-desktop` CI 在干净的 Windows runner 上从 `Statistical_Analysis.pro` 构建出的同一个 `TablePilot.exe`。
+2. 双击启动桌面壳。
+3. 要使用画像 / 清洗 / 报告功能，让桌面壳指向一个正在运行的分析服务——要么 `docker compose up --build`（见下），要么 `uvicorn app.main:app --reload`（再下）。
+
+> 提示：该 exe 是独立 Windows 二进制；FastAPI 分析服务须单独运行，桌面壳才能调用 `/api/*`。
+
+### 从源码跑（分析服务 + 桌面壳）
+
 ```bash
 git clone https://github.com/Phoenix0531-sudo/TablePilot.git
 cd TablePilot/analysis_service

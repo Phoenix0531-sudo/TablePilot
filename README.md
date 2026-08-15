@@ -59,6 +59,18 @@ Desktop shell adds a Qt/C++ oriented experience on top of the same service surfa
 
 ## Quickstart
 
+### Windows one-click (prebuilt desktop shell)
+
+Grab the CI-built binary from Releases — no Python, Qt, or compiler needed on your machine:
+
+1. Download **`TablePilot-v1.1.4.exe`** (~1.0 MB) from [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe) — it is the same `TablePilot.exe` the `qt-desktop` CI builds from `Statistical_Analysis.pro` on a clean Windows runner.
+2. Double-click to launch the desktop shell.
+3. To use profile / clean / report features, point the shell at a running analysis service — either `docker compose up --build` (below) or `uvicorn app.main:app --reload` (further below).
+
+> Tip: the exe is a standalone Windows binary; the FastAPI analysis service must be running separately for the desktop shell to talk to `/api/*`.
+
+### From source (analysis service + desktop shell)
+
 ```bash
 git clone https://github.com/Phoenix0531-sudo/TablePilot.git
 cd TablePilot/analysis_service

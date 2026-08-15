@@ -14,7 +14,12 @@ name: Sync generated artifacts
 #                 - openapi      -> docs/openapi.json
 #                 - png          -> docs/screenshots/{banner,avatar}{,@2x}.png
 #                 - sample_json  -> docs/screenshots/api-analyze-sample.json
-#                 - all          -> all three
+#                 - readme_badge -> bump the version-pinned Windows download
+#                                  badge + Quickstart one-click subsection in
+#                                  README.md / README.zh-CN.md to release_tag.
+#                 - all          -> all three artifact families (not readme_badge)
+#   release_tag   target tag for readme_badge, e.g. v1.1.5. Required when
+#                 artifact_set == readme_badge; ignored otherwise.
 
 on:
   workflow_dispatch:
@@ -28,6 +33,11 @@ on:
           - openapi
           - png
           - sample_json
+          - readme_badge
+      release_tag:
+        description: Target tag for readme_badge (e.g. v1.1.5); ignored otherwise
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -102,6 +112,17 @@ jobs:
               p.write_text(json.dumps(d, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
           PY
 
+      - name: Bump README Windows download badge to a new release tag
+        if: github.event.inputs.artifact_set == 'readme_badge'
+        run: |
+          set -e
+          tag="${{ github.event.inputs.release_tag }}"
+          if [ -z "$tag" ]; then
+            echo "ERROR: release_tag is required when artifact_set=readme_badge" >&2
+            exit 3
+          fi
+          python scripts/bump_readme_version.py "$tag"
+
       - name: Detect changes
         id: diff
         run: |
@@ -141,6 +162,7 @@ jobs:
             - `openapi` -> `docs/openapi.json` (via `scripts/dump_openapi.py`)
             - `png`     -> `docs/screenshots/{banner,avatar}{,@2x}.png` (via `scripts/render_assets.py`)
             - `sample_json` -> `docs/screenshots/api-analyze-sample.json` (start uvicorn + `scripts/smoke.sh`)
+            - `readme_badge` -> bump the version-pinned Windows download badge + Quickstart one-click subsection in `README.md` / `README.zh-CN.md` to `release_tag` (via `scripts/bump_readme_version.py`; no source/dependency change)
 
             Source/dependencies are untouched. Review the shape against the
             README/docs claims, then merge. If the workflow reported

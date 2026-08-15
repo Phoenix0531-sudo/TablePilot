@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **README download badge for the Windows release exe.** Both `README.md` and `README.zh-CN.md` now lead the badge row with a Windows-branded download badge linking directly to `releases/download/v1.1.4/TablePilot-v1.1.4.exe` (the CI-built MSVC artifact pinned in the v1.1.4 release), so visitors land on a one-click Windows install instead of having to drill into the Releases tab. The badge is version-pinned to `v1.1.4` and will need a one-line bump on the next tagged release.
 
+- **README Quickstart now opens with a Windows one-click install subsection.** Both READMEs gained a `Windows one-click (prebuilt desktop shell)` / `Windows 一键安装（预构建桌面壳）` block right under the Quickstart heading: download `TablePilot-v1.1.4.exe` from Releases (~1.0 MB), double-click to launch, then point the shell at a running analysis service (`docker compose` or `uvicorn`) for the `/api/*` features. This closes the badge's conversion path — a visitor who clicks the badge lands on an exe they can immediately run, with the same binary the `qt-desktop` CI produces from `Statistical_Analysis.pro`.
+
+- **`sync-artifacts` workflow can now bump the README badge on a new tag.** A new `artifact_set: readme_badge` option (plus a `release_tag` input, e.g. `v1.1.5`) runs `scripts/bump_readme_version.py`, which rewrites every version-pinned occurrence in the badge + Quickstart one-click subsection of both READMEs from the current tag to the target and opens a PR. The script auto-detects the current pin, refuses to run if the two READMEs disagree, and is a clean no-op when `release_tag` equals the current pin (proven via a `readme_badge`/`v1.1.4` dispatch). This removes the manual one-line bump noted in the badge entry above — tagging the next release + dispatching this set keeps the READMEs in sync without hand-editing.
+
 ## [1.1.4] - 2026-08-14
 
 Patch release landing the Qt desktop CI and wiring the built exe into releases. No service or source changes; service component version is unchanged (`v0.5.0`).

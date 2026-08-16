@@ -21,28 +21,31 @@ BASE="${BASE:-http://localhost:8000}"
 DEMO_CSV="demo/quality_issues_demo.csv"
 
 say() { printf '\n\033[1;36m== %s ==\033[0m\n' "$*"; }
-field() { python3 -c "import sys,json; d=json.load(sys.stdin); print($1)"; }
+# $1 is a python expression referencing `d` (the parsed JSON). Pass it via
+# an env var so bash never has to quote-splice it into `python3 -c`; this
+# sidesteps every f-string / nested-quote / backslash hazard.
+field() { EXPR="$1" python3 -c 'import sys,json,os; d=json.load(sys.stdin); print(eval(os.environ["EXPR"]))'; }
 
 say "1/5  health check  (GET /health)"
-curl -fsS "$BASE/health" | field '"status"' | sed 's/^/  status: /'
+curl -fsS "$BASE/health" | field "d['status']" | sed 's/^/  status: /'
 
 say "2/5  list datasets  (GET /api/datasets)"
 curl -fsS "$BASE/api/datasets" \
-  | field '", ".join(f"{d[\"filename\"]} ({d[\"size_bytes\"]}B)" for d in d["datasets"])' \
+  | field "', '.join('{} ({}B)'.format(x['filename'], x['size_bytes']) for x in d['datasets'])" \
   | sed 's/^/  files: /'
 
 say "3/5  profile  (POST /api/analyze  → quality_issues_demo.csv)"
 PROFILE_JSON=$(curl -fsS -X POST "$BASE/api/analyze" \
   -H 'Content-Type: application/json' \
   -d '{"filename":"quality_issues_demo.csv"}')
-echo "$PROFILE_JSON" | field '"  rows: {}\ncols: {}\nmissing cells: {}".format(d["dataset"]["rows"], d["dataset"]["columns"], d["dataset"]["missing_cells"])'
-echo "$PROFILE_JSON" | field '"  quality score: {}".format(d.get("quality",{}).get("score","n/a"))'
-echo "$PROFILE_JSON" | field '"  anomalies: {}".format(len(d.get("anomalies",[])))'
+echo "$PROFILE_JSON" | field "'  rows: {}\n  cols: {}\n  missing cells: {}'.format(d['dataset']['rows'], d['dataset']['columns'], d['dataset']['missing_cells'])"
+echo "$PROFILE_JSON" | field "'  quality score: {}'.format(d.get('quality', {}).get('score', 'n/a'))"
+echo "$PROFILE_JSON" | field "'  anomalies: {}'.format(len(d.get('anomalies', [])))"
 
 say "4/5  clean preview  (POST /api/clean-preview-upload  → upload the same csv)"
 curl -fsS -X POST "$BASE/api/clean-preview-upload" \
   -F "file=@${DEMO_CSV}" \
-  | field '"  repairs available: {}\n  dup rows removed: {}\n  missing cells filled: {}\n  anomaly rows marked: {}".format(len(d["summary"]["repairs"]), d["summary"]["removed_duplicate_rows"], d["summary"]["filled_missing_cells"], d["summary"]["marked_anomaly_rows"])'
+  | field "'  repairs available: {}\n  dup rows removed: {}\n  missing cells filled: {}\n  anomaly rows marked: {}'.format(len(d['summary']['repairs']), d['summary']['removed_duplicate_rows'], d['summary']['filled_missing_cells'], d['summary']['marked_anomaly_rows'])"
 
 say "5/5  report  (POST /api/report/markdown)"
 REPORT=$(curl -fsS -X POST "$BASE/api/report/markdown" \

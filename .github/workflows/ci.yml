@@ -103,6 +103,20 @@ jobs:
         working-directory: analysis_service
         run: ruff check .
 
+  ruff-lint-root:
+    name: Ruff lint (scripts + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: python -m pip install --upgrade pip "ruff==0.6.9"
+      - name: ruff check (root config)
+        run: ruff check scripts tests
+
   openapi-export:
     name: OpenAPI snapshot (contract guard)
     runs-on: ubuntu-latest

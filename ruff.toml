@@ -1,0 +1,40 @@
+# Ruff configuration for repo-root Python (scripts/ and tests/).
+#
+# analysis_service/ has its own [tool.ruff] in analysis_service/pyproject.toml
+# (scoped to that subpackage, run by a job whose working-directory is
+# analysis_service). This config covers the standalone scripts and the
+# top-level tests/ suite, which live outside analysis_service/ and therefore
+# were not linted before. The rule set mirrors analysis_service/pyproject.toml
+# so the whole repo enforces one consistent style baseline.
+
+line-length = 100
+target-version = "py311"
+
+# analysis_service/ is linted by its own job + config; exclude it here so the
+# root job does not double-lint (and cannot disagree on rules).
+extend-exclude = [
+    "analysis_service",
+    "build",
+    "dist",
+    ".venv",
+    "Statistical_Analysis",   # Qt/C++ desktop shell, no Python
+    "site",                   # static Pages content
+]
+
+[lint]
+# Same conservative starter set as analysis_service: catch real bugs and obvious
+# style, not nitpicks. F (pyflakes), E (pycodestyle errors), I (isort),
+# UP (pyupgrade), B (bugbear), N (naming).
+select = ["E", "F", "I", "UP", "B", "N"]
+ignore = [
+    "E501",   # line too long (handled by formatter, not linter)
+    "B008",   # Do not perform function call in argument defaults
+    "N805",   # first-argument-method name (pydantic validators)
+    "N818",   # error suffix (we do not suffix exception names with Error)
+]
+
+[lint.per-file-ignores]
+# Top-level tests mirror analysis_service/tests: assert-heavy, may re-import.
+"tests/*.py" = ["E402", "F811"]
+# Scripts legitimately import after sys.path manipulation.
+"scripts/*.py" = ["E402"]

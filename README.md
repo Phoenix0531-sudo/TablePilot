@@ -134,7 +134,7 @@ flowchart LR
     Shell -->|drive actions| Service
 ```
 
-The **service is the contract**: every feature is an HTTP endpoint, so the desktop shell and the OpenAPI UI drive exactly the same surface. No hidden Python calls across the process boundary.
+The **service is the contract**: every feature is an HTTP endpoint, so the desktop shell and the OpenAPI UI drive exactly the same surface. No hidden Python calls across the process boundary. Each node above maps to a real route in [`docs/API.md`](docs/API.md) and `docs/openapi.json` (10 paths); the `demo-e2e` CI job exercises profile → clean-preview → report end-to-end against a live service.
 
 ### Repo layout
 
@@ -156,12 +156,12 @@ Real UI captures from a local run (also in `assets/screenshots/`):
 
 <table>
 <tr>
-<td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot desktop overview"></td>
-<td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="Chinese-language insights view"></td>
+<td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot desktop overview"><br><sub>Desktop workbench — overview with data preview and analysis brief</sub></td>
+<td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="Chinese-language insights view"><br><sub>中文洞察面板 — Chinese-language insight cards</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="Cleaned-vs-original compare view"></td>
-<td width="50%"><img src="docs/screenshots/preview.png" alt="Architecture schematic"></td>
+<td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="Cleaned-vs-original compare view"><br><sub>Clean-up comparison — dirty vs. cleaned side by side</sub></td>
+<td width="50%"><img src="docs/screenshots/preview.png" alt="Architecture schematic"><br><sub>Architecture schematic — files → service → shell/reports</sub></td>
 </tr>
 </table>
 

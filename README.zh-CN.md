@@ -129,7 +129,7 @@ flowchart LR
     Shell -->|驱动动作| Service
 ```
 
-**服务即契约**：每个功能都是一个 HTTP 端点，桌面壳与 OpenAPI UI 驱动的是完全相同的接口，进程边界之外没有任何隐藏的 Python 互调。
+**服务即契约**：每个功能都是一个 HTTP 端点，桌面壳与 OpenAPI UI 驱动的是完全相同的接口，进程边界之外没有任何隐藏的 Python 互调。上图每个节点都对应 [`docs/API.md`](docs/API.md) 与 `docs/openapi.json`（10 个路径）中的真实路由；`demo-e2e` CI 任务会对真实服务跑画像 → 清洗预览 → 报告的端到端验证。
 
 ### 仓库布局
 
@@ -151,12 +151,12 @@ tests/                 # pytest 测试套件（analysis_service + 独立 smoke�
 
 <table>
 <tr>
-<td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot 桌面总览"></td>
-<td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="中文洞察视图"></td>
+<td width="50%"><img src="assets/screenshots/tablepilot-desktop-overview.png" alt="TablePilot 桌面总览"><br><sub>桌面工作台 — 数据预览与分析概要</sub></td>
+<td width="50%"><img src="assets/screenshots/tablepilot-chinese-insights.png" alt="中文洞察视图"><br><sub>中文洞察面板 — 自然语言洞察卡片</sub></td>
 </tr>
 <tr>
-<td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="清洗前后对比视图"></td>
-<td width="50%"><img src="docs/screenshots/preview.png" alt="架构示意图"></td>
+<td width="50%"><img src="assets/screenshots/tablepilot-clean-compare.png" alt="清洗前后对比视图"><br><sub>清洗前后对比 — 脓表与清洗后并排</sub></td>
+<td width="50%"><img src="docs/screenshots/preview.png" alt="架构示意图"><br><sub>架构示意图 — 本地文件 → 服务 → 桌面壳与报告</sub></td>
 </tr>
 </table>
 

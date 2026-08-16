@@ -280,3 +280,32 @@ jobs:
       - name: Service log on failure
         if: failure()
         run: cat /tmp/uvicorn.log || true
+
+  bench:
+    name: Analysis micro-benchmark
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Install service deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r analysis_service/requirements.txt
+      - name: Run benchmark
+        run: |
+          python scripts/bench.py | tee /tmp/bench.txt
+      - name: Assert positive real numbers
+        run: |
+          python - <<'PY'
+          import re
+          out = open("/tmp/bench.txt").read()
+          keys = ["profile_demo_ms", "clean_preview_demo_ms",
+                  "markdown_report_demo_ms", "profile_synth_ms"]
+          for k in keys:
+              m = re.search(k + r"=([\d.]+)", out)
+              assert m and float(m.group(1)) > 0, f"{k} missing or zero"
+          print("all benchmark metrics are positive real numbers")
+          PY

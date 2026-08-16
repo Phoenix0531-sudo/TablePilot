@@ -90,6 +90,22 @@ Then open the auto-generated docs at <http://127.0.0.1:8000/docs> and try `GET /
 | Run the service in Docker | `docker compose up --build` then probe `GET /health` |
 | Build the desktop shell | `Statistical_Analysis/Statistical_Analysis.pro` with Qt 6 + MSVC (see `qt-desktop.yml`) or follow `packaging/` |
 
+### End-to-end in 60 seconds
+
+Once the service is up, one command walks one bundled table — `demo/quality_issues_demo.csv` (duplicate rows, missing cells, and a revenue outlier) — through the three core endpoint families (profile → clean-preview → report):
+
+```bash
+bash scripts/demo_e2e.sh
+```
+
+Expected highlights:
+
+- `GET /api/analyze` reports the dataset shape, a 0–100 quality score, and anomaly count.
+- `POST /api/clean-preview-upload` returns how many duplicate rows it would drop, missing cells it would fill, and anomaly rows it would flag — without mutating the file.
+- `POST /api/report/markdown` prints the first 20 lines of an explainable, copy-pasteable report.
+
+Point `BASE` at a different host if the service runs elsewhere (`BASE=http://localhost:9000 bash scripts/demo_e2e.sh`).
+
 Sample tables live in `demo/`. The Pages site renders at <https://phoenix0531-sudo.github.io/TablePilot/>.
 
 ## Architecture

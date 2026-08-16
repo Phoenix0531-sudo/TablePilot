@@ -89,6 +89,17 @@ uvicorn app.main:app --reload
 | 跑测试 | `pytest tests/ analysis_service/tests/` |
 | Docker 跑服务 | `docker compose up --build`，再探 `GET /health` |
 | 构建桌面壳 | 用 `Statistical_Analysis/Statistical_Analysis.pro` + Qt 6 + MSVC（见 `qt-desktop.yml`）或参考 `packaging/` |
+### 60 秒端到端体验
+
+服务跑起来后，一条命令把内置表 `demo/quality_issues_demo.csv`（含重复行、缺失值、离群值）走完三个核心端点（画像 → 清洗预览 → 报告）：
+```bash
+bash scripts/demo_e2e.sh
+```
+预期亮点：
+- `GET /api/analyze` 报表形状、0–100 质量评分与异常行数。
+- `POST /api/clean-preview-upload` 返回会删多少重复行、补多少缺失值、标多少异常行——不改原文件。
+- `POST /api/report/markdown` 打印可解释、可复制报告的前 20 行。
+服务跑在别处用 `BASE=http://localhost:9000 bash scripts/demo_e2e.sh`。
 
 示例表格在 `demo/`。项目页：<https://phoenix0531-sudo.github.io/TablePilot/>。
 

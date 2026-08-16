@@ -27,6 +27,7 @@
   <a href="#features">Features</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="#performance">Performance</a> ·
   <a href="#proof">Proof</a> ·
   <a href="#scope">Scope</a> ·
   <a href="#faq">FAQ</a> ·
@@ -164,6 +165,19 @@ Real UI captures from a local run (also in `assets/screenshots/`):
 <td width="50%"><img src="docs/screenshots/preview.png" alt="Architecture schematic"><br><sub>Architecture schematic — files → service → shell/reports</sub></td>
 </tr>
 </table>
+
+## Performance
+
+Measured by `scripts/bench.py` (median of 5 runs, in-process, on an `ubuntu-latest` CI runner — no server/network jitter). Run it locally with `python scripts/bench.py`.
+
+| Workload | Rows | Operation | Median wall-clock |
+| --- | --- | --- | --- |
+| `demo/quality_issues_demo.csv` (real) | 14 | profile | ~17 ms |
+| `demo/quality_issues_demo.csv` (real) | 14 | clean-preview | ~12 ms |
+| `demo/quality_issues_demo.csv` (real) | 14 | markdown report | ~16 ms |
+| synthetic re-sampling of the demo pattern | 9,996 | profile | ~346 ms |
+
+These are CI-observed numbers from a real run ([job log](https://github.com/Phoenix0531-sudo/TablePilot/actions/runs/31948192866)), not estimates. The `bench` CI job re-measures on every push and asserts each metric is a positive real number, so they cannot silently rot. The synthetic 10k-row row is a generated re-sampling of the real demo rows, not real user data — it only exists to show the scaling curve, not to claim a representative workload.
 
 ## Scope
 

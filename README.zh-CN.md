@@ -27,6 +27,7 @@
   <a href="#核心功能">核心功能</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#架构">架构</a> ·
+  <a href="#性能">性能</a> ·
   <a href="#实证">实证</a> ·
   <a href="#范围">范围</a> ·
   <a href="#faq">FAQ</a> ·
@@ -159,6 +160,19 @@ tests/                 # pytest 测试套件（analysis_service + 独立 smoke�
 <td width="50%"><img src="docs/screenshots/preview.png" alt="架构示意图"><br><sub>架构示意图 — 本地文件 → 服务 → 桌面壳与报告</sub></td>
 </tr>
 </table>
+
+## 性能
+
+由 `scripts/bench.py` 测得（5 次运行取中位数，进程内调用，在 `ubuntu-latest` CI 运行器上——无服务器/网络抖动）。本地可用 `python scripts/bench.py` 复现。
+
+| 负载 | 行数 | 操作 | 中位耗时 |
+| --- | --- | --- | --- |
+| `demo/quality_issues_demo.csv`（真实） | 14 | 画像 | ~17 ms |
+| `demo/quality_issues_demo.csv`（真实） | 14 | 清洗预览 | ~12 ms |
+| `demo/quality_issues_demo.csv`（真实） | 14 | Markdown 报告 | ~16 ms |
+| 对 demo 模式的合成重采样 | 9,996 | 画像 | ~346 ms |
+
+这些是真实 CI 运行（[job 日志](https://github.com/Phoenix0531-sudo/TablePilot/actions/runs/31948192866)）观测到的数字，不是估算。`bench` CI 任务在每次推送时重新测量并断言每个指标为正实数，不会默默失效。那一行合成的 10k 行是对真实 demo 行的重采样生成数据，不是真实用户数据——只为展示Scaling曲线，不代表典型工作负载。
 
 ## 范围
 

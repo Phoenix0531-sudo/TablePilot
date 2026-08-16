@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.1.5] - 2026-08-16
 
 ### Added
 
@@ -36,6 +36,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **README professionalism pass (8 reviewer findings).** Both READMEs tidied: (1) removed the duplicate plain-text title under the banner SVG so the hero isn't two stacked titles; (2) re-indented the misaligned `qt-desktop` badge to match the other five badges' 2-space column; (3) extended the top nav to cover `#proof` and `#contributing` (previously only Overview/Features/Quickstart/Architecture/Scope/FAQ were linked); (4) added a `python -m venv .venv` hint to the from-source Quickstart so users don't install into system Python; (5) fixed the Quickstart table's "Build the desktop shell" row which pointed at `packaging/` and contradicted the Architecture section — it now names `Statistical_Analysis/Statistical_Analysis.pro` + Qt 6 + MSVC (with `packaging/` as the secondary path); (6) annotated the bare `tests/` line in the repo layout with `# pytest suite (analysis_service + standalone smoke)` to match the per-line comment pattern; (7) added a "See also: CHANGELOG · SECURITY · API" link row under Contributing; (8) updated `packaging/`'s own layout comment to `desktop packaging / build scripts`.
 
 - **README Proof screenshots now carry visible captions; Architecture diagram now evidence-anchored (professionalism pass 2).** Two honesty gaps closed. (a) The Proof section's four `<table>`-cell images only exposed meaning through `alt=` text (screen readers / hover-tooltips only); a scrolling reader saw "real UI captures" but no per-shot explanation. Both READMEs now add a `<sub>` caption row under each image naming what it demonstrates (desktop overview / Chinese insight cards / dirty-vs-clean side-by-side / architecture schematic), matching the `<figcaption>` already present in `site/index.html`. (b) The mermaid Architecture diagram labeled nodes with real function/endpoint names but never pointed back to the contract artifact; both READMEs now add a sentence stating each node maps to a real route in `docs/API.md` + `docs/openapi.json` (10 paths) and that the `demo-e2e` CI job exercises profile → clean-preview → report end-to-end against a live service — turning the diagram from "self-praise" into "verifiable claim".
+
+- **Lint coverage extended to repo-root `scripts/` and `tests/` (honesty widening).** Previously `ruff` only ran scoped to `analysis_service/` (its own `[tool.ruff]` in `analysis_service/pyproject.toml`, run by a CI job whose `working-directory` is `analysis_service`). The standalone `scripts/` (`bench.py`, `bump_readme_version.py`, `dump_openapi.py`, `render_assets.py`) and the top-level `tests/` suite lived outside that scope and were never linted — a real gap, since those scripts are the ones reviewers and Dependabot-touchable automation run. New `ruff.toml` at the repo root mirrors the `analysis_service` rule set (conservative starter: E/F/I/UP/B/N, same ignores) but is scoped to `scripts/` and `tests/` and excludes `analysis_service/` (already covered), the Qt/C++ `Statistical_Analysis/` shell, and static `site/` content. A new `ruff-lint-root` CI job runs `ruff check scripts tests` on every push.
+
+### Changed
+
+- **Dependency bumps merged via Dependabot (statically risk-assessed, not blind).** `uvicorn[standard]` 0.52.1 → 0.52.2 (patch: fixes bodyless-request receives and improves HTTP/1 request parsing performance) and `actions/download-artifact` v7 → v8 in `qt-desktop.yml`. The `download-artifact` v8 bump is a *major* with two breaking changes — (1) hash-mismatch now errors by default instead of warning; (2) the action no longer auto-unzips non-zipped downloads — but both were statically verified against the repo's actual usage (standard zipped upload artifact + `find`-locate, no `digest-mismatch` override, no raw-file downloads), so they are forward-compatible. No source code changed; the `release-assets` job's behavior is unchanged.
+
+### Fixed
+
+- **Removed two unused imports in `tests/` that the new root lint surfaced (F401).** `import importlib` in `tests/test_smoke.py` and `import importlib.util` in `tests/test_analysis_import.py` were never referenced. They were invisible before because no lint covered `tests/`; the first run of `ruff-lint-root` flagged them and they were removed. This is the诚实 payoff of widening lint coverage — a dead import the eyeball missed.
+
 
 ## [1.1.4] - 2026-08-14
 

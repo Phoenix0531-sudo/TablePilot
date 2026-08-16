@@ -1,5 +1,4 @@
 """Smoke tests — keep green on empty / thin packages."""
-import importlib
 import sys
 from pathlib import Path
 

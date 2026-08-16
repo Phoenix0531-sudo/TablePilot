@@ -6,14 +6,14 @@
 
 <p align="center">
   <img src="docs/screenshots/avatar.svg" width="64" alt="TablePilot icon" align="top">
-  <strong>TablePilot — local-first messy-table workbench.<br>Profile, clean, plan, and report over Excel / CSV / TXT.</strong>
+  <strong>Local-first messy-table workbench — profile, clean, plan, and report over Excel / CSV / TXT, without shipping your data to the cloud.</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe"><img src="https://img.shields.io/badge/Download_Windows_TablePilot_v1.1.4-0078D6.svg?logo=windows&logoColor=white" alt="Download TablePilot for Windows (v1.1.4)"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml/badge.svg" alt="Docker analysis-service"></a>
-<a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt desktop build"></a>
+  <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt desktop build"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
@@ -27,8 +27,10 @@
   <a href="#features">Features</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#architecture">Architecture</a> ·
+  <a href="#proof">Proof</a> ·
   <a href="#scope">Scope</a> ·
   <a href="#faq">FAQ</a> ·
+  <a href="#contributing">Contributing</a> ·
   <a href="README.zh-CN.md">中文</a>
 </p>
 
@@ -73,6 +75,7 @@ Grab the CI-built binary from Releases — no Python, Qt, or compiler needed on 
 ```bash
 git clone https://github.com/Phoenix0531-sudo/TablePilot.git
 cd TablePilot/analysis_service
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
@@ -85,7 +88,7 @@ Then open the auto-generated docs at <http://127.0.0.1:8000/docs> and try `GET /
 | Browse API / try endpoints | open `http://127.0.0.1:8000/docs` |
 | Run tests | `pytest tests/ analysis_service/tests/` |
 | Run the service in Docker | `docker compose up --build` then probe `GET /health` |
-| Build the desktop shell | follow `packaging/` (CMake / project scripts) |
+| Build the desktop shell | `Statistical_Analysis/Statistical_Analysis.pro` with Qt 6 + MSVC (see `qt-desktop.yml`) or follow `packaging/` |
 
 Sample tables live in `demo/`. The Pages site renders at <https://phoenix0531-sudo.github.io/TablePilot/>.
 
@@ -123,12 +126,12 @@ The **service is the contract**: every feature is an HTTP endpoint, so the deskt
 analysis_service/      # FastAPI service (primary automated surface), v0.5.0
 Statistical_Analysis/  # Qt / C++ desktop shell sources (main.cpp, mainwindow.*, .pro)
 demo/                  # sample tables
-packaging/             # desktop packaging
+packaging/             # desktop packaging / build scripts
 assets/screenshots/    # real UI captures
 docs/                  # docs + project-page sources
 site/                  # GitHub Pages content
 docker-compose.yml
-tests/
+tests/                 # pytest suite (analysis_service + standalone smoke)
 ```
 
 ## Proof
@@ -174,6 +177,8 @@ Nowhere by default. Files are loaded from a local data directory (or an upload) 
 ## Contributing
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep it **local-first** (no remote uploads in the default path), **evidence-grounded** (agent/report output derives from the actual profiled data), and **honest in docs** (don't describe a capability the code doesn't ship). Run `python -m pytest -q analysis_service/tests` before opening a PR.
+
+See also: [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [docs/API.md](docs/API.md)
 
 ## License
 

@@ -6,14 +6,14 @@
 
 <p align="center">
   <img src="docs/screenshots/avatar.svg" width="64" alt="TablePilot icon" align="top">
-  <strong>TablePilot —— 本地优先的脏表工作台。<br>对 Excel / CSV / TXT 做画像、清洗、方案与报告。</strong>
+  <strong>本地优先的脏表工作台——对 Excel / CSV / TXT 做画像、清洗、方案与报告，不把数据送到云端。</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe"><img src="https://img.shields.io/badge/下载_Windows_TablePilot_v1.1.4-0078D6.svg?logo=windows&logoColor=white" alt="下载 Windows 版 TablePilot（v1.1.4）"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml/badge.svg" alt="Docker 分析服务"></a>
-<a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt 桌面端构建"></a>
+  <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt 桌面端构建"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
@@ -27,8 +27,10 @@
   <a href="#核心功能">核心功能</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#架构">架构</a> ·
+  <a href="#实证">实证</a> ·
   <a href="#范围">范围</a> ·
   <a href="#faq">FAQ</a> ·
+  <a href="#贡献">贡献</a> ·
   <a href="README.md">English</a>
 </p>
 
@@ -73,6 +75,7 @@ TablePilot 是一个**本地优先的脏表工作台**：把你磁盘上混乱�
 ```bash
 git clone https://github.com/Phoenix0531-sudo/TablePilot.git
 cd TablePilot/analysis_service
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
@@ -85,7 +88,7 @@ uvicorn app.main:app --reload
 | 浏览 API / 试用端点 | 打开 `http://127.0.0.1:8000/docs` |
 | 跑测试 | `pytest tests/ analysis_service/tests/` |
 | Docker 跑服务 | `docker compose up --build`，再探 `GET /health` |
-| 构建桌面壳 | 见 `packaging/`（CMake / 项目脚本） |
+| 构建桌面壳 | 用 `Statistical_Analysis/Statistical_Analysis.pro` + Qt 6 + MSVC（见 `qt-desktop.yml`）或参考 `packaging/` |
 
 示例表格在 `demo/`。项目页：<https://phoenix0531-sudo.github.io/TablePilot/>。
 
@@ -123,12 +126,12 @@ flowchart LR
 analysis_service/      # FastAPI 服务（主要自动化接口），v0.5.0
 Statistical_Analysis/  # Qt / C++ 桌面壳源码（main.cpp、mainwindow.*、.pro）
 demo/                  # 示例表格
-packaging/             # 桌面打包
+packaging/             # 桌面打包 / 构建脚本
 assets/screenshots/    # 真实 UI 截图
 docs/                  # 文档 + 项目页源
 site/                  # GitHub Pages 内容
 docker-compose.yml
-tests/
+tests/                 # pytest 测试套件（analysis_service + 独立 smoke）
 ```
 
 ## 实证
@@ -174,6 +177,8 @@ tests/
 ## 贡献
 
 欢迎贡献 —— 见 [CONTRIBUTING.md](CONTRIBUTING.md)。简版原则：**本地优先**（默认路径不上传远程）、**证据为本**（agent/report 产物源自真实画像数据）、**文档诚实**（不描述代码没有的能力）。提交 PR 前跑 `python -m pytest -q analysis_service/tests`。
+
+另见：[CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [docs/API.md](docs/API.md)
 
 ## 许可证
 

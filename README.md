@@ -1,6 +1,5 @@
 <p align="center">
   <picture>
-    <source srcset="docs/screenshots/banner.png 1x, docs/screenshots/banner@2x.png 2x" type="image/png">
     <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot — local-first messy-table analysis workbench: profile, clean, plan, and report over Excel/CSV/TXT">
   </picture>
 </p>
@@ -18,7 +17,7 @@
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
-  <img src="https://img.shields.io/badge/FastAPI-0.141-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/FastAPI-0.141.1-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/Qt-C++-41CD52.svg?logo=qt&logoColor=white" alt="Qt / C++">
   <img src="https://img.shields.io/badge/Local--first-files%20only-0F172A.svg" alt="Local-first — files only">
 </p>
@@ -63,7 +62,7 @@ Desktop shell adds a Qt/C++ oriented experience on top of the same service surfa
 
 Grab the CI-built binary from Releases — no Python, Qt, or compiler needed on your machine:
 
-1. Download **`TablePilot-v1.1.4.exe`** (~1.0 MB) from [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe) — it is the same `TablePilot.exe` the `qt-desktop` CI builds from `Statistical_Analysis.pro` on a clean Windows runner.
+1. Download **[TablePilot-v1.1.4.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe)** (~1.0 MB) from the [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases) page — it is the same `TablePilot.exe` the `qt-desktop` CI builds from `Statistical_Analysis.pro` on a clean Windows runner.
 2. Double-click to launch the desktop shell.
 3. To use profile / clean / report features, point the shell at a running analysis service — either `docker compose up --build` (below) or `uvicorn app.main:app --reload` (further below).
 

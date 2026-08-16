@@ -1,6 +1,5 @@
 <p align="center">
   <picture>
-    <source srcset="docs/screenshots/banner.png 1x, docs/screenshots/banner@2x.png 2x" type="image/png">
     <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot —— 本地优先的脏表分析工作台：对 Excel/CSV/TXT 做画像、清洗、方案与报告">
   </picture>
 </p>
@@ -18,7 +17,7 @@
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/pages.yml/badge.svg" alt="Pages"></a>
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT">
   <img src="https://img.shields.io/badge/Python-3.11-3776AB.svg?logo=python&logoColor=white" alt="Python 3.11">
-  <img src="https://img.shields.io/badge/FastAPI-0.141-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/FastAPI-0.141.1-009688.svg?logo=fastapi&logoColor=white" alt="FastAPI">
   <img src="https://img.shields.io/badge/Qt-C++-41CD52.svg?logo=qt&logoColor=white" alt="Qt / C++">
   <img src="https://img.shields.io/badge/本地优先-仅文件-0F172A.svg" alt="Local-first — files only">
 </p>
@@ -63,7 +62,7 @@ TablePilot 是一个**本地优先的脏表工作台**：把你磁盘上混乱�
 
 从 Releases 下载 CI 构建的二进制——本机无需 Python / Qt / 编译器：
 
-1. 从 [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe) 下载 **`TablePilot-v1.1.4.exe`**（约 1.0 MB）——它就是 `qt-desktop` CI 在干净的 Windows runner 上从 `Statistical_Analysis.pro` 构建出的同一个 `TablePilot.exe`。
+1. 从 [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases) 页下载 **[TablePilot-v1.1.4.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe)**（约 1.0 MB）——它就是 `qt-desktop` CI 在干净的 Windows runner 上从 `Statistical_Analysis.pro` 构建出的同一个 `TablePilot.exe`。
 2. 双击启动桌面壳。
 3. 要使用画像 / 清洗 / 报告功能，让桌面壳指向一个正在运行的分析服务——要么 `docker compose up --build`（见下），要么 `uvicorn app.main:app --reload`（再下）。
 

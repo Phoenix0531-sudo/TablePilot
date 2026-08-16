@@ -19,6 +19,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - **Qt desktop shell gained a self-contained Web Research dock (Exa search).** New `Statistical_Analysis/webresearchdock.{h,cpp}` adds a `QDockWidget` with a query box + results list that calls the Exa Search API (`POST https://api.exa.ai/search`) via `QNetworkAccessManager`. The `EXA_API_KEY` is read live from the environment at search time (never stored in source); if it is unset the dock shows a friendly "set EXA_API_KEY" hint and fires no network request, so the shell remains usable unconfigured. Results open in the system browser on double-click (also a right-click menu: open / copy URL). A toolbar button toggles the dock; the label and dock strings retranslate with the EN/中文 language switch. The `.pro` adds `webresearchdock.{h,cpp}` to `SOURCES`/`HEADERS` (`network` module was already linked). Verified by the `qt-desktop` CI build producing `TablePilot.exe` on a clean MSVC runner.
 
+### Fixed
+
+- **README banner now renders the SVG instead of a raster PNG that always won `<picture>` source selection (AI review).** The `<picture>` had a PNG `<source srcset="banner.png 1x, banner@2x.png 2x" type="image/png">` with no `media` condition, so it matched in every browser and the vector `banner.svg` `<img>` fallback never rendered — the hero was always the raster PNG, defeating the point of an SVG banner. Both READMEs now keep only the SVG `<img>`, so GitHub renders crisp vectors at any DPI. This also clears a historical display artifact where an earlier `@2x` filename was rendered as a redacted-email placeholder on-screen.
+
+- **README FastAPI badge now shows the exact pinned version `0.141.1` (AI review).** The shields.io label was truncated to `FastAPI-0.141`, masking the real `fastapi==0.141.1` pin in `analysis_service/requirements.txt`. Both READMEs updated to `FastAPI-0.141.1`.
+
+- **README Quickstart `[Releases]` link no longer fires a direct exe download (AI review).** The clickable `[Releases]` text was wired to the raw `releases/download/v1.1.4/TablePilot-v1.1.4.exe` URL, so clicking it downloaded the binary instead of opening the Releases page. Both READMEs now link `[Releases]` to the `/releases` page and make the downloadable filename the exe link. `scripts/bump_readme_version.py` stays compatible — `detect_current`'s `releases/download/vX.Y.Z/TablePilot-vX.Y.Z.exe` regex still matches the exe download link, and the one-click-block bump still covers the prose.
+
 ## [1.1.4] - 2026-08-14
 
 Patch release landing the Qt desktop CI and wiring the built exe into releases. No service or source changes; service component version is unchanged (`v0.5.0`).

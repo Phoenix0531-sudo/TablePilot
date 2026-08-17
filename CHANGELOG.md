@@ -34,6 +34,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the PR body. Closes #15 — this fills the gap between the static curl check and
   the optional `agent_browser` step that needs the upstream CLI installed.
 
+- **README hero `banner.svg` / `avatar.svg` now use proper `<picture>` with SVG
+  source + PNG `@2x` fallback.** Previously the hero `<picture>` held only an SVG
+  `<img>`, so the PNG and `@2x` renders produced by the `assets-render` CI job
+  were dead weight — never referenced. Now `<source type="image/svg+xml">` serves
+  SVG to capable browsers (crisp at any scale) and the `<img>` falls back to
+  `banner.png` / `avatar.png` with `1x`/`2x` density descriptors for environments
+  without SVG support. Both `README.md` and `README.zh-CN.md` updated.
+
+- **"End-to-end in 60 seconds" folded into `<details>` in both READMEs.** The
+  Quickstart section previously showed the full demo command, expected
+  highlights, and `BASE` env-var note on the first screen, raising information
+  density for first-time readers. Now collapsed behind a single summary line;
+  content unchanged and still searchable.
+
 ### Fixed
 
 - **README nav anchors now match section order.** In both `README.md` and

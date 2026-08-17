@@ -1,11 +1,15 @@
 <p align="center">
   <picture>
-    <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot — local-first messy-table analysis workbench: profile, clean, plan, and report over Excel/CSV/TXT">
+    <source type="image/svg+xml" srcset="docs/screenshots/banner.svg">
+    <img src="docs/screenshots/banner.png" srcset="docs/screenshots/banner.png 1x, docs/screenshots/banner@2x 2x" width="100%" alt="TablePilot — local-first messy-table analysis workbench: profile, clean, plan, and report over Excel/CSV/TXT">
   </picture>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/avatar.svg" width="64" alt="TablePilot icon" align="top">
+  <picture>
+    <source type="image/svg+xml" srcset="docs/screenshots/avatar.svg">
+    <img src="docs/screenshots/avatar.png" srcset="docs/screenshots/avatar.png 1x, docs/screenshots/avatar@2x 2x" width="64" alt="TablePilot icon" align="top">
+  </picture>
   <strong>Local-first messy-table workbench — profile, clean, plan, and report over Excel / CSV / TXT, without shipping your data to the cloud.</strong>
 </p>
 
@@ -94,6 +98,9 @@ Then open the auto-generated docs at <http://127.0.0.1:8000/docs> and try `GET /
 
 ### End-to-end in 60 seconds
 
+<details>
+<summary>Walk the bundled demo table through profile → clean-preview → report</summary>
+
 Once the service is up, one command walks one bundled table — `demo/quality_issues_demo.csv` (duplicate rows, missing cells, and a revenue outlier) — through the three core endpoint families (profile → clean-preview → report):
 
 ```bash
@@ -107,6 +114,8 @@ Expected highlights:
 - `POST /api/report/markdown` prints the first 20 lines of an explainable, copy-pasteable report.
 
 Point `BASE` at a different host if the service runs elsewhere (`BASE=http://localhost:9000 bash scripts/demo_e2e.sh`).
+
+</details>
 
 Sample tables live in `demo/`. The Pages site renders at <https://phoenix0531-sudo.github.io/TablePilot/>.
 

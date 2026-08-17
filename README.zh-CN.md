@@ -1,11 +1,15 @@
 <p align="center">
   <picture>
-    <img src="docs/screenshots/banner.svg" width="100%" alt="TablePilot —— 本地优先的脏表分析工作台：对 Excel/CSV/TXT 做画像、清洗、方案与报告">
+    <source type="image/svg+xml" srcset="docs/screenshots/banner.svg">
+    <img src="docs/screenshots/banner.png" srcset="docs/screenshots/banner.png 1x, docs/screenshots/banner@2x 2x" width="100%" alt="TablePilot —— 本地优先的脏表分析工作台：对 Excel/CSV/TXT 做画像、清洗、方案与报告">
   </picture>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/avatar.svg" width="64" alt="TablePilot icon" align="top">
+  <picture>
+    <source type="image/svg+xml" srcset="docs/screenshots/avatar.svg">
+    <img src="docs/screenshots/avatar.png" srcset="docs/screenshots/avatar.png 1x, docs/screenshots/avatar@2x 2x" width="64" alt="TablePilot icon" align="top">
+  </picture>
   <strong>本地优先的脏表工作台——对 Excel / CSV / TXT 做画像、清洗、方案与报告，不把数据送到云端。</strong>
 </p>
 
@@ -93,6 +97,9 @@ uvicorn app.main:app --reload
 | 构建桌面壳 | 用 `Statistical_Analysis/Statistical_Analysis.pro` + Qt 6 + MSVC（见 `qt-desktop.yml`）或参考 `packaging/` |
 ### 60 秒端到端体验
 
+<details>
+<summary>走一遍内置 demo 表：画像 → 清洗预览 → 报告</summary>
+
 服务跑起来后，一条命令把内置表 `demo/quality_issues_demo.csv`（含重复行、缺失值、离群值）走完三个核心端点（画像 → 清洗预览 → 报告）：
 ```bash
 bash scripts/demo_e2e.sh
@@ -102,6 +109,8 @@ bash scripts/demo_e2e.sh
 - `POST /api/clean-preview-upload` 返回会删多少重复行、补多少缺失值、标多少异常行——不改原文件。
 - `POST /api/report/markdown` 打印可解释、可复制报告的前 20 行。
 服务跑在别处用 `BASE=http://localhost:9000 bash scripts/demo_e2e.sh`。
+
+</details>
 
 示例表格在 `demo/`。项目页：<https://phoenix0531-sudo.github.io/TablePilot/>。
 

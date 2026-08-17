@@ -1,0 +1,118 @@
+name: Publish analysis_service to PyPI
+
+# Publishes the `tablepilot-analysis-service` Python package (built from
+# analysis_service/) to PyPI using OpenID Connect (OIDC) trusted publishing —
+# no long-lived PyPI API token is stored as a repository secret.
+#
+# WHY workflow_dispatch (manual), not tag-triggered:
+#   The repository release tags (v1.1.x) track the DESKTOP SHELL; the Python
+#   package version lives independently in analysis_service/pyproject.toml
+#   (currently 0.5.0). Auto-publishing on every v* tag would attempt to
+#   re-upload the same 0.5.0 wheel and PyPI rejects duplicate versions. So a
+#   maintainer bumps pyproject.toml's version first, commits, then triggers
+#   this workflow manually — that one upload per version is deliberate.
+#
+# ONE-TIME SETUP (human, on PyPI — the assistant cannot do this):
+#   1. Own the `tablepilot-analysis-service` project on PyPI (create it if the
+#      name is free, or ask the current owner to add you).
+#   2. Under the project → "Publishing" → add a GitHub Actions trusted
+#      publisher with EXACTLY:
+#        PyPI Project Owner:  <your PyPI user or TablePilot org>
+#        GitHub repository:   Phoenix0531-sudo/TablePilot
+#        Workflow filename:    publish-pypi.yml
+#        Environment:          pypi
+#   Until that registration exists this workflow will fail at the publish step
+#   with a trusted-publisher mismatch — that is expected on the first run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "publish" to confirm the PyPI upload (irreversible)'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-pypi
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build sdist + wheel
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install build backend
+        run: python -m pip install --upgrade pip "setuptools>=69" wheel build
+
+      - name: Build sdist + wheel
+        working-directory: analysis_service
+        run: python -m build --sdist --wheel --no-isolation --outdir dist/
+
+      - name: Verify dynamic deps resolved into the wheel METADATA
+        # Mirrors the package-metadata gate in ci.yml: assert the wheel really
+        # carries the requirements.txt dependencies, so we never publish a
+        # package whose metadata silently lost its deps.
+        working-directory: analysis_service
+        run: |
+          python - <<'PY'
+          import glob, zipfile, re
+          whls = glob.glob('dist/*.whl')
+          assert whls, "no wheel produced"
+          z = zipfile.ZipFile(whls[0])
+          meta_name = next(n for n in z.namelist() if n.endswith('.dist-info/METADATA'))
+          md = z.read(meta_name).decode()
+          reqs = re.findall(r'^Requires-Dist:\s*(.+)$', md, re.M)
+          got = {r.split('==')[0].strip().split('[')[0] for r in reqs}
+          expected = {'fastapi', 'uvicorn', 'pandas', 'openpyxl', 'xlrd', 'python-multipart'}
+          missing = expected - got
+          assert not missing, f"dynamic deps missing from wheel METADATA: {missing}"
+          assert 'Version:' in md, "no Version header in METADATA"
+          print(f"verified wheel carries {len(reqs)} Requires-Dist: {sorted(got)}")
+          PY
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@v7
+        with:
+          name: pypi-dist
+          path: analysis_service/dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    name: Publish to PyPI (trusted publishing)
+    needs: build
+    runs-on: ubuntu-latest
+    # The `pypi` environment is what the PyPI trusted publisher is registered
+    # against; creating it in repo Settings → Environments is optional but
+    # recommended (it lets you add reviewers/branch protection later).
+    environment: pypi
+    timeout-minutes: 10
+    if: github.event.inputs.confirm == 'publish'
+    permissions:
+      # OIDC trusted publishing requires write access to mint an id token.
+      id-token: write
+      contents: read
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: pypi-dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          # Fail loudly if the version already exists (don't silently skip),
+          # so the maintainer knows to bump pyproject.toml before retrying.
+          skip-existing: false

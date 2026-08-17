@@ -83,7 +83,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the AGL framework that the Qt 6.8 `macx-clang` mkspec still links against;
   Qt 6.8 `clang_64`, `make`, produces `TablePilot.app`, with `sdk_no_version_check`
   and `-Wno-error=implicit-function-declaration` to handle the `qyieldcpu.h`
-  `__yield` stub-vs-newer-SDK mismatch) and `build-linux` (uses the **Ubuntu
+  `__yield` stub-vs-newer-SDK mismatch, and a portable bg/sleep/kill smoke
+  pattern because macOS has no GNU `timeout`) and `build-linux` (uses the **Ubuntu
   archive `qt6-base-dev`** because `aqt` cannot install Qt 6.8.x for Linux desktop —
   Qt stopped shipping a freely-downloadable `gcc_64` offline package after 6.7,
   so `aqt install-qt linux desktop 6.8.* gcc_64` fails with `packages ['qt_base']
@@ -94,6 +95,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   The `.pro` is already cross-platform — the only Windows-specific flag
   (`-Wa,-mbig-obj`) is guarded by `win32-g++` scope — so no source changes were
   expected or made; the macOS/Linux fixes are pure toolchain/SDK accommodation.
+
+- **`publish-pypi.yml` workflow added for OIDC trusted publishing of the
+  `tablepilot-analysis-service` package.** Manual `workflow_dispatch` only (the
+  repo release tags track the desktop shell, not the Python package version in
+  `pyproject.toml`, so tag-triggered publishing would re-upload the same version
+  and PyPI would reject it). The build job produces sdist + wheel and re-runs the
+  dynamic-deps sanity check from the `package-metadata` gate; the publish job uses
+  `pypa/gh-action-pypi-publish` with `id-token: write` against a `pypi`
+  environment — no long-lived API token stored as a secret. A `confirm: publish`
+  input guards against accidental triggers. First real publish requires a
+  one-time human setup on PyPI (register a trusted publisher pointing at this
+  repo + `publish-pypi.yml` + the `pypi` environment); the workflow header
+  documents the exact values to enter. Until that registration exists the
+  publish step is expected to fail with a trusted-publisher mismatch.
 
 ### Fixed
 

@@ -5,6 +5,18 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **CONTRIBUTING.md: added a manual screenshot SOP (plain browser, no tooling).**
+  A new "Manual screenshot" subsection under "Visual verification of the project
+  page" walks through capturing a full-page screenshot of the Pages site with any
+  desktop browser at a reproducible 1280×800 (or mobile preset) viewport, naming it
+  `site/screenshots/pages-<desktop|mobile>-<YYYY-MM-DD>.png`, and referencing it in
+  the PR body. Closes #15 — this fills the gap between the static curl check and
+  the optional `agent_browser` step that needs the upstream CLI installed.
+
 ## [1.1.6] - 2026-08-17
 
 ### Fixed

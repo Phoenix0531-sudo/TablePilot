@@ -77,6 +77,33 @@ curl -s https://phoenix0531-sudo.github.io/TablePilot/banner.svg | grep -q viewB
   && echo 'banner viewBox: ok'
 ```
 
+### Manual screenshot (plain browser, no tooling)
+
+If you don't have the `agent-browser` CLI installed, you can still capture a
+rendered screenshot of the Pages site with any desktop browser. No Pi tooling,
+no Node install, no browser extension — just Chrome / Firefox / Edge.
+
+1. Open `https://phoenix0531-sudo.github.io/TablePilot/` in your browser.
+2. Open DevTools (`F12` / `Ctrl+Shift+I` / macOS `Cmd+Opt+I`) and toggle the
+   device toolbar (`Ctrl+Shift+M` / macOS `Cmd+Shift+M`) so you can set a
+   reproducible viewport. Use **1280×800** for the desktop shot.
+3. Let the page settle (the hero `<picture>` loads SVG then falls back to PNG),
+   then run a full-page capture:
+   - **Chrome/Edge**: DevTools → Command Menu (`Ctrl+Shift+P` / macOS
+     `Cmd+Shift+P`) → run **"Capture full size screenshot"**.
+   - **Firefox**: right-click the page → **Take Screenshot** → **Save full
+     page**.
+4. Save the file as `site/screenshots/pages-desktop-<YYYY-MM-DD>.png`
+   (e.g. `pages-desktop-2026-08-17.png`). For a mobile shot, set the device
+   toolbar to a phone preset (e.g. 390×844) and name it
+   `pages-mobile-<YYYY-MM-DD>.png`.
+5. Reference the screenshot in your PR description to show the render. Screenshots
+   under `site/screenshots/` are committed only if they replace a stale one —
+   otherwise keep them local and link them from the PR body.
+
+The committed `site/screenshots/` set is the source of truth for the README
+Proof section; do not delete an existing screenshot without replacing it.
+
 ### Browser screenshot (optional, needs upstream `agent-browser` CLI)
 
 For a real rendered screenshot under Pi's `agent_browser` tool, install the upstream

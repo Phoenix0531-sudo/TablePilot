@@ -7,14 +7,11 @@ name = "tablepilot-analysis-service"
 version = "0.5.0"
 description = "FastAPI planner and profiling service for TablePilot."
 requires-python = ">=3.11"
-dependencies = [
-    "fastapi==0.115.6",
-    "uvicorn[standard]==0.34.0",
-    "pandas==2.2.3",
-    "openpyxl==3.1.5",
-    "xlrd==2.0.1",
-    "python-multipart==0.0.20",
-]
+# Dependencies are read dynamically from requirements.txt (see
+# [tool.setuptools.dynamic] below) so there is a single source of truth and
+# the package metadata can never drift from the pinned set that CI/Docker
+# actually install. requirements.txt is the live, Dependabot-tended pin.
+dynamic = ["dependencies"]
 
 [project.optional-dependencies]
 dev = [
@@ -25,6 +22,12 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.setuptools.dynamic]
+# Single source of truth: analysis_service/requirements.txt is the pinned
+# dependency set exercised by Docker and CI; the package metadata reads from
+# it so `pip install analysis_service/` resolves the same versions.
+dependencies = { file = ["requirements.txt"] }
 
 [tool.ruff]
 line-length = 100

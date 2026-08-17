@@ -5,6 +5,16 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- **`analysis_service/pyproject.toml` no longer drifts from `requirements.txt` (single source of truth).** The `[project].dependencies` static list had fallen behind `analysis_service/requirements.txt` — pyproject pinned `fastapi==0.115.6`, `uvicorn==0.34.0`, `pandas==2.2.3`, `xlrd==2.0.1`, `python-multipart==0.0.20` while the live, CI/Docker-exercised `requirements.txt` pinned `0.141.1`, `0.52.2`, `3.0.5`, `2.0.2`, `0.0.32` (openpyxl already matched at `3.1.5`). Rather than just re-sync the static list (which would re-drift on the next Dependabot bump), the package metadata now reads dependencies dynamically via `[tool.setuptools.dynamic] dependencies = { file = ["requirements.txt"] }` with `[project] dynamic = ["dependencies"]` — `requirements.txt` is now the only pinned runtime-dep declaration, so the two can never disagree again.
+
+### Added
+
+- **CI guard for pyproject dynamic-dependency resolution (`package-metadata` job).** Since nothing in CI actually does `pip install analysis_service/` today, the dynamic-dependency wiring was previously un-exercised. A new `package-metadata` job builds the wheel with `python -m build --no-isolation`, parses the resulting `METADATA`, and asserts all 6 expected `Requires-Dist` entries (`fastapi`, `uvicorn`, `pandas`, `openpyxl`, `xlrd`, `python-multipart`) are present — failing loudly if setuptools can no longer read `requirements.txt`.
+
 ## [1.1.5] - 2026-08-16
 
 ### Added

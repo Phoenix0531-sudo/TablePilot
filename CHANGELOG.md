@@ -76,6 +76,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   returns 200 with an empty / malformed payload — the grep step would happily
   pass that.
 
+- **Qt desktop CI now also builds the macOS (clang) and Linux (gcc) shells.**
+  The `qt-desktop` workflow previously covered only the Windows MSVC build,
+  leaving macOS and Linux as "it probably compiles" guesses. Two new jobs —
+  `build-macos` (Qt 6.8 `clang_64`, `make`, produces `TablePilot.app`) and
+  `build-linux` (Qt 6.8 `gcc_64`, `make`, produces a native `TablePilot` binary,
+  with `libegl1`/`libgl1-mesa-glx`/`libxkbcommon0`/`libdbus-1-3` installed so the
+  offscreen Qt platform plugin can dlopen its runtime deps) — each build, locate,
+  smoke-launch headless (`QT_QPA_PLATFORM=offscreen`, `timeout 5`), and upload an
+  artifact, mirroring the Windows job. Both gate the workflow (a macOS or Linux
+  build regression now fails CI, not just Windows). The `.pro` is already
+  cross-platform — the only Windows-specific flag (`-Wa,-mbig-obj`) is guarded by
+  `win32-g++` scope — so no source changes were expected or made.
+
 ### Fixed
 
 - **README nav anchors now match section order.** In both `README.md` and

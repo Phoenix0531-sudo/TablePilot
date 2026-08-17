@@ -94,6 +94,114 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  build-macos:
+    name: Build TablePilot.app (macOS, Qt 6.8)
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Qt 6.8 (macOS clang 64-bit)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          arch: clang_64
+          set-env: true
+
+      - name: qmake + make (clang)
+        run: |
+          mkdir build
+          cd build
+          qmake ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
+          make -j$(sysctl -n hw.ncpu)
+
+      - name: Locate & verify TablePilot.app
+        run: |
+          app="$(find build -name 'TablePilot.app' -type d | head -1)"
+          echo "app=$app"
+          test -n "$app"
+          ls -la "$app"
+
+      - name: Smoke launch (offscreen platform, no service)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          # macOS app bundle binary lives under Contents/MacOS/TablePilot
+          bin="$(find build -name TablePilot -type f -path '*/Contents/MacOS/*' | head -1)"
+          test -n "$bin"
+          timeout 5 "$bin" >/tmp/tp-smoke.log 2>&1
+          code=$?
+          echo "TablePilot exited with code $code (124 = timed out = healthy, 0 = clean early exit)"
+          echo "--- smoke log ---"
+          cat /tmp/tp-smoke.log || true
+          test "$code" -eq 124 -o "$code" -eq 0
+
+      - name: Upload TablePilot.app
+        uses: actions/upload-artifact@v7
+        with:
+          name: TablePilot-macos-app
+          path: build/**/TablePilot.app
+          if-no-files-found: error
+          retention-days: 14
+
+  build-linux:
+    name: Build TablePilot (Linux, Qt 6.8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Qt 6.8 (Linux gcc 64-bit) + system deps
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          arch: gcc_64
+          set-env: true
+      - run: |
+          # Qt GUI on a headless Linux runner needs the XCB/ Wayland plugin
+          # libs at runtime even under QT_QPA_PLATFORM=offscreen (it dlopen's
+          # the platform plugin). Install the minimal setuptools used by the
+          # offscreen plugin.
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1-mesa-glx libxkbcommon0 libdbus-1-3
+
+      - name: qmake + make (gcc)
+        run: |
+          mkdir build
+          cd build
+          qmake ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
+          make -j$(nproc)
+
+      - name: Locate & verify TablePilot binary
+        run: |
+          bin="$(find build -name TablePilot -type f ! -path '*/Contents/*' | head -1)"
+          echo "bin=$bin"
+          test -n "$bin"
+          ls -la "$bin"
+
+      - name: Smoke launch (offscreen platform, no service)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          bin="$(find build -name TablePilot -type f ! -path '*/Contents/*' | head -1)"
+          test -n "$bin"
+          timeout 5 "$bin" >/tmp/tp-smoke.log 2>&1
+          code=$?
+          echo "TablePilot exited with code $code (124 = timed out = healthy, 0 = clean early exit)"
+          echo "--- smoke log ---"
+          cat /tmp/tp-smoke.log || true
+          test "$code" -eq 124 -o "$code" -eq 0
+
+      - name: Upload TablePilot binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: TablePilot-linux-bin
+          path: build/**/TablePilot
+          if-no-files-found: error
+          retention-days: 14
+
   release-assets:
     name: Attach TablePilot.exe to the tag release
     needs: build-windows

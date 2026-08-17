@@ -7,6 +7,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Removed
+
+- **`config/` directory (3 orphan JSON files) deleted.** Static verification found
+  `config/app.json`, `config/i18n.en.json`, and `config/i18n.zh-CN.json` had
+  **zero references** anywhere in the repository — not in the Qt/C++ shell
+  (`Statistical_Analysis/`), the FastAPI service, CI workflows, docs, or other
+  config. The C++ desktop shell loads runtime assets only via `ProjectPath(...)`
+  (currently `qss/blue1.qss` and `docker-compose.yml`); nothing reads `config/`.
+  Further evidence they were an early scaffold rather than a live surface:
+  `config/app.json` still held `analysis_service_url: "http://[IP]:8000"` — had
+  any running code read it, that placeholder would have surfaced as a real bug long
+  ago. `demo/` datasets named in `config/app.json` are referenced directly by
+  `scripts/demo_e2e.sh` and tests, so deleting the JSON does not break those paths.
+  This corrects a placeholder attempt in an earlier review round to annotate these
+  files as "runtime-loaded" — static grep disproved that, and the honest call is to
+  delete rather than preserve a false "in use" story.
+
 ### Changed
 
 - **CONTRIBUTING.md: added a manual screenshot SOP (plain browser, no tooling).**

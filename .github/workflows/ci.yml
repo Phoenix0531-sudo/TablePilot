@@ -299,12 +299,43 @@ jobs:
       - name: Run demo script
         run: |
           set -e
-          out=$(bash scripts/demo_e2e.sh)
+          out=$(DEMO_OUT_DIR=/tmp/demo-out bash scripts/demo_e2e.sh)
           echo "$out"
           # Assert the demo surfaced real analysis signals, not just HTTP 200s.
           echo "$out" | grep -q 'quality score:'
           echo "$out" | grep -q 'dup rows removed:'
           echo "$out" | grep -q 'anomaly rows marked:'
+      - name: Structural assertions on captured JSON
+        run: |
+          python3 - <<'PY'
+          import json, sys
+          # demo/quality_issues_demo.csv is a known fixture: 14 rows with
+          # duplicate rows, missing cells, and a revenue outlier. Assert the
+          # service returned sane *values*, not just HTTP 200 + the right
+          # label strings (the grep step checked labels; this checks payload).
+          profile = json.load(open('/tmp/demo-out/profile.json'))
+          clean = json.load(open('/tmp/demo-out/clean-preview.json'))
+          report = open('/tmp/demo-out/report.md').read()
+
+          # --- profile ---
+          ds = profile.get('dataset', {})
+          assert isinstance(ds.get('rows'), int) and ds['rows'] >= 1, f"bad rows: {ds.get('rows')}"
+          assert isinstance(ds.get('columns'), int) and ds['columns'] >= 1, f"bad columns: {ds.get('columns')}"
+          q = profile.get('quality', {})
+          assert isinstance(q.get('score'), (int, float)) and 0 <= q['score'] <= 100, f"bad quality score: {q.get('score')}"
+          assert isinstance(profile.get('anomalies'), list), "anomalies not a list"
+
+          # --- clean preview ---
+          s = clean.get('summary', {})
+          assert isinstance(s.get('removed_duplicate_rows'), int) and s['removed_duplicate_rows'] >= 1, f"dup removed: {s.get('removed_duplicate_rows')}"
+          assert isinstance(s.get('filled_missing_cells'), int) and s['filled_missing_cells'] >= 1, f"missing filled: {s.get('filled_missing_cells')}"
+          assert isinstance(s.get('marked_anomaly_rows'), int) and s['marked_anomaly_rows'] >= 1, f"anomaly marked: {s.get('marked_anomaly_rows')}"
+          assert isinstance(s.get('repairs'), list), "repairs not a list"
+
+          # --- report ---
+          assert len(report) > 0 and report.startswith('#'), f"report does not look like markdown: {report[:40]!r}"
+          print('structural assertions passed:', ds['rows'], 'rows,', q['score'], 'quality,', s['removed_duplicate_rows'], 'dup removed,', s['filled_missing_cells'], 'filled,', s['marked_anomaly_rows'], 'anomaly marked')
+          PY
       - name: Service log on failure
         if: failure()
         run: cat /tmp/uvicorn.log || true

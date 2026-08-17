@@ -61,6 +61,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   crash and fails the job. Catches ctor / QSS / ProjectPath regressions that
   compile fine but break at launch.
 
+- **`demo-e2e` CI job now runs structural assertions on captured JSON.** The
+  End-to-end demo script previously gated CI only on `grep -q 'quality score:'`
+  style label checks — i.e. it confirmed the script *printed* the right line, not
+  that the service *returned* a sane value. `scripts/demo_e2e.sh` now honors an
+  optional `DEMO_OUT_DIR` env var: when set, it writes the raw `profile.json`,
+  `clean-preview.json`, and `report.md` payloads there. The CI job sets
+  `DEMO_OUT_DIR=/tmp/demo-out` and a new "Structural assertions on captured JSON"
+  step parses those payloads with `python3 -c`, asserting: `dataset.rows` and
+  `dataset.columns` are ints ≥ 1; `quality.score` is a number in [0, 100];
+  `anomalies` and `summary.repairs` are lists; `summary.removed_duplicate_rows`,
+  `filled_missing_cells`, `marked_anomaly_rows` are each ints ≥ 1; and the
+  report is non-empty markdown starting with `#`. Catches a service that
+  returns 200 with an empty / malformed payload — the grep step would happily
+  pass that.
+
 ### Fixed
 
 - **README nav anchors now match section order.** In both `README.md` and

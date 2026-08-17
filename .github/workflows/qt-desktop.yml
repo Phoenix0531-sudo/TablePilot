@@ -112,7 +112,14 @@ jobs:
         run: |
           mkdir build
           cd build
-          qmake ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
+          # Qt 6.8.3 headers (qyieldcpu.h __yield) trip -Werror under the newer
+          # macOS SDK 26 on the runner; silence that one warning and skip the
+          # SDK version check rather than pin an older Xcode. Source code is
+          # unchanged — this is a Qt-header vs runner-SDK mismatch.
+          qmake ../Statistical_Analysis/Statistical_Analysis.pro \
+            "CONFIG+=release" \
+            "CONFIG+=sdk_no_version_check" \
+            "QMAKE_CXXFLAGS+=-Wno-error=implicit-function-declaration"
           make -j$(sysctl -n hw.ncpu)
 
       - name: Locate & verify TablePilot.app

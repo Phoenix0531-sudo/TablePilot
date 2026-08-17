@@ -76,18 +76,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   returns 200 with an empty / malformed payload — the grep step would happily
   pass that.
 
-- **Qt desktop CI now also builds the macOS (clang) and Linux (gcc) shells.**
+- **Qt desktop CI now also builds the macOS (clang) and Linux (apt Qt 6) shells.**
   The `qt-desktop` workflow previously covered only the Windows MSVC build,
-  leaving macOS and Linux as "it probably compiles" guesses. Two new jobs —
-  `build-macos` (Qt 6.8 `clang_64`, `make`, produces `TablePilot.app`) and
-  `build-linux` (Qt 6.8 `gcc_64`, `make`, produces a native `TablePilot` binary,
-  with `libegl1`/`libgl1-mesa-glx`/`libxkbcommon0`/`libdbus-1-3` installed so the
-  offscreen Qt platform plugin can dlopen its runtime deps) — each build, locate,
-  smoke-launch headless (`QT_QPA_PLATFORM=offscreen`, `timeout 5`), and upload an
-  artifact, mirroring the Windows job. Both gate the workflow (a macOS or Linux
-  build regression now fails CI, not just Windows). The `.pro` is already
-  cross-platform — the only Windows-specific flag (`-Wa,-mbig-obj`) is guarded by
-  `win32-g++` scope — so no source changes were expected or made.
+  leaving macOS and Linux as "it probably compiles" guesses. Two new jobs:
+  `build-macos` (pinned to **macos-14** because `macos-latest`'s 26.x SDK removed
+  the AGL framework that the Qt 6.8 `macx-clang` mkspec still links against;
+  Qt 6.8 `clang_64`, `make`, produces `TablePilot.app`, with `sdk_no_version_check`
+  and `-Wno-error=implicit-function-declaration` to handle the `qyieldcpu.h`
+  `__yield` stub-vs-newer-SDK mismatch) and `build-linux` (uses the **Ubuntu
+  archive `qt6-base-dev`** because `aqt` cannot install Qt 6.8.x for Linux desktop —
+  Qt stopped shipping a freely-downloadable `gcc_64` offline package after 6.7,
+  so `aqt install-qt linux desktop 6.8.* gcc_64` fails with `packages ['qt_base']
+  were not found`; the distro Qt 6.7.x is API-compatible with our `.pro`). Each job
+  builds, locates, smoke-launches headless (`QT_QPA_PLATFORM=offscreen`,
+  `timeout 5`), and uploads an artifact, mirroring the Windows job. Both gate the
+  workflow (a macOS or Linux build regression now fails CI, not just Windows).
+  The `.pro` is already cross-platform — the only Windows-specific flag
+  (`-Wa,-mbig-obj`) is guarded by `win32-g++` scope — so no source changes were
+  expected or made; the macOS/Linux fixes are pure toolchain/SDK accommodation.
 
 ### Fixed
 

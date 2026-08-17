@@ -96,7 +96,11 @@ jobs:
 
   build-macos:
     name: Build TablePilot.app (macOS, Qt 6.8)
-    runs-on: macos-latest
+    # macos-14 ships Xcode 15 with a macOS 14 SDK that still includes the AGL
+    # framework stub; macos-latest (26.x SDK) removed AGL, which makes the
+    # Qt 6.8 macx-clang mkspec's `-framework AGL` link step fail. Pin to macos-14
+    # so the stock Qt 6.8 release links without source changes.
+    runs-on: macos-14
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -112,10 +116,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          # Qt 6.8.3 headers (qyieldcpu.h __yield) trip -Werror under the newer
-          # macOS SDK 26 on the runner; silence that one warning and skip the
-          # SDK version check rather than pin an older Xcode. Source code is
-          # unchanged — this is a Qt-header vs runner-SDK mismatch.
+          # Qt 6.8.3 headers (qyieldcpu.h __yield) trip -Werror under a newer
+          # macOS SDK than Qt 6.8 was tested against; silence that one warning
+          # and skip the SDK version gate rather than fight the mkspec.
           qmake ../Statistical_Analysis/Statistical_Analysis.pro \
             "CONFIG+=release" \
             "CONFIG+=sdk_no_version_check" \
@@ -153,31 +156,33 @@ jobs:
           retention-days: 14
 
   build-linux:
-    name: Build TablePilot (Linux, Qt 6.8)
+    name: Build TablePilot (Linux, Qt 6 via apt)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Qt 6.8 (Linux gcc 64-bit) + system deps
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '6.8.*'
-          arch: gcc_64
-          set-env: true
-      - run: |
-          # Qt GUI on a headless Linux runner needs the XCB/ Wayland plugin
-          # libs at runtime even under QT_QPA_PLATFORM=offscreen (it dlopen's
-          # the platform plugin). Install the minimal setuptools used by the
-          # offscreen plugin.
+      - name: Install Qt 6 from the Ubuntu archive (qt6-base-dev + printsupport)
+        run: |
+          # aqt cannot install Qt 6.8.x for Linux desktop — Qt stopped shipping
+          # a freely-downloadable gcc_64 offline package after 6.7 (aqt fails
+          # with "packages ['qt_base'] were not found"), so we use the distro Qt
+          # 6 dev packages instead. Ubuntu 24.04's qt6-base-dev ships a recent
+          # enough Qt 6 (6.7.x) that is API-compatible with our .pro.
           sudo apt-get update
-          sudo apt-get install -y libegl1 libgl1-mesa-glx libxkbcommon0 libdbus-1-3
+          sudo apt-get install -y \
+            qt6-base-dev \
+            libqt6printsupport6-dev \
+            libqt6network6-dev \
+            libgl1-mesa-dev \
+            libegl1 \
+            libxkbcommon0
 
-      - name: qmake + make (gcc)
+      - name: qmake6 + make (gcc)
         run: |
           mkdir build
           cd build
-          qmake ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
+          qmake6 ../Statistical_Analysis/Statistical_Analysis.pro "CONFIG+=release"
           make -j$(nproc)
 
       - name: Locate & verify TablePilot binary

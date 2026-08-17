@@ -17,6 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the PR body. Closes #15 — this fills the gap between the static curl check and
   the optional `agent_browser` step that needs the upstream CLI installed.
 
+### Fixed
+
+- **README nav anchors now match section order.** In both `README.md` and
+  `README.zh-CN.md` the top navigation listed `Performance` before `Proof`, but the
+  sections render in `Proof` then `Performance` order — a click jumped readers
+  backwards. Reordered the nav to match the heading order, and added the missing
+  `License` / `许可证` anchor (the License section existed but was unreachable
+  from the nav).
+
 ## [1.1.6] - 2026-08-17
 
 ### Fixed

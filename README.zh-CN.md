@@ -27,11 +27,12 @@
   <a href="#核心功能">核心功能</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#架构">架构</a> ·
-  <a href="#性能">性能</a> ·
   <a href="#实证">实证</a> ·
+  <a href="#性能">性能</a> ·
   <a href="#范围">范围</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#贡献">贡献</a> ·
+  <a href="#许可证">许可证</a> ·
   <a href="README.md">English</a>
 </p>
 

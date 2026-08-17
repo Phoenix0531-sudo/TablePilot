@@ -27,11 +27,12 @@
   <a href="#features">Features</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#architecture">Architecture</a> ·
-  <a href="#performance">Performance</a> ·
   <a href="#proof">Proof</a> ·
+  <a href="#performance">Performance</a> ·
   <a href="#scope">Scope</a> ·
   <a href="#faq">FAQ</a> ·
   <a href="#contributing">Contributing</a> ·
+  <a href="#license">License</a> ·
   <a href="README.zh-CN.md">中文</a>
 </p>
 

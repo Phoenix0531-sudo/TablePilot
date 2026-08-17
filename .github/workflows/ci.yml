@@ -272,27 +272,6 @@ jobs:
           path: docs/screenshots/*.png
           if-no-files-found: error
 
-  go-build:
-    name: Go build (if present)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
-        with:
-          go-version: "1.22"
-      - name: Build modules
-        run: |
-          mapfile -t mods < <(find . -name go.mod -not -path './vendor/*' -not -path './Ref/*' | head -10)
-          if [ ${#mods[@]} -eq 0 ]; then
-            echo "No go.mod"
-          else
-            for m in "${mods[@]}"; do
-              dir=$(dirname "$m")
-              (cd "$dir" && go build ./...)
-            done
-          fi
-
   demo-e2e:
     name: End-to-end demo script
     runs-on: ubuntu-latest

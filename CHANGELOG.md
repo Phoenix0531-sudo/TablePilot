@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
+- **Removed the dead `Go build (if present)` CI job.** `ci.yml` ran a `go-build` job that set up Go 1.22, scanned for `go.mod` files, and built any Go modules it found. The repository contains **zero** `.go` files and no `go.mod` — the job's only output was ever `echo "No go.mod"`, yet it still cost a runner slot, a `setup-go@v7` download, and CI wall-clock time on every push. Removed entirely. No test coverage is lost because the job never tested anything.
+
 - **`analysis_service/pyproject.toml` no longer drifts from `requirements.txt` (single source of truth).** The `[project].dependencies` static list had fallen behind `analysis_service/requirements.txt` — pyproject pinned `fastapi==0.115.6`, `uvicorn==0.34.0`, `pandas==2.2.3`, `xlrd==2.0.1`, `python-multipart==0.0.20` while the live, CI/Docker-exercised `requirements.txt` pinned `0.141.1`, `0.52.2`, `3.0.5`, `2.0.2`, `0.0.32` (openpyxl already matched at `3.1.5`). Rather than just re-sync the static list (which would re-drift on the next Dependabot bump), the package metadata now reads dependencies dynamically via `[tool.setuptools.dynamic] dependencies = { file = ["requirements.txt"] }` with `[project] dynamic = ["dependencies"]` — `requirements.txt` is now the only pinned runtime-dep declaration, so the two can never disagree again.
 
 ### Added

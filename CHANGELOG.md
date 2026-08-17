@@ -48,6 +48,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   density for first-time readers. Now collapsed behind a single summary line;
   content unchanged and still searchable.
 
+### Added
+
+- **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
+  workflow previously only proved the `.pro` compiles and links under MSVC +
+  Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen
+  platform, no service)" step runs `timeout 5 TablePilot.exe` with
+  `QT_QPA_PLATFORM=offscreen` right after the build, asserting the Qt event
+  loop starts and stays alive for 5 seconds without an analysis service (API
+  calls must fail gracefully, not crash the shell). Exit 124 (timeout = still
+  running = healthy) or 0 (clean early exit) passes; any other code is a startup
+  crash and fails the job. Catches ctor / QSS / ProjectPath regressions that
+  compile fine but break at launch.
+
 ### Fixed
 
 - **README nav anchors now match section order.** In both `README.md` and

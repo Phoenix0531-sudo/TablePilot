@@ -65,6 +65,27 @@ jobs:
           test -n "$exe"
           ls -la "$exe"
 
+      - name: Smoke launch (offscreen platform, no service)
+        shell: bash
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          exe="$(find build -name TablePilot.exe -type f | head -1)"
+          test -n "$exe"
+          # Launch the GUI binary headless; it must start the Qt event loop and
+          # stay alive for several seconds without an analysis service running
+          # (API calls are expected to fail gracefully, not crash the shell).
+          # `timeout` sends SIGTERM after 5s -> exit code 124 means the binary
+          # was still running (healthy). Exit 0 would mean it self-terminated
+          # cleanly within 5s — also acceptable. Any other code is a startup crash.
+          timeout 5 "$exe" >/tmp/tp-smoke.log 2>&1
+          code=$?
+          echo "TablePilot.exe exited with code $code (124 = timed out = healthy, 0 = clean early exit)"
+          echo "--- smoke log ---"
+          cat /tmp/tp-smoke.log || true
+          test "$code" -eq 124 -o "$code" -eq 0
+
       - name: Upload TablePilot.exe
         uses: actions/upload-artifact@v7
         with:

@@ -138,16 +138,18 @@ jobs:
         run: |
           python -m build --wheel --no-isolation --outdir /tmp/whl >/tmp/build.log 2>&1 || { cat /tmp/build.log; exit 1; }
           python - <<'PY'
-          import glob, zipfile
+          import glob, zipfile, re
           whl = glob.glob('/tmp/whl/*.whl')[0]
-          md = zipfile.ZipFile(whl).read('METADATA').decode()
-          import re
+          z = zipfile.ZipFile(whl)
+          # Wheel metadata lives at {dist}-{ver}.dist-info/METADATA, not root.
+          meta_name = next(n for n in z.namelist() if n.endswith('.dist-info/METADATA'))
+          md = z.read(meta_name).decode()
           reqs = re.findall(r'^Requires-Dist:\s*(.+)$', md, re.M)
-          expected = {'fastapi','uvicorn','pandas','openpyxl','xlrd','python-multipart'}
+          expected = {'fastapi', 'uvicorn', 'pandas', 'openpyxl', 'xlrd', 'python-multipart'}
           got = {r.split('==')[0].strip().split('[')[0] for r in reqs}
           missing = expected - got
           assert not missing, f"dynamic deps missing from wheel METADATA: {missing}"
-          print(f"wheel METADATA carries {len(reqs)} Requires-Dist entries")
+          print(f"wheel METADATA carries {len(reqs)} Requires-Dist entries: {sorted(got)}")
           PY
 
   openapi-export:

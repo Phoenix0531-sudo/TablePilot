@@ -140,9 +140,22 @@ jobs:
           # macOS app bundle binary lives under Contents/MacOS/TablePilot
           bin="$(find build -name TablePilot -type f -path '*/Contents/MacOS/*' | head -1)"
           test -n "$bin"
-          timeout 5 "$bin" >/tmp/tp-smoke.log 2>&1
-          code=$?
-          echo "TablePilot exited with code $code (124 = timed out = healthy, 0 = clean early exit)"
+          # macOS does not ship GNU `timeout` (and `coreutils`/gtimeout is not
+          # installed on the stock runner), so launch in the background, sleep,
+          # and check liveness: if still alive after 5s the event loop is
+          # healthy (124-like); if it self-exited cleanly (code 0) that's also
+          # fine; any other exit code is a startup crash.
+          "$bin" >/tmp/tp-smoke.log 2>&1 &
+          pid=$!
+          sleep 5
+          if kill -0 "$pid" 2>/dev/null; then
+            echo "TablePilot still running after 5s (healthy)"
+            kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null
+            code=124
+          else
+            wait "$pid"; code=$?
+            echo "TablePilot exited early with code $code"
+          fi
           echo "--- smoke log ---"
           cat /tmp/tp-smoke.log || true
           test "$code" -eq 124 -o "$code" -eq 0
@@ -162,18 +175,19 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Qt 6 from the Ubuntu archive (qt6-base-dev + printsupport)
+      - name: Install Qt 6 from the Ubuntu archive (qt6-base-dev)
         run: |
-          # aqt cannot install Qt 6.8.x for Linux desktop — Qt stopped shipping
-          # a freely-downloadable gcc_64 offline package after 6.7 (aqt fails
-          # with "packages ['qt_base'] were not found"), so we use the distro Qt
-          # 6 dev packages instead. Ubuntu 24.04's qt6-base-dev ships a recent
-          # enough Qt 6 (6.7.x) that is API-compatible with our .pro.
+          # aqt cannot install Qt 6.8.x for Linux desktop (Qt stopped shipping
+          # a freely-downloadable gcc_64 offline package after 6.7), so use the
+          # distro Qt 6 instead. In Ubuntu 24.04 (noble) there is ONE base dev
+          # package — `qt6-base-dev` — which already provides headers for the
+          # core/gui/widgets/network/printsupport modules of qtbase; the separate
+          # `libqt6{network,printsupport}6-dev` sub-packages do NOT exist, so do
+          # not install them (apt would error). Qt 6.7.x is API-compatible with
+          # our .pro.
           sudo apt-get update
           sudo apt-get install -y \
             qt6-base-dev \
-            libqt6printsupport6-dev \
-            libqt6network6-dev \
             libgl1-mesa-dev \
             libegl1 \
             libxkbcommon0

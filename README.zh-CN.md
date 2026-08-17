@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe"><img src="https://img.shields.io/badge/下载_Windows_TablePilot_v1.1.4-0078D6.svg?logo=windows&logoColor=white" alt="下载 Windows 版 TablePilot（v1.1.4）"></a>
+  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe"><img src="https://img.shields.io/badge/下载_Windows_TablePilot_v1.1.6-0078D6.svg?logo=windows&logoColor=white" alt="下载 Windows 版 TablePilot（v1.1.6）"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml/badge.svg" alt="Docker 分析服务"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt 桌面端构建"></a>
@@ -65,7 +65,7 @@ TablePilot 是一个**本地优先的脏表工作台**：把你磁盘上混乱�
 
 从 Releases 下载 CI 构建的二进制——本机无需 Python / Qt / 编译器：
 
-1. 从 [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases) 页下载 **[TablePilot-v1.1.4.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.4/TablePilot-v1.1.4.exe)**（约 1.0 MB）——它就是 `qt-desktop` CI 在干净的 Windows runner 上从 `Statistical_Analysis.pro` 构建出的同一个 `TablePilot.exe`。
+1. 从 [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases) 页下载 **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)**（约 1.0 MB）——它就是 `qt-desktop` CI 在干净的 Windows runner 上从 `Statistical_Analysis.pro` 构建出的同一个 `TablePilot.exe`。
 2. 双击启动桌面壳。
 3. 要使用画像 / 清洗 / 报告功能，让桌面壳指向一个正在运行的分析服务——要么 `docker compose up --build`（见下），要么 `uvicorn app.main:app --reload`（再下）。
 

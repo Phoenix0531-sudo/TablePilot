@@ -107,7 +107,10 @@ def test_date_ratio_pure_dates():
 
 
 def test_date_ratio_mixed():
-    df = pd.DataFrame({"d": ["2024-01-01", "not-a-date", "x"], "n": [1, 2, 3]})
+    # Use a non-numeric, non-date string so only the date column cells parse.
+    # (Integers like [1,2,3] DO parse as dates in pd.to_datetime, which would
+    # inflate the ratio.)
+    df = pd.DataFrame({"d": ["2024-01-01", "not-a-date", "x"], "n": ["abc", "def", "ghi"]})
     # Only 1 of 6 cells is a parseable date
     assert date_ratio(df) == pytest.approx(1 / 6)
 
@@ -156,8 +159,9 @@ def test_detect_trends_flat_constant_series():
 
 
 def test_detect_trends_skips_short_series():
-    # <3 non-null points -> no trend reported for that column
-    df = pd.DataFrame({"short": [1.0, 2.0], "long": [1.0, 2.0, 3.0]})
+    # <3 non-null points -> no trend reported for that column.
+    # Columns must be equal length, so pad the short one with None.
+    df = pd.DataFrame({"short": [1.0, 2.0, None], "long": [1.0, 2.0, 3.0]})
     trends = detect_trends(df)
     cols = {t["column"] for t in trends}
     assert cols == {"long"}
@@ -199,7 +203,8 @@ def _make_schema(names_types):
 
 
 def test_score_data_quality_clean_table():
-    df = pd.DataFrame({"a": [1, 2, 3, 4, 5], "b": [6, 7, 8, 9, 10]})
+    # 25 rows so sample_warning is False (the threshold is <20).
+    df = pd.DataFrame({"a": range(25), "b": range(25, 50)})
     schema = _make_schema([("a", "numeric"), ("b", "numeric")])
     numeric_df = df.copy()
     q = score_data_quality(df, schema, numeric_df, missing_cells=0, anomalies=[])
@@ -212,8 +217,9 @@ def test_score_data_quality_clean_table():
 
 
 def test_score_data_quality_missing_cells_lower_score():
-    clean = pd.DataFrame({"a": [1, 2, 3, 4, 5], "b": [6, 7, 8, 9, 10]})
-    missing = pd.DataFrame({"a": [1, None, 3, None, 5], "b": [6, 7, 8, 9, 10]})
+    clean = pd.DataFrame({"a": range(25), "b": range(25, 50)})
+    missing = pd.DataFrame({"a": [1, None, 3, None, 5] + list(range(6, 25)),
+                            "b": list(range(25, 50))})
     schema = _make_schema([("a", "numeric"), ("b", "numeric")])
     q_clean = score_data_quality(clean, schema, clean, 0, [])
     q_missing = score_data_quality(missing, schema, missing, 2, [])
@@ -222,12 +228,12 @@ def test_score_data_quality_missing_cells_lower_score():
 
 
 def test_score_data_quality_duplicates_lower_score():
-    df = pd.DataFrame({"a": [1, 1, 3, 4, 5], "b": [6, 6, 8, 9, 10]})
+    # 25 rows, one duplicated row, vs a fully unique 25-row table.
+    df = pd.DataFrame({"a": [1, 1] + list(range(3, 25)), "b": [6, 6] + list(range(8, 30))})
     schema = _make_schema([("a", "numeric"), ("b", "numeric")])
     q = score_data_quality(df, schema, df, 0, [])
     assert q["duplicate_rows"] == 1
-    # Compare against deduped
-    df2 = pd.DataFrame({"a": [1, 3, 4, 5, 6], "b": [6, 8, 9, 10, 11]})
+    df2 = pd.DataFrame({"a": range(25), "b": range(25, 50)})
     q2 = score_data_quality(df2, schema, df2, 0, [])
     assert q["score"] < q2["score"]
 
@@ -249,10 +255,10 @@ def test_score_data_quality_score_bounded_0_100():
 
 
 def test_score_data_quality_levels():
-    df = pd.DataFrame({"a": [1, 2, 3, 4, 5]})
+    df = pd.DataFrame({"a": range(25)})
     schema = _make_schema([("a", "numeric")])
     q = score_data_quality(df, schema, df, 0, [])
-    # clean 5-row numeric table -> high (>=80)
+    # clean 25-row numeric table -> high (>=80)
     assert q["level"] == "high"
 
 

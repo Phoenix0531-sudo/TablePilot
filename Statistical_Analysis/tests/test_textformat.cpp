@@ -40,13 +40,13 @@ private slots:
 
 void TestTextFormat::text_data()
 {
-    QTestaddColumn<QString>("en");
-    QTest.addColumn<QString>("zh");
-    QTestaddColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("en");
+    QTest::addColumn<QString>("zh");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
-    QTest.newRow("en-picks-en")   << "Hello" << "你好" << false << "Hello";
-    QTest.newRow("zh-picks-zh")   << "Hello" << "你好" << true  << "你好";
+    QTest::newRow("en-picks-en") << "Hello" << QString::fromUtf8("你好") << false << "Hello";
+    QTest::newRow("zh-picks-zh") << "Hello" << QString::fromUtf8("你好") << true << QString::fromUtf8("你好");
 }
 
 void TestTextFormat::text()
@@ -62,21 +62,21 @@ void TestTextFormat::text()
 
 void TestTextFormat::qualityLevelText_data()
 {
-    QTest.addColumn<QString>("level");
-    QTest.addColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("level");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
     // EN: passthrough
-    QTest.newRow("en-high")   << "high"   << false << "high";
-    QTest.newRow("en-medium") << "medium" << false << "medium";
-    QTest.newRow("en-low")    << "low"    << false << "low";
-    QTest.newRow("en-unknown") << "weird" << false << "weird";
+    QTest::newRow("en-high")    << "high"   << false << "high";
+    QTest::newRow("en-medium")  << "medium" << false << "medium";
+    QTest::newRow("en-low")     << "low"    << false << "low";
+    QTest::newRow("en-unknown") << "weird"  << false << "weird";
     // ZH: mapped
-    QTest.newRow("zh-high")   << "high"   << true << QStringLiteral("高");
-    QTest.newRow("zh-medium") << "medium" << true << QStringLiteral("中");
-    QTest.newRow("zh-low")    << "low"    << true << QStringLiteral("低");
+    QTest::newRow("zh-high")    << "high"   << true << QString::fromUtf8("高");
+    QTest::newRow("zh-medium")  << "medium" << true << QString::fromUtf8("中");
+    QTest::newRow("zh-low")     << "low"    << true << QString::fromUtf8("低");
     // ZH unknown: passthrough unchanged
-    QTest.newRow("zh-unknown") << "weird" << true << "weird";
+    QTest::newRow("zh-unknown") << "weird"  << true << "weird";
 }
 
 void TestTextFormat::qualityLevelText()
@@ -91,18 +91,18 @@ void TestTextFormat::qualityLevelText()
 
 void TestTextFormat::semanticTypeText_data()
 {
-    QTest.addColumn<QString>("type");
-    QTest.addColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("type");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
-    QTest.newRow("en-numeric") << "numeric" << false << "numeric";
-    QTest.newRow("zh-numeric") << "numeric" << true << QStringLiteral("数值");
-    QTest.newRow("zh-date")    << "date"    << true << QStringLiteral("日期");
-    QTest.newRow("zh-category") << "category" << true << QStringLiteral("分类");
-    QTest.newRow("zh-text")    << "text"    << true << QStringLiteral("文本");
-    QTest.newRow("zh-empty")   << "empty"   << true << QStringLiteral("空字段");
-    QTest.newRow("zh-highcard") << "high_cardinality" << true << QStringLiteral("高基数字段");
-    QTest.newRow("zh-unknown") << "weird"   << true << "weird";
+    QTest::newRow("en-numeric")  << "numeric" << false << "numeric";
+    QTest::newRow("zh-numeric")  << "numeric" << true << QString::fromUtf8("数值");
+    QTest::newRow("zh-date")     << "date"    << true << QString::fromUtf8("日期");
+    QTest::newRow("zh-category") << "category" << true << QString::fromUtf8("分类");
+    QTest::newRow("zh-text")     << "text"    << true << QString::fromUtf8("文本");
+    QTest::newRow("zh-empty")    << "empty"   << true << QString::fromUtf8("空字段");
+    QTest::newRow("zh-highcard") << "high_cardinality" << true << QString::fromUtf8("高基数字段");
+    QTest::newRow("zh-unknown")  << "weird"   << true << "weird";
 }
 
 void TestTextFormat::semanticTypeText()
@@ -117,17 +117,17 @@ void TestTextFormat::semanticTypeText()
 
 void TestTextFormat::roleHintText_data()
 {
-    QTestaddColumn<QString>("role");
-    QTest.addColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("role");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
-    QTest.newRow("en-time_axis") << "time_axis" << false << "time_axis";
-    QTest.newRow("zh-time_axis") << "time_axis" << true << QStringLiteral("时间轴");
-    QTest.newRow("zh-dimension") << "dimension" << true << QStringLiteral("维度");
-    QTest.newRow("zh-measure")  << "measure"  << true << QStringLiteral("指标");
-    QTest.newRow("zh-biz")      << "business_measure" << true << QStringLiteral("业务指标");
-    QTest.newRow("zh-identifier") << "identifier" << true << QStringLiteral("标识符");
-    QTest.newRow("zh-unknown")  << "weird"    << true << "weird";
+    QTest::newRow("en-time_axis")  << "time_axis" << false << "time_axis";
+    QTest::newRow("zh-time_axis")  << "time_axis" << true << QString::fromUtf8("时间轴");
+    QTest::newRow("zh-dimension")  << "dimension" << true << QString::fromUtf8("维度");
+    QTest::newRow("zh-measure")    << "measure"  << true << QString::fromUtf8("指标");
+    QTest::newRow("zh-biz")        << "business_measure" << true << QString::fromUtf8("业务指标");
+    QTest::newRow("zh-identifier") << "identifier" << true << QString::fromUtf8("标识符");
+    QTest::newRow("zh-unknown")    << "weird"    << true << "weird";
 }
 
 void TestTextFormat::roleHintText()
@@ -142,15 +142,15 @@ void TestTextFormat::roleHintText()
 
 void TestTextFormat::directionText_data()
 {
-    QTest.addColumn<QString>("direction");
-    QTest.addColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("direction");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
-    QTest.newRow("en-up")   << "up"   << false << "up";
-    QTest.newRow("zh-up")   << "up"   << true << QStringLiteral("上升");
-    QTest.newRow("zh-down") << "down" << true << QStringLiteral("下降");
-    QTest.newRow("zh-flat") << "flat" << true << QStringLiteral("平稳");
-    QTest.newRow("zh-unknown") << "weird" << true << "weird";
+    QTest::newRow("en-up")      << "up"   << false << "up";
+    QTest::newRow("zh-up")      << "up"   << true << QString::fromUtf8("上升");
+    QTest::newRow("zh-down")    << "down" << true << QString::fromUtf8("下降");
+    QTest::newRow("zh-flat")    << "flat" << true << QString::fromUtf8("平稳");
+    QTest::newRow("zh-unknown") << "weird" << true << "weird";
 }
 
 void TestTextFormat::directionText()
@@ -165,25 +165,25 @@ void TestTextFormat::directionText()
 
 void TestTextFormat::toolTraceText_data()
 {
-    QTest.addColumn<QString>("step");
-    QTest.addColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("step");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
     // EN: underscores -> spaces
-    QTest.newRow("en-load_table") << "load_table" << false << "load table";
-    QTest.newRow("en-detect_anomalies") << "detect_anomalies" << false << "detect anomalies";
+    QTest::newRow("en-load_table")       << "load_table"       << false << "load table";
+    QTest::newRow("en-detect_anomalies") << "detect_anomalies" << false << "detect anomalies";
     // ZH: mapped
-    QTest.newRow("zh-load_table") << "load_table" << true << QStringLiteral("加载表格");
-    QTest.newRow("zh-detect_encoding") << "detect_encoding" << true << QStringLiteral("识别编码");
-    QTest.newRow("zh-detect_delimiter") << "detect_delimiter" << true << QStringLiteral("识别分隔符");
-    QTest.newRow("zh-infer_header") << "infer_header" << true << QStringLiteral("识别表头");
-    QTest.newRow("zh-infer_schema") << "infer_schema" << true << QStringLiteral("推断字段结构");
-    QTest.newRow("zh-profile_quality") << "profile_quality" << true << QStringLiteral("评估数据质量");
-    QTest.newRow("zh-detect_anomalies") << "detect_anomalies" << true << QStringLiteral("检测异常");
-    QTest.newRow("zh-recommend_analysis") << "recommend_analysis" << true << QStringLiteral("生成分析建议");
-    QTest.newRow("zh-compose_insight") << "compose_insight" << true << QStringLiteral("生成洞察摘要");
+    QTest::newRow("zh-load_table")         << "load_table"         << true << QString::fromUtf8("加载表格");
+    QTest::newRow("zh-detect_encoding")    << "detect_encoding"    << true << QString::fromUtf8("识别编码");
+    QTest::newRow("zh-detect_delimiter")   << "detect_delimiter"   << true << QString::fromUtf8("识别分隔符");
+    QTest::newRow("zh-infer_header")       << "infer_header"       << true << QString::fromUtf8("识别表头");
+    QTest::newRow("zh-infer_schema")       << "infer_schema"       << true << QString::fromUtf8("推断字段结构");
+    QTest::newRow("zh-profile_quality")    << "profile_quality"    << true << QString::fromUtf8("评估数据质量");
+    QTest::newRow("zh-detect_anomalies")   << "detect_anomalies"   << true << QString::fromUtf8("检测异常");
+    QTest::newRow("zh-recommend_analysis") << "recommend_analysis" << true << QString::fromUtf8("生成分析建议");
+    QTest::newRow("zh-compose_insight")    << "compose_insight"    << true << QString::fromUtf8("生成洞察摘要");
     // ZH unknown: passthrough unchanged (no underscore replacement in ZH)
-    QTest.newRow("zh-unknown") << "weird_step" << true << "weird_step";
+    QTest::newRow("zh-unknown") << "weird_step" << true << "weird_step";
 }
 
 void TestTextFormat::toolTraceText()
@@ -198,25 +198,25 @@ void TestTextFormat::toolTraceText()
 
 void TestTextFormat::limitationText_data()
 {
-    QTest.addColumn<QString>("value");
-    QTest.addColumn<bool>("useChinese");
-    QTest.addColumn<QString>("expected");
+    QTest::addColumn<QString>("value");
+    QTest::addColumn<bool>("useChinese");
+    QTest::addColumn<QString>("expected");
 
     // EN: passthrough
-    QTest.newRow("en-sample") << "The sample is small" << false << "The sample is small";
+    QTest::newRow("en-sample") << "The sample is small" << false << "The sample is small";
     // ZH: prefix-mapped to full sentence
-    QTest.newRow("zh-sample") << "The sample is small" << true
-        << QStringLiteral("样本量偏小，趋势和异常信号只能作为复核线索。");
-    QTest.newRow("zh-missing") << "Missing values found" << true
-        << QStringLiteral("缺失值可能改变总和、均值和排序结果。");
-    QTest.newRow("zh-no-time") << "No reliable time field" << true
-        << QStringLiteral("未识别到可靠时间字段，趋势图会按记录顺序展示。");
-    QTest.newRow("zh-no-group") << "No clear grouping field" << true
-        << QStringLiteral("未识别到清晰分组字段，分组对比能力有限。");
-    QTest.newRow("zh-exploratory") << "Findings are exploratory" << true
-        << QStringLiteral("当前结论属于探索性分析，正式决策前需要结合业务背景验证。");
+    QTest::newRow("zh-sample") << "The sample is small" << true
+        << QString::fromUtf8("样本量偏小，趋势和异常信号只能作为复核线索。");
+    QTest::newRow("zh-missing") << "Missing values found" << true
+        << QString::fromUtf8("缺失值可能改变总和、均值和排序结果。");
+    QTest::newRow("zh-no-time") << "No reliable time field" << true
+        << QString::fromUtf8("未识别到可靠时间字段，趋势图会按记录顺序展示。");
+    QTest::newRow("zh-no-group") << "No clear grouping field" << true
+        << QString::fromUtf8("未识别到清晰分组字段，分组对比能力有限。");
+    QTest::newRow("zh-exploratory") << "Findings are exploratory" << true
+        << QString::fromUtf8("当前结论属于探索性分析，正式决策前需要结合业务背景验证。");
     // ZH unknown: passthrough unchanged
-    QTest.newRow("zh-unknown") << "Some other limitation" << true << "Some other limitation";
+    QTest::newRow("zh-unknown") << "Some other limitation" << true << "Some other limitation";
 }
 
 void TestTextFormat::limitationText()

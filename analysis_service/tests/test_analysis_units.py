@@ -218,8 +218,9 @@ def test_score_data_quality_clean_table():
 
 def test_score_data_quality_missing_cells_lower_score():
     clean = pd.DataFrame({"a": range(25), "b": range(25, 50)})
-    missing = pd.DataFrame({"a": [1, None, 3, None, 5] + list(range(6, 25)),
-                            "b": list(range(25, 50))})
+    # 25 rows, 2 with None in column a (same length as b).
+    a_vals = [1, None, 3, None, 5] + list(range(6, 26))  # 5 + 20 = 25
+    missing = pd.DataFrame({"a": a_vals, "b": list(range(25, 50))})
     schema = _make_schema([("a", "numeric"), ("b", "numeric")])
     q_clean = score_data_quality(clean, schema, clean, 0, [])
     q_missing = score_data_quality(missing, schema, missing, 2, [])

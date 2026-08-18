@@ -7,6 +7,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **README synced to shipped capabilities.** The Quickstart now lists prebuilt
+  binaries for all three OSes (Windows `.exe`, macOS `.app` in a `.zip`, Linux
+  binary) that the `release-assets` CI job attaches to each tag release, instead
+  of a Windows-only one-click section. The Features section documents the
+  desktop shell's built-in web research dock (Exa API search, results open in
+  the system browser; `EXA_API_KEY` read from the environment, never stored in
+  source). The Contributing section now lists both test suites — the pytest
+  analysis/agent unit tests and the QtTest `test_textformat` / `test_exadock`
+  binaries run by the `qt-tests` CI job — so contributors know the full PR gate.
+
 ### Removed
 
 - **`config/` directory (3 orphan JSON files) deleted.** Static verification found

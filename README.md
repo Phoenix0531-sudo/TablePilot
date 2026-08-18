@@ -62,19 +62,21 @@ Real capabilities wired into `analysis_service/app/main.py` (service `v0.5.0`):
 - **Session export** — `POST /api/session/export` snapshots the current analysis session as JSON.
 - **Health** — `GET /health` for liveness and container probes.
 
-Desktop shell adds a Qt/C++ oriented experience on top of the same service surface (see `packaging/`, `qss/`).
+Desktop shell adds a Qt/C++ oriented experience on top of the same service surface (see `packaging/`, `qss/`). It ships a built-in **web research dock** — type a query and it searches the web via the [Exa API](https://exa.ai/) (set `EXA_API_KEY` in your environment; no key is stored in source) and lists clickable results that open in your system browser, so you can enrich a messy table with outside context without leaving the workbench.
 
 ## Quickstart
 
-### Windows one-click (prebuilt desktop shell)
+### Prebuilt desktop shell (Windows, macOS, Linux)
 
-Grab the CI-built binary from Releases — no Python, Qt, or compiler needed on your machine:
+Grab a CI-built binary from Releases — no Python, Qt, or compiler needed on your machine. The `qt-desktop` CI builds the desktop shell from `Statistical_Analysis.pro` on three OSes and attaches the binaries to each release:
 
-1. Download **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)** (~1.0 MB) from the [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases) page — it is the same `TablePilot.exe` the `qt-desktop` CI builds from `Statistical_Analysis.pro` on a clean Windows runner.
-2. Double-click to launch the desktop shell.
-3. To use profile / clean / report features, point the shell at a running analysis service — either `docker compose up --build` (below) or `uvicorn app.main:app --reload` (further below).
+| OS | Asset | Notes |
+| --- | --- | --- |
+| Windows | **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)** (~1.0 MB) | double-click to launch |
+| macOS | `TablePilot-v1.1.6-macos.zip` | unzip, the `.app` bundle runs natively on Apple Silicon |
+| Linux | `TablePilot-v1.1.6-linux` | `chmod +x` then run |
 
-> Tip: the exe is a standalone Windows binary; the FastAPI analysis service must be running separately for the desktop shell to talk to `/api/*`.
+> Tip: these are standalone binaries; the FastAPI analysis service must be running separately for the desktop shell to talk to `/api/*`. To use profile / clean / report features, point the shell at a running analysis service — either `docker compose up --build` (below) or `uvicorn app.main:app --reload` (further below).
 
 ### From source (analysis service + desktop shell)
 
@@ -220,7 +222,10 @@ Nowhere by default. Files are loaded from a local data directory (or an upload) 
 
 ## Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep it **local-first** (no remote uploads in the default path), **evidence-grounded** (agent/report output derives from the actual profiled data), and **honest in docs** (don't describe a capability the code doesn't ship). Run `python -m pytest -q analysis_service/tests` before opening a PR.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The short version: keep it **local-first** (no remote uploads in the default path), **evidence-grounded** (agent/report output derives from the actual profiled data), and **honest in docs** (don't describe a capability the code doesn't ship). Before opening a PR:
+
+- **Service tests** — `python -m pytest -q analysis_service/tests` (108 analysis.py unit tests + 38 agent.py unit tests + endpoint integration tests).
+- **Desktop shell tests** — `cd Statistical_Analysis/tests && qmake6 test_textformat.pro && make && ./test_textformat` plus the `test_exadock` binary (Exa API response parser). Both run in the `qt-tests` CI job on every push.
 
 See also: [CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [docs/API.md](docs/API.md)
 

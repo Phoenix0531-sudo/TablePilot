@@ -62,19 +62,21 @@ TablePilot 是一个**本地优先的脏表工作台**：把你磁盘上混乱�
 - **会话导出** — `POST /api/session/export` 把当前分析会话以 JSON 快照导出。
 - **健康检查** — `GET /health` 供存活探针与容器健康检查。
 
-桌面壳在相同服务接口之上提供 Qt/C++ 体验（见 `packaging/`、`qss/`）。
+桌面壳在相同服务接口之上提供 Qt/C++ 体验（见 `packaging/`、`qss/`）。内置 **网络检索 Dock**——输入检索词即通过 [Exa API](https://exa.ai/) 搜网（在环境里设 `EXA_API_KEY`；源码不存任何密钥），结果以可点击列表呈现并在系统浏览器打开，让你不用离开工作台即可为脏表补充外部背景。
 
 ## 快速开始
 
-### Windows 一键安装（预构建桌面壳）
+### 预构建桌面壳（Windows / macOS / Linux）
 
-从 Releases 下载 CI 构建的二进制——本机无需 Python / Qt / 编译器：
+从 Releases 下载 CI 构建的二进制——本机无需 Python / Qt / 编译器。`qt-desktop` CI 在三个操作系统上从 `Statistical_Analysis.pro` 构建桌面壳，并把二进制挂到每个 release：
 
-1. 从 [Releases](https://github.com/Phoenix0531-sudo/TablePilot/releases) 页下载 **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)**（约 1.0 MB）——它就是 `qt-desktop` CI 在干净的 Windows runner 上从 `Statistical_Analysis.pro` 构建出的同一个 `TablePilot.exe`。
-2. 双击启动桌面壳。
-3. 要使用画像 / 清洗 / 报告功能，让桌面壳指向一个正在运行的分析服务——要么 `docker compose up --build`（见下），要么 `uvicorn app.main:app --reload`（再下）。
+| 系统 | 资产 | 说明 |
+| --- | --- | --- |
+| Windows | **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)**（约 1.0 MB） | 双击启动 |
+| macOS | `TablePilot-v1.1.6-macos.zip` | 解压后 `.app` 原生运行（Apple Silicon） |
+| Linux | `TablePilot-v1.1.6-linux` | `chmod +x` 后运行 |
 
-> 提示：该 exe 是独立 Windows 二进制；FastAPI 分析服务须单独运行，桌面壳才能调用 `/api/*`。
+> 提示：这些是独立二进制；FastAPI 分析服务须单独运行，桌面壳才能调用 `/api/*`。要使用画像 / 清洗 / 报告功能，让桌面壳指向一个正在运行的分析服务——要么 `docker compose up --build`（见下），要么 `uvicorn app.main:app --reload`（再下）。
 
 ### 从源码跑（分析服务 + 桌面壳）
 
@@ -215,7 +217,10 @@ GitHub Pages 项目页（[phoenix0531-sudo.github.io/TablePilot](https://phoenix
 
 ## 贡献
 
-欢迎贡献 —— 见 [CONTRIBUTING.md](CONTRIBUTING.md)。简版原则：**本地优先**（默认路径不上传远程）、**证据为本**（agent/report 产物源自真实画像数据）、**文档诚实**（不描述代码没有的能力）。提交 PR 前跑 `python -m pytest -q analysis_service/tests`。
+欢迎贡献 —— 见 [CONTRIBUTING.md](CONTRIBUTING.md)。简版原则：**本地优先**（默认路径不上传远程）、**证据为本**（agent/report 产物源自真实画像数据）、**文档诚实**（不描述代码没有的能力）。提交 PR 前：
+
+- **服务测试** —— `python -m pytest -q analysis_service/tests`（108 个 analysis.py 单元测试 + 38 个 agent.py 单元测试 + 端点集成测试）。
+- **桌面壳测试** —— `cd Statistical_Analysis/tests && qmake6 test_textformat.pro && make && ./test_textformat` 以及 `test_exadock`（Exa API 响应解析）。两者均在每次推送时由 `qt-tests` CI 任务运行。
 
 另见：[CHANGELOG.md](CHANGELOG.md) · [SECURITY.md](SECURITY.md) · [docs/API.md](docs/API.md)
 

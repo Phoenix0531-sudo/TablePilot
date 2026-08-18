@@ -94,6 +94,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   covered by the repo's MIT License — making their redistribution safe and
   unambiguous.
 
+- **QtTest unit tests for the Qt desktop shell (S7).** Extracted seven pure
+  localization helpers (`Text`, `QualityLevelText`, `SemanticTypeText`,
+  `RoleHintText`, `DirectionText`, `ToolTraceText`, `LimitationText`) from the
+  166 KB `mainwindow.cpp` into a standalone `textformat.h/.cpp` namespace so
+  they can be tested without instantiating the full MainWindow (which pulls in
+  the QSS loader, service client, QCustomPlot, and every dock widget).
+  `mainwindow.cpp` now delegates to `TextFormat::...` (behavior identical).
+  Added `tests/test_textformat.{cpp,pro}` (36 test rows covering EN/ZH
+  passthrough + every mapped enum value + unknown fallback) and a lightweight
+  `qt-tests` CI job on Ubuntu that builds and runs the test binary headless in
+  seconds, giving the 3000-line desktop shell its first automated regression
+  gate.
+
 - **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
   workflow previously only proved the `.pro` compiles and links under MSVC +
   Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen

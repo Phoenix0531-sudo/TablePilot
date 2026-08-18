@@ -33,6 +33,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  qt-tests:
+    # Lightweight: builds only textformat.cpp + test_textformat.cpp against
+    # QtCore + QtTest (no QCustomPlot, no UI, no service). Fast feedback on
+    # the extracted localization helpers that the desktop shell renders.
+    name: QtTest (textformat helpers)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Qt 6 from the Ubuntu archive (qt6-base-dev)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            qt6-base-dev \
+            libgl1-mesa-dev \
+            libegl1 \
+            libxkbcommon0
+
+      - name: qmake6 + make test binary
+        run: |
+          mkdir build-test
+          cd build-test
+          qmake6 ../Statistical_Analysis/tests/test_textformat.pro "CONFIG+=release"
+          make -j$(nproc)
+
+      - name: Run QtTest
+        run: |
+          bin="$(find build-test -name test_textformat -type f | head -1)"
+          echo "bin=$bin"
+          test -n "$bin"
+          QT_QPA_PLATFORM=offscreen "$bin" -v2
+
   build-windows:
     name: Build TablePilot.exe (MSVC, Qt 6.8)
     runs-on: windows-latest

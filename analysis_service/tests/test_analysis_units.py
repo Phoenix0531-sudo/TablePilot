@@ -44,7 +44,6 @@ from app.analysis import (
     top_metrics,
 )
 
-
 # ---------------------------------------------------------------------------
 # looks_numeric — single-value numeric coercion predicate
 # ---------------------------------------------------------------------------

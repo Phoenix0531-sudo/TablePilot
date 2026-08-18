@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe"><img src="https://img.shields.io/badge/下载_Windows_TablePilot_v1.1.6-0078D6.svg?logo=windows&logoColor=white" alt="下载 Windows 版 TablePilot（v1.1.6）"></a>
+  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.7/TablePilot-v1.1.7.exe"><img src="https://img.shields.io/badge/下载_Windows_TablePilot_v1.1.7-0078D6.svg?logo=windows&logoColor=white" alt="下载 Windows 版 TablePilot（v1.1.7）"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml/badge.svg" alt="Docker 分析服务"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt 桌面端构建"></a>
@@ -72,9 +72,9 @@ TablePilot 是一个**本地优先的脏表工作台**：把你磁盘上混乱�
 
 | 系统 | 资产 | 说明 |
 | --- | --- | --- |
-| Windows | **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)**（约 1.0 MB） | 双击启动 |
-| macOS | `TablePilot-v1.1.6-macos.zip` | 解压后 `.app` 原生运行（Apple Silicon） |
-| Linux | `TablePilot-v1.1.6-linux` | `chmod +x` 后运行 |
+| Windows | **[TablePilot-v1.1.7.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.7/TablePilot-v1.1.7.exe)**（约 1.0 MB） | 双击启动 |
+| macOS | `TablePilot-v1.1.7-macos.zip` | 解压后 `.app` 原生运行（Apple Silicon） |
+| Linux | `TablePilot-v1.1.7-linux` | `chmod +x` 后运行 |
 
 > 提示：这些是独立二进制；FastAPI 分析服务须单独运行，桌面壳才能调用 `/api/*`。要使用画像 / 清洗 / 报告功能，让桌面壳指向一个正在运行的分析服务——要么 `docker compose up --build`（见下），要么 `uvicorn app.main:app --reload`（再下）。
 

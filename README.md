@@ -14,7 +14,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe"><img src="https://img.shields.io/badge/Download_Windows_TablePilot_v1.1.6-0078D6.svg?logo=windows&logoColor=white" alt="Download TablePilot for Windows (v1.1.6)"></a>
+  <a href="https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.7/TablePilot-v1.1.7.exe"><img src="https://img.shields.io/badge/Download_Windows_TablePilot_v1.1.7-0078D6.svg?logo=windows&logoColor=white" alt="Download TablePilot for Windows (v1.1.7)"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/docker.yml/badge.svg" alt="Docker analysis-service"></a>
   <a href="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml"><img src="https://github.com/Phoenix0531-sudo/TablePilot/actions/workflows/qt-desktop.yml/badge.svg" alt="Qt desktop build"></a>
@@ -72,9 +72,9 @@ Grab a CI-built binary from Releases — no Python, Qt, or compiler needed on yo
 
 | OS | Asset | Notes |
 | --- | --- | --- |
-| Windows | **[TablePilot-v1.1.6.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.6/TablePilot-v1.1.6.exe)** (~1.0 MB) | double-click to launch |
-| macOS | `TablePilot-v1.1.6-macos.zip` | unzip, the `.app` bundle runs natively on Apple Silicon |
-| Linux | `TablePilot-v1.1.6-linux` | `chmod +x` then run |
+| Windows | **[TablePilot-v1.1.7.exe](https://github.com/Phoenix0531-sudo/TablePilot/releases/download/v1.1.7/TablePilot-v1.1.7.exe)** (~1.0 MB) | double-click to launch |
+| macOS | `TablePilot-v1.1.7-macos.zip` | unzip, the `.app` bundle runs natively on Apple Silicon |
+| Linux | `TablePilot-v1.1.7-linux` | `chmod +x` then run |
 
 > Tip: these are standalone binaries; the FastAPI analysis service must be running separately for the desktop shell to talk to `/api/*`. To use profile / clean / report features, point the shell at a running analysis service — either `docker compose up --build` (below) or `uvicorn app.main:app --reload` (further below).
 

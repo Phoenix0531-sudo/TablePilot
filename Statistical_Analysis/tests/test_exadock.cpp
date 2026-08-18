@@ -58,7 +58,7 @@ void TestExaParser::singleResultAllFields()
     QCOMPARE(out[0].url, QStringLiteral("https://example.com/a"));
     QCOMPARE(out[0].text, QStringLiteral("body text"));
     QCOMPARE(out[0].publishedDate, QStringLiteral("2026-01-02"));
-    QCOMPARE(out[0].score, 0.91);
+    QVERIFY(qFuzzyCompare(out[0].score, 0.91));
 }
 
 void TestExaParser::multipleResultsPreserveOrder()
@@ -98,7 +98,7 @@ void TestExaParser::scoreParsedAsDouble()
     auto out = WebResearchDock::parseResults(docFrom(
         R"({"results":[{"title":"t","score":0.5555}]}))"));
     QCOMPARE(out.size(), 1);
-    QCOMPARE(out[0].score, 0.5555);
+    QVERIFY(qFuzzyCompare(out[0].score, 0.5555));
 }
 
 void TestExaParser::nonObjectArrayElementsSkipped()

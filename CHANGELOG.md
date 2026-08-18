@@ -88,6 +88,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   or removing a rule updates both scopes atomically — the two configs can no
   longer silently drift.
 
+- **`demo/README.md` source & license declaration (S6).** Documents that the
+  four bundled sample tables are fully synthetic, author-created data (no real
+  or personal data), carry intentional quality issues by design, and are
+  covered by the repo's MIT License — making their redistribution safe and
+  unambiguous.
+
 - **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
   workflow previously only proved the `.pro` compiles and links under MSVC +
   Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen

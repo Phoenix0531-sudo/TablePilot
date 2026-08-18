@@ -112,6 +112,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   tool (still failing on Windows per upstream #131) and without racing the
   Pages deploy — the local server reuses the same staging command.
 
+- **README Proof section now shows the live Pages-site screenshot captured by
+  CI.** The `screenshot-site.yml` workflow produces `site/screenshots/pages-desktop.png`
+  (1280×800, 2x DPR, regenerated on every site/ change); the Proof section embeds it
+  below the desktop-UI captures with a caption linking to the live Pages URL and
+  to the workflow that generates it, so the README's Web-preview never drifts
+  from the real markup. Closes the D4 site-screenshot gap end-to-end — the CI
+  captures the running site and the README shows that capture.
+
 - **`publish-pypi.yml` workflow added for OIDC trusted publishing of the
   `tablepilot-analysis-service` package.** Manual `workflow_dispatch` only (the
   repo release tags track the desktop shell, not the Python package version in

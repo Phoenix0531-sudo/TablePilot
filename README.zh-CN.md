@@ -171,6 +171,10 @@ tests/                 # pytest 测试套件（analysis_service + 独立 smoke�
 </tr>
 </table>
 
+GitHub Pages 项目页（[phoenix0531-sudo.github.io/TablePilot](https://phoenix0531-sudo.github.io/TablePilot/)）由 CI 以无头 Chromium 实拍（[`screenshot-site.yml`](.github/workflows/screenshot-site.yml)），保证与真实标记同步不漂移：
+
+<p align="center"><img src="site/screenshots/pages-desktop.png" alt="TablePilot GitHub Pages 项目页（桌面端 1280×800，CI 实拍）" width="960"><br><sub>GitHub Pages 项目页 — 桌面视图，每次站点改动由 CI 无头 Chromium 重新生成</sub></p>
+
 ## 性能
 
 由 `scripts/bench.py` 测得（5 次运行取中位数，进程内调用，在 `ubuntu-latest` CI 运行器上——无服务器/网络抖动）。本地可用 `python scripts/bench.py` 复现。

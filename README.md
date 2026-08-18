@@ -176,6 +176,10 @@ Real UI captures from a local run (also in `assets/screenshots/`):
 </tr>
 </table>
 
+The live GitHub Pages project page ([phoenix0531-sudo.github.io/TablePilot](https://phoenix0531-sudo.github.io/TablePilot/)), captured headless by CI ([`screenshot-site.yml`](.github/workflows/screenshot-site.yml)) so it never drifts from the real markup:
+
+<p align="center"><img src="site/screenshots/pages-desktop.png" alt="TablePilot GitHub Pages project page (desktop, 1280×800, CI-captured)" width="960"><br><sub>GitHub Pages project page — desktop view, regenerated on every site change by headless Chromium in CI</sub></p>
+
 ## Performance
 
 Measured by `scripts/bench.py` (median of 5 runs, in-process, on an `ubuntu-latest` CI runner — no server/network jitter). Run it locally with `python scripts/bench.py`.

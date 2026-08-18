@@ -96,6 +96,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   (`-Wa,-mbig-obj`) is guarded by `win32-g++` scope — so no source changes were
   expected or made; the macOS/Linux fixes are pure toolchain/SDK accommodation.
 
+- **`screenshot-site.yml` workflow regenerates Pages-site preview screenshots
+  via headless Chromium.** `scripts/screenshot_site.py` stages site/ the exact
+  same way `pages.yml` does (copy `assets/screenshots/*` → `site/screenshots/`,
+  copy `docs/screenshots/{banner,avatar}.svg` → `site/`), serves it over a
+  local HTTP server, and drives Playwright headless Chromium to capture two
+  stable PNGs — `site/screenshots/pages-desktop.png` (1280×800, full page, 2x
+  DPR) and `pages-mobile.png` (390×844). Stable filenames keep each regeneration
+  a single-file diff instead of accumulating date-stamped history. The workflow
+  is path-gated (`site/**`, `assets/screenshots/**`, the banner/avatar SVGs, and
+  the script/workflow themselves) so it doesn't burn a runner on every commit;
+  regenerations that produce an identical image skip the commit (the diff step
+  detects no change), and changed screenshots are committed straight to main.
+  This closes the D4 site-screenshot gap without the blocked `agent_browser`
+  tool (still failing on Windows per upstream #131) and without racing the
+  Pages deploy — the local server reuses the same staging command.
+
 - **`publish-pypi.yml` workflow added for OIDC trusted publishing of the
   `tablepilot-analysis-service` package.** Manual `workflow_dispatch` only (the
   repo release tags track the desktop shell, not the Python package version in

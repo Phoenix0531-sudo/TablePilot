@@ -1,7 +1,7 @@
 # TablePilot Analysis Service — API Quick Reference
 
 The TablePilot analysis service (`analysis_service/`, **v0.5.0**) runs locally and exposes
-**11 HTTP endpoints** over FastAPI. Every capability below is reachable over plain HTTP; the
+**10 HTTP endpoints** over FastAPI. Every capability below is reachable over plain HTTP; the
 auto-generated Swagger UI is at `http://127.0.0.1:8000/docs` once the service is running.
 
 > Run the service:

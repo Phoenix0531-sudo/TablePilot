@@ -223,6 +223,30 @@ jobs:
           )
           print(f"coverage gate OK: {n_paths} paths == {n_routes} routes, {n_ops} ops")
         shell: python
+      - name: docs/API.md endpoint contract sync
+        run: |
+          import json, re
+          from pathlib import Path
+          # Parse every "### `METHOD /path`" heading in docs/API.md and assert
+          # the documented path set matches docs/openapi.json exactly. This
+          # catches documentation drift: a new endpoint added to app/main.py
+          # (and thus openapi.json) but not described in API.md fails here, and
+          # vice-versa a stale API.md entry for a removed endpoint also fails.
+          api_md = Path("docs/API.md").read_text(encoding="utf-8")
+          headings = re.findall(r"^###\s+`(?:GET|POST|PUT|DELETE|PATCH)\s+([^`]+)`", api_md, re.MULTILINE)
+          doc_paths = sorted(h.strip() for h in headings)
+          with open("docs/openapi.json", encoding="utf-8") as f:
+              spec = json.load(f)
+          spec_paths = sorted(spec.get("paths", {}).keys())
+          assert doc_paths == spec_paths, (
+              f"docs/API.md endpoint headings drifted from openapi.json.\n"
+              f"  API.md:    {doc_paths}\n"
+              f"  openapi:   {spec_paths}\n"
+              f"  only in API.md:  {sorted(set(doc_paths) - set(spec_paths))}\n"
+              f"  only in openapi: {sorted(set(spec_paths) - set(doc_paths))}"
+          )
+          print(f"API.md contract OK: {len(doc_paths)} documented paths == openapi paths")
+        shell: python
       - name: Upload snapshot
         uses: actions/upload-artifact@v7
         with:

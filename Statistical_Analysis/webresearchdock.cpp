@@ -175,23 +175,15 @@ void WebResearchDock::onResult(QNetworkReply *reply)
     }
 
     QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-    const QJsonArray arr = doc.object().value(QStringLiteral("results")).toArray();
-    if (arr.isEmpty()) {
+    m_results = parseResults(doc);
+
+    if (m_results.isEmpty()) {
         m_statusLabel->setText(tr2("No results.", "无结果。"));
         return;
     }
 
     int idx = 0;
-    for (const QJsonValue &v : arr) {
-        const QJsonObject o = v.toObject();
-        ResultItem r;
-        r.title = o.value(QStringLiteral("title")).toString();
-        r.url = o.value(QStringLiteral("url")).toString();
-        r.text = o.value(QStringLiteral("text")).toString();
-        r.publishedDate = o.value(QStringLiteral("publishedDate")).toString();
-        r.score = o.value(QStringLiteral("score")).toDouble(0.0);
-        m_results.append(r);
-
+    for (const ResultItem &r : std::as_const(m_results)) {
         QString label = QStringLiteral("%1. %2").arg(idx + 1).arg(r.title);
         if (!r.url.isEmpty()) label += QStringLiteral("  —  ") + r.url;
         QListWidgetItem *item = new QListWidgetItem(label, m_resultsList);
@@ -201,6 +193,28 @@ void WebResearchDock::onResult(QNetworkReply *reply)
     }
     m_statusLabel->setText(tr2("%1 result(s). Double-click to open in browser.",
                               "%1 条结果。双击在浏览器打开。").arg(m_results.size()));
+}
+
+QVector<WebResearchDock::ResultItem> WebResearchDock::parseResults(const QJsonDocument &doc)
+{
+    // Pure parser: turn the Exa API { results: [ ... ] } payload into the
+    // dock's internal vector. Extracted from onResult so QtTest can feed it
+    // canned JSON (happy path, empty results, missing fields, malformed
+    // types) without a live QNetworkReply.
+    QVector<ResultItem> out;
+    const QJsonArray arr = doc.object().value(QStringLiteral("results")).toArray();
+    out.reserve(arr.size());
+    for (const QJsonValue &v : arr) {
+        const QJsonObject o = v.toObject();
+        ResultItem r;
+        r.title = o.value(QStringLiteral("title")).toString();
+        r.url = o.value(QStringLiteral("url")).toString();
+        r.text = o.value(QStringLiteral("text")).toString();
+        r.publishedDate = o.value(QStringLiteral("publishedDate")).toString();
+        r.score = o.value(QStringLiteral("score")).toDouble(0.0);
+        out.append(r);
+    }
+    return out;
 }
 
 void WebResearchDock::onItemActivated(QListWidgetItem *item)

@@ -52,16 +52,30 @@ jobs:
             libegl1 \
             libxkbcommon0
 
-      - name: qmake6 + make test binary
+      - name: qmake6 + make test binary (textformat)
         run: |
           mkdir build-test
           cd build-test
           qmake6 ../Statistical_Analysis/tests/test_textformat.pro "CONFIG+=release"
           make -j$(nproc)
 
-      - name: Run QtTest
+      - name: Run QtTest (textformat)
         run: |
           bin="$(find build-test -name test_textformat -type f | head -1)"
+          echo "bin=$bin"
+          test -n "$bin"
+          QT_QPA_PLATFORM=offscreen "$bin" -v2
+
+      - name: qmake6 + make test binary (exadock parser)
+        run: |
+          mkdir build-exadock
+          cd build-exadock
+          qmake6 ../Statistical_Analysis/tests/test_exadock.pro "CONFIG+=release"
+          make -j$(nproc)
+
+      - name: Run QtTest (exadock parser)
+        run: |
+          bin="$(find build-exadock -name test_exadock -type f | head -1)"
           echo "bin=$bin"
           test -n "$bin"
           QT_QPA_PLATFORM=offscreen "$bin" -v2

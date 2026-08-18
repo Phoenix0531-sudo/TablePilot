@@ -40,6 +40,19 @@ public:
     void setUseChinese(bool zh);
     void retranslateUi();
 
+    // Public so QtTest can construct fixtures without going through a live
+    // QNetworkReply. The Exa API returns { results: [ {title, url, text,
+    // publishedDate, score} ] }; this pure parser turns that JSON into the
+    // dock's internal result vector, defaulting missing fields safely.
+    struct ResultItem {
+        QString title;
+        QString url;
+        QString text;
+        QString publishedDate;
+        double score;
+    };
+    static QVector<ResultItem> parseResults(const QJsonDocument &doc);
+
 private slots:
     void onSearch();
     void onResult(QNetworkReply *reply);
@@ -58,13 +71,6 @@ private:
     QNetworkAccessManager *m_net;
     bool m_useChinese;
 
-    struct ResultItem {
-        QString title;
-        QString url;
-        QString text;
-        QString publishedDate;
-        double score;
-    };
     QVector<ResultItem> m_results;
 };
 

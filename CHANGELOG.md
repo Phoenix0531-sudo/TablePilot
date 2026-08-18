@@ -116,6 +116,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   uploaded with `--clobber` so re-running on the same tag refreshes stale
   assets.
 
+- **Exa dock parser mock tests (S10).** Extracted the Exa API JSON parsing
+  logic from `WebResearchDock::onResult` into a pure static
+  `WebResearchDock::parseResults(const QJsonDocument&)` (made `ResultItem`
+  public). Added `tests/test_exadock.{cpp,pro}` (10 tests covering: empty
+  results array, missing `results` key, single result with all fields, order
+  preservation across multiple results, safe defaults for missing fields,
+  score defaulting to 0.0, score parsed as double, non-object array elements,
+  empty document, and malformed JSON). The `qt-tests` CI job now builds and
+  runs both Qt test binaries headless. The dock's network layer (live Exa API,
+  real API key) is intentionally not exercised — only the pure parser is.
+
 - **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
   workflow previously only proved the `.pro` compiles and links under MSVC +
   Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen

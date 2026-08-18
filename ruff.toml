@@ -1,19 +1,22 @@
 # Ruff configuration for repo-root Python (scripts/ and tests/).
 #
-# analysis_service/ has its own [tool.ruff] in analysis_service/pyproject.toml
-# (scoped to that subpackage, run by a job whose working-directory is
-# analysis_service). This config covers the standalone scripts and the
-# top-level tests/ suite, which live outside analysis_service/ and therefore
-# were not linted before. The rule set mirrors analysis_service/pyproject.toml
-# so the whole repo enforces one consistent style baseline.
+# This config is the SECOND ruff scope in the repo. The PRIMARY rule set lives
+# in analysis_service/pyproject.toml [tool.ruff]; this file EXTENDS it so the
+# whole repo enforces ONE consistent style baseline and the two configs can
+# never silently drift (add a rule to pyproject and the root inherits it).
+#
+# The root job (ruff-lint-root in ci.yml) runs `ruff check scripts tests` with
+# this config; the analysis_service job runs `ruff check .` with
+# analysis_service/pyproject.toml. The only differences this file adds are the
+# excludes (analysis_service/build/dist/Statistical_Analysis/site are out of
+# scope here) and per-directory ignores for scripts (E402 for sys.path imports).
 
-line-length = 100
-target-version = "py311"
+# Inherit line-length, target-version, select, ignore, and per-file-ignores
+# from the analysis_service config. Only override what differs for the root scope.
+extend = "analysis_service/pyproject.toml"
 
-# analysis_service/ is linted by its own job + config; exclude it here so the
-# root job does not double-lint (and cannot disagree on rules).
 extend-exclude = [
-    "analysis_service",
+    "analysis_service",       # linted by its own job + config
     "build",
     "dist",
     ".venv",
@@ -21,20 +24,9 @@ extend-exclude = [
     "site",                   # static Pages content
 ]
 
-[lint]
-# Same conservative starter set as analysis_service: catch real bugs and obvious
-# style, not nitpicks. F (pyflakes), E (pycodestyle errors), I (isort),
-# UP (pyupgrade), B (bugbear), N (naming).
-select = ["E", "F", "I", "UP", "B", "N"]
-ignore = [
-    "E501",   # line too long (handled by formatter, not linter)
-    "B008",   # Do not perform function call in argument defaults
-    "N805",   # first-argument-method name (pydantic validators)
-    "N818",   # error suffix (we do not suffix exception names with Error)
-]
-
 [lint.per-file-ignores]
-# Top-level tests mirror analysis_service/tests: assert-heavy, may re-import.
+# Inherit the tests/*.py ignores from the parent, then add script-specific
+# allowances. ruff merges per-file-ignores on extend.
 "tests/*.py" = ["E402", "F811"]
 # Scripts legitimately import after sys.path manipulation.
 "scripts/*.py" = ["E402"]

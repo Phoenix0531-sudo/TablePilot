@@ -81,6 +81,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   by default, with explicit entries for `analysis_service/`, `Statistical_Analysis/`,
   `.github/`, and `docs/`.
 
+- **Unified ruff configuration (S5).** `ruff.toml` (repo-root scope, linting
+  `scripts/` and `tests/`) now `extend`s `analysis_service/pyproject.toml`
+  instead of mirroring its rule set. The select/ignore/per-file-ignores live in
+  one place (the analysis_service config) and the root inherits them, so adding
+  or removing a rule updates both scopes atomically — the two configs can no
+  longer silently drift.
+
 - **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
   workflow previously only proved the `.pro` compiles and links under MSVC +
   Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen

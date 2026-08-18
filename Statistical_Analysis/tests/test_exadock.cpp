@@ -90,7 +90,7 @@ void TestExaParser::scoreDefaultsToZeroWhenAbsent()
     auto out = WebResearchDock::parseResults(docFrom(
         R"({"results":[{"title":"t","url":"u"}]})"));
     QCOMPARE(out.size(), 1);
-    QCOMPARE(out[0].score, 0.0);  // absent -> default 0.0
+    QVERIFY(qFuzzyCompare(out[0].score, 0.0));  // absent -> default 0.0
 }
 
 void TestExaParser::scoreParsedAsDouble()

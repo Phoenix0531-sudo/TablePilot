@@ -50,6 +50,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Unit-test coverage for `analysis_service/app/analysis.py` pure-logic functions (S1).**
+  Added `analysis_service/tests/test_analysis_units.py` (108 tests) targeting 16
+  leaf pure functions: `looks_numeric`, `numeric_ratio`, `date_ratio`,
+  `parse_dates_quietly`, `detect_trends`, `score_data_quality`,
+  `find_duplicate_columns`, `count_total_like_rows`, `calculate_messy_score`,
+  `schema_roles`, `build_dataset_fingerprint`, `preferred_metric`, `top_metrics`,
+  `metric_priority`, `correlation_strength`. Existing tests were integration-style
+  (drive the FastAPI endpoints / full pipeline, assert top-level keys); a silent
+  pandas coercion change would pass those but break a unit assertion that points
+  straight at the broken function.
+
+- **Unit-test coverage for `analysis_service/app/agent.py` (S2).** Added
+  `analysis_service/tests/test_agent_units.py` (38 tests) targeting the three
+  leaf functions: `plan_question` (keyword→intent routing for all 5 intents,
+  case-insensitivity, first-match-wins ordering), `compose_answer` (narrative
+  assembly per intent with empty + populated anomalies/trends/correlations),
+  and `answer_question` (full evidence envelope shape, top-5 truncation,
+  plan-tool fallback, monkeypatched `profile_dataset` so no file I/O).
+
+- **`docs/API.md` endpoint contract sync in CI (S3).** The `openapi-export` job
+  now parses every `### \`METHOD /path\`` heading in `docs/API.md` and asserts the
+  documented path set matches `docs/openapi.json` exactly — catching doc drift in
+  either direction (a new endpoint added to `app/main.py` but not described in
+  API.md, or a stale API.md entry for a removed endpoint). Also fixed a stale
+  API.md header ("11 HTTP endpoints" → 10).
+
+- **`.github/CODEOWNERS` (S4).** Documents ownership intent and pre-fills the
+  reviewer field on PRs: the repo owner (`@Phoenix0531-sudo`) reviews everything
+  by default, with explicit entries for `analysis_service/`, `Statistical_Analysis/`,
+  `.github/`, and `docs/`.
+
 - **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
   workflow previously only proved the `.pro` compiles and links under MSVC +
   Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen

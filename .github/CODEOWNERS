@@ -1,0 +1,25 @@
+# CODEOWNERS — default review owners for TablePilot.
+#
+# Each line: <glob> <owner ...>. Owners are requested as reviewers on any PR
+# that touches files under the glob. GitHub requires owners to have write
+# access or be members of a team with write access for branch protection to
+# enforce review; on a solo project this file documents ownership intent and
+# still pre-fills the reviewer field on PRs.
+#
+# Owner: @Phoenix0531-sudo (repo owner)
+
+# Default: the owner reviews everything not matched below.
+*                           @Phoenix0531-sudo
+
+# Analysis service (FastAPI backend) — owner has full context on the
+# profiling/cleaning/agent pipeline.
+/analysis_service/          @Phoenix0531-sudo
+
+# Qt/C++ desktop shell — owner has full context on the native UI.
+/Statistical_Analysis/      @Phoenix0531-sudo
+
+# CI workflows — owner reviews all automation changes.
+/.github/                   @Phoenix0531-sudo
+
+# Generated artifacts and docs — owner reviews doc drift.
+/docs/                      @Phoenix0531-sudo

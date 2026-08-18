@@ -107,6 +107,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   seconds, giving the 3000-line desktop shell its first automated regression
   gate.
 
+- **Multi-OS release assets (S9).** The tag-triggered `release-assets` job in
+  `qt-desktop.yml` previously attached only the Windows `.exe` to a release.
+  It now downloads artifacts from all three OS build jobs and attaches three
+  versioned binaries per release: `TablePilot-<tag>.exe` (Windows MSVC),
+  `TablePilot-<tag>-macos.zip` (macOS `.app` bundle, zipped with `-y` to
+  preserve symlinks), and `TablePilot-<tag>-linux` (Linux gcc binary). All are
+  uploaded with `--clobber` so re-running on the same tag refreshes stale
+  assets.
+
 - **Qt desktop CI now smoke-launches `TablePilot.exe` headless.** The `qt-desktop`
   workflow previously only proved the `.pro` compiles and links under MSVC +
   Qt 6.8 — it never ran the produced binary. A new "Smoke launch (offscreen

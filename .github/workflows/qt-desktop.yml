@@ -262,30 +262,50 @@ jobs:
           retention-days: 14
 
   release-assets:
-    name: Attach TablePilot.exe to the tag release
-    needs: build-windows
+    name: Attach multi-OS binaries to the tag release
+    needs: [build-windows, build-macos, build-linux]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download built exe
+      - name: Download all built artifacts
         uses: actions/download-artifact@v8
         with:
-          name: TablePilot-windows-exe
           path: release-assets
 
-      - name: Attach versioned exe to the release
+      - name: Stage versioned release assets
+        run: |
+          set -e
+          tag="${GITHUB_REF#refs/tags/}"
+          mkdir -p staged
+
+          # --- Windows exe ---
+          exe="$(find release-assets/TablePilot-windows-exe -name TablePilot.exe -type f | head -1)"
+          test -n "$exe"
+          cp "$exe" "staged/TablePilot-${tag}.exe"
+
+          # --- macOS app bundle -> zip ---
+          # The .app bundle is a directory; zip it so it survives the upload
+          # and double-click extraction on macOS. Use -y to store symlinks.
+          app="$(find release-assets/TablePilot-macos-app -name 'TablePilot.app' -type d | head -1)"
+          test -n "$app"
+          (cd "$(dirname "$app")" && zip -r -y "${GITHUB_WORKSPACE}/staged/TablePilot-${tag}-macos.zip" TablePilot.app)
+
+          # --- Linux binary ---
+          bin="$(find release-assets/TablePilot-linux-bin -name TablePilot -type f ! -path '*/Contents/*' | head -1)"
+          test -n "$bin"
+          cp "$bin" "staged/TablePilot-${tag}-linux"
+
+          echo '--- staged assets ---'
+          ls -la staged/
+
+      - name: Attach versioned assets to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
-          # upload-artifact preserved the build/release/ path of the exe,
-          # so locate it recursively rather than at the download root.
-          exe="$(find release-assets -name TablePilot.exe -type f | head -1)"
-          test -n "$exe"
-          mv "$exe" "TablePilot-${tag}.exe"
           # Create a draft release for the tag if one does not yet exist;
           # if a release was already published manually, this is a no-op.
           gh release create "$tag" --draft --generate-notes --repo "$GITHUB_REPOSITORY" || true
-          gh release upload "$tag" "TablePilot-${tag}.exe" --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$tag" staged/* --clobber --repo "$GITHUB_REPOSITORY"
